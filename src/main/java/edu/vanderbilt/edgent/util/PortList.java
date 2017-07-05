@@ -1,4 +1,4 @@
-package edu.vanderbilt.edge.util;
+package edu.vanderbilt.edgent.util;
 
 import java.util.LinkedList;
 import java.util.Queue;

@@ -1,4 +1,4 @@
-group 'edu.vanderbilt.edge'
+group 'edu.vanderbilt.edgent'
 
 apply plugin: 'java'
 apply plugin: 'eclipse'

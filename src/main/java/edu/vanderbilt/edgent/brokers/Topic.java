@@ -1,4 +1,4 @@
-package edu.vanderbilt.edge.brokers;
+package edu.vanderbilt.edgent.brokers;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
