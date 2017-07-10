@@ -1,0 +1,13 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+    - log_dir: /home/ubuntu/log
+  tasks: 
+    - name: start subscriber process
+      shell: cd "{{ src_home }}" && ./scripts/start_subscribers.sh "{{ item.value }}"
+        "{{ item.key }}" "{{ region_id }}" "{{ run_id }}" "{{ sample_count }}" "{{ log_dir }}"
+      with_dict: "{{ topic_count_map }}"

@@ -1,0 +1,18 @@
+---
+- include: set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  tasks:
+    - name: check if process is running
+      shell: ps aux | grep {{ pattern }} | grep -v grep
+      register: plist
+      failed_when: plist.rc > 1
+    - name: print result for case:not running 
+      debug:
+        msg: "Not Running"
+      when: "plist.stdout.find('{{ pattern }}') == -1"
+    - name: print result for case:running 
+      debug:
+        msg: "Running"
+      when: "plist.stdout.find('{{ pattern }}') >= 0"

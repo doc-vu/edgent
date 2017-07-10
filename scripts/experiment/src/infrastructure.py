@@ -1,0 +1,65 @@
+import argparse,metadata,conf,subprocess,time
+
+"""
+Script that sets up the infrastructure before testing.
+"""
+class Infrastructure(object):
+  def __init__(self,conf_file,teardown):
+    #flag to determine whether to teardown existing infrastructure
+    self.teardown=teardown
+    #load test configuration
+    self.conf=conf.Conf(conf_file)
+    
+  def setup(self):
+    #clean up
+    if(self.teardown):
+      print("\n\n\nTearing down existing infrastructure")
+      self.clean()
+
+    #Launch infrastructure components
+    print("\n\n\nSetting up infrastructure processes")
+    self.setup_infrastructure()
+
+
+  def clean(self):
+    #kill existing edge-broker processes
+    print("\n\n\nKilling all existing broker processes on edge-brokers")
+    self.kill_existing_processes()
+
+    #clear logs
+    print("\n\n\nCleaning log directory on edge-brokers")
+    self.clean_logs()
+
+  def kill_existing_processes(self):
+    #kill existing processes on edge brokers
+    command_string='cd %s && ansible-playbook playbooks/util/kill.yml  --limit %s\
+      --extra-vars="pattern=Broker"'%(metadata.ansible,','.join(self.conf.ebs))
+    subprocess.check_call(['bash','-c', command_string])
+
+  def clean_logs(self):
+    command_string='cd %s && ansible-playbook playbooks/util/clean.yml \
+      --extra-vars="dir=/home/ubuntu/infrastructure_log/" --limit %s'\
+      %(metadata.ansible,','.join(self.conf.ebs))
+    subprocess.check_call(['bash','-c',command_string])
+
+  def setup_infrastructure(self):
+    #ensure netem rules are set on clients
+    command_string='cd %s && ansible-playbook playbooks/experiment/netem_cli.yml  --limit %s'%\
+      (metadata.ansible,','.join(self.conf.clients))
+    subprocess.check_call(['bash','-c',command_string])
+
+    #ensure netem rules are set on RBs
+
+    #start EdgeBroker on ebs
+    print("\n\n\nStarting broker processes on edge-brokers")
+    command_string='cd %s && ansible-playbook playbooks/experiment/eb.yml  --limit %s'%\
+      (metadata.ansible,','.join(self.conf.ebs))
+    subprocess.check_call(['bash','-c',command_string])
+
+
+if __name__=="__main__":
+  parser=argparse.ArgumentParser(description='script for setting up  edgent infrastructure nodes')
+  parser.add_argument('conf',help='configuration file containing setup information')
+  parser.add_argument('--teardown',dest='teardown',action='store_true',help='flag to specify if infrastructure processes must be restarted')
+  args=parser.parse_args()
+  Infrastructure(args.conf,args.teardown).setup()

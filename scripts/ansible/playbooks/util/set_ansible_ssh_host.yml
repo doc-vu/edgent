@@ -1,0 +1,9 @@
+---
+- hosts: all 
+  connection: local
+  tasks:
+    - name: get ip from /etc/hosts
+      shell: getent hosts "{{ inventory_hostname }}" | awk '{ print $1 }'
+      register: res
+    - name: set ansible_ssh_host 
+      set_fact: ansible_ssh_host={{ res.stdout }}

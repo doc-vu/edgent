@@ -1,0 +1,12 @@
+---
+- include: set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - log: /dev/null
+  tasks:
+  - name: command string to be executed 
+    debug: "msg={{ command }}"
+  - name: execute command 
+    shell:  "( ( nohup {{ command }} 1>{{ log }} 2>&1 ) & )"

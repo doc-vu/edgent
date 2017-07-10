@@ -93,7 +93,7 @@ public class Subscriber {
 			
 			Subscriber subscriber= new Subscriber(topicName,regionId,runId,sampleCount,outDir);
 			//TODO acquire EB locator for the topic of interest
-			subscriber.receive("tcp://localhost:5001");
+			subscriber.receive("tcp://10.2.2.47:5001");
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();

@@ -1,0 +1,11 @@
+rbs:rb1
+ebs:eb1
+clients:cli1-1,cli1-2
+topics:A
+no_subs:1
+no_pubs:1
+sub_distribution:cli1-1:A:1
+pub_distribution:cli1-2:A:1
+pub_sample_count:10000
+sub_sample_count:10000
+sleep_interval:10

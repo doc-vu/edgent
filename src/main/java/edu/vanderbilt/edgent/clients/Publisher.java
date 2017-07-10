@@ -102,7 +102,7 @@ public class Publisher {
 
 			Publisher publisher = new Publisher(topicName, regionId, runId, sampleCount, sendInterval);
 			// TODO acquire the address of EB which hosts the topic of interest
-			publisher.publish("tcp://localhost:5000");
+			publisher.publish("tcp://10.2.2.47:5000");
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();
