@@ -77,7 +77,7 @@ public class EdgeBroker {
 
 	public static void main(String args[]){
 		EdgeBroker eb= new EdgeBroker(1,3);
-		eb.createTopic("A");
+		eb.createTopic("t1");
 	}
 
 }

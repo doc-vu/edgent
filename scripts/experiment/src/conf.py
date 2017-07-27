@@ -56,8 +56,8 @@ class Conf(object):
         elif line.startswith('sub_sample_count'):
           self.sub_sample_count=int(line.rstrip().partition(':')[2])
         #publisher sleep interval
-        elif line.startswith('sleep_interval'):
-          self.sleep_interval=int(line.rstrip().partition(':')[2])
+        elif line.startswith('sleep_interval_milisec'):
+          self.sleep_interval_milisec=int(line.rstrip().partition(':')[2])
         else:
           print('invalid line:%s'%(line))
     
