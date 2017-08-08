@@ -150,7 +150,8 @@ public class Publisher {
 
 			Publisher publisher = new Publisher(topicName, regionId, runId, sampleCount, sendInterval, zkConnector);
 			// TODO acquire the address of EB which hosts the topic of interest
-			publisher.start("tcp://10.2.2.47:5000");
+			int port=TemporaryHelper.topicSendPort(topicName);
+			publisher.start(String.format("tcp://10.2.2.47:%d",port));
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();

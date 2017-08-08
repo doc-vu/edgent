@@ -43,11 +43,11 @@ public class EdgeBroker {
 	 * Creates a topic which will be hosted on this EB. 
 	 * @param topicName 
 	 */
-	public void createTopic(String topicName){
+	public void createTopic(String topicName,int receivePort, int sendPort){
 		logger.debug("EdgeBroker:{} creating topic:{}",ebId,topicName);
 		if(!hostedTopics.containsKey(topicName)){
 			//TODO acquire port numbers from portList
-			Topic topic= new Topic(topicName,context,5000,5001);
+			Topic topic= new Topic(topicName,context,receivePort,sendPort);
 			hostedTopics.put(topicName,topic);
 			new Thread(topic).start();
 			logger.info("EdgeBroker:{} created topic:{}",ebId,topicName);
@@ -77,7 +77,8 @@ public class EdgeBroker {
 
 	public static void main(String args[]){
 		EdgeBroker eb= new EdgeBroker(1,3);
-		eb.createTopic("t1");
+		eb.createTopic("t1",5000,5001);
+		eb.createTopic("t2",6000,6001);
 	}
 
 }

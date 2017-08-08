@@ -48,6 +48,11 @@ class Experiment(object):
     print("\n\n\nCollecting logs")
     self.collect_logs()
 
+    #collate results
+
+    #copy test configuration
+    self.copy_conf()
+
     #exit
     self.zk.stop()
 
@@ -87,10 +92,10 @@ class Experiment(object):
     subprocess.check_call(['bash','-c',command_string])
 
   def start_monitors(self):
-    #start Monitors on brokers
+    #start Monitors on all host machines 
     command_string='cd %s && ansible-playbook playbooks/experiment/monitor.yml \
       --extra-vars="run_id=%s zk_connector=%s" --limit %s'%\
-      (metadata.ansible,self.conf.run_id,metadata.zk,self.conf.brokers)
+      (metadata.ansible,self.conf.run_id,metadata.zk,self.conf.hosts)
     subprocess.check_call(['bash','-c',command_string])
 
   def netem(self):
@@ -139,6 +144,10 @@ class Experiment(object):
       '%s/%s'%(metadata.remote_log_dir,self.conf.run_id), 
       dest_dir)
     subprocess.check_call(['bash','-c',command_string])
+
+  def copy_conf(self):
+    command_string='cp conf/conf %s/%s/'%(metadata.local_log_dir,self.conf.run_id)                
+    subprocess.check_call(['bash','-c',command_string]) 
     
 if __name__=="__main__":
   parser=argparse.ArgumentParser(description='script for running an experiment')

@@ -143,7 +143,8 @@ public class Subscriber {
 			
 			Subscriber subscriber= new Subscriber(topicName,regionId,runId,sampleCount,outDir,zkConnector);
 			//TODO acquire EB locator for the topic of interest
-			subscriber.start("tcp://10.2.2.47:5001");
+			int port=TemporaryHelper.topicReceivePort(topicName);
+			subscriber.start(String.format("tcp://10.2.2.47:%d",port));
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();

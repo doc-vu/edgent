@@ -90,4 +90,4 @@ class Conf(object):
     self.client_numPublishers={ client: sum([int(num_pub) for num_pub in topics.values()]) for client,topics in self.publishers.items() }
 
 if __name__=="__main__":
-  Conf('conf/conf.csv')
+  Conf('conf/conf')

@@ -9,4 +9,4 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 *.pyc
-conf/conf.csv
+conf/conf

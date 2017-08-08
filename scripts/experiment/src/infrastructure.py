@@ -12,11 +12,10 @@ class Infrastructure(object):
     
   def setup(self):
     #clean up
-    if(self.teardown):
-      print("\n\n\nTearing down existing infrastructure")
-      self.clean()
+    print("\n\n\nTearing down existing infrastructure")
+    self.clean()
 
-    #Launch infrastructure components
+    #Launch infrastructure components after tearing down
     print("\n\n\nSetting up infrastructure processes")
     self.setup_infrastructure()
 
@@ -57,6 +56,5 @@ class Infrastructure(object):
 if __name__=="__main__":
   parser=argparse.ArgumentParser(description='script for setting up edgent infrastructure nodes')
   parser.add_argument('conf',help='configuration file containing setup information')
-  parser.add_argument('--teardown',dest='teardown',action='store_true',help='flag to specify if infrastructure processes must be restarted')
   args=parser.parse_args()
-  Infrastructure(args.conf,args.teardown).setup()
+  Infrastructure(args.conf).setup()
