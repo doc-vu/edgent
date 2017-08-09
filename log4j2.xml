@@ -2,9 +2,6 @@
 <Configuration status="warn">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <!--ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"-->
-            <!-- Flow tracing is most useful with a pattern that shows location.
-                 Below pattern outputs class, line number and method name. -->
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n"/>
         </Console>
     </Appenders>
