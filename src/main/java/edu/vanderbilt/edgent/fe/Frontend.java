@@ -2,6 +2,10 @@ package edu.vanderbilt.edgent.fe;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZContext;
@@ -15,7 +19,7 @@ public class Frontend {
 	private ZMQ.Socket listener;
 	private ZMQ.Socket distributor;
 	//Front facing Router and backend Dealer socket endpoints
-	public static final int LISTENER_PORT=5555;
+	public static final int LISTENER_PORT=5552;
 	public static final String INPROC_CONNECTOR="inproc://workers";
 	
 	//FE Request Commands
@@ -25,7 +29,11 @@ public class Frontend {
 	//Number of concurrent threads servicing incoming requests 
 	public static final int WORKER_POOL_SIZE=5;
 	private List<Thread> workers;
+	
+	//Curator client for connecting to ZK 
+	private CuratorFramework client;
 
+	//Unique FE id
 	private String feId;
 	private Logger logger;
 
@@ -42,10 +50,13 @@ public class Frontend {
 		distributor=context.createSocket(ZMQ.DEALER);
 		distributor.bind(INPROC_CONNECTOR);
 		
+		client=CuratorFrameworkFactory.newClient(zkConnector,
+				new ExponentialBackoffRetry(1000, 3));
+		client.start();
 		//create  worker threads to process incoming requests concurrently
 		workers= new ArrayList<Thread>();
 		for(int i=0;i<WORKER_POOL_SIZE;i++){
-			workers.add(new Thread(new WorkerThread(ZContext.shadow(context),zkConnector)));
+			workers.add(new Thread(new WorkerThread(ZContext.shadow(context),client)));
 		}
 
 		logger.debug("Initalized FE:{}",feId);
@@ -66,6 +77,7 @@ public class Frontend {
 		//FE was terminated, perform clean-up
 		logger.debug("FE:{} proxy was terminated",feId);
 		context.destroy();
+		CloseableUtils.closeQuietly(client);
 		
 		logger.debug("FE:{} will wait for worker threads to exit",feId);
 		try{
@@ -79,32 +91,28 @@ public class Frontend {
 	}
 	
 	public static void main(String args[]){
-		if(args.length<2)
-		{
-			System.out.println("Usage: FrontEnd regionId zkConnector");
+		if(args.length<2){
+			System.out.println("Usage: Frontend regionId zkConnector");
 			return;
 		}
 		try{
-			int regionId= Integer.parseInt(args[0]);
+			int regionId=Integer.parseInt(args[0]);
 			String zkConnector=args[1];
+			ZContext context=new ZContext();
+			Frontend fe=new Frontend(regionId,ZContext.shadow(context),zkConnector);
 		
-			//ZMQ Context for FE
-			ZContext context= new ZContext();
-
-			//register callback to safely handle SIGINT SIGTERM
 			Runtime.getRuntime().addShutdownHook(new Thread() {
-		         @Override
-		         public void run() {
-		            context.destroy();
-		         }
-		      });	
-			
-			//start FE
-			Frontend fe= new Frontend(regionId,context,zkConnector);
+				@Override
+				public void run() {
+					context.destroy();
+				}
+			});
+				 	         
 			fe.start();
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();
 		}
 	}
+
 }
