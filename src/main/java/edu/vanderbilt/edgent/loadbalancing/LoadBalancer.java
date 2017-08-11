@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.fe;
+package edu.vanderbilt.edgent.loadbalancing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,77 +12,82 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
-public class Frontend {
-	//ZMQ Context
+/**
+ * LoadBalancer is responsible for the following operations: 
+ * 1. Listens for incoming topic creation requests from the FE 
+ * and processes them on a pool of worker threads.
+ * 2. LB thread periodically comes up to take LB decisions
+ * @author kharesp
+ *
+ */
+public class LoadBalancer {
+	//ZMQ Context 
 	private ZContext context;
-	//Router and Dealer sockets for supporting multi-threaded operation
+	//ZMQ front-facing Router and backend Dealer sockets for multi-threaded operation
 	private ZMQ.Socket listener;
 	private ZMQ.Socket distributor;
+
 	//Front facing Router and backend Dealer socket endpoints
-	public static final int LISTENER_PORT=5552;
-	public static final String INPROC_CONNECTOR="inproc://feWorkers";
-	
-	//FE Request Commands
-	public static final String CONNECTION_REQUEST="connect";
-	public static final String DISCONNECTION_REQUEST="disconnect";
-	
-	//Number of concurrent threads servicing incoming requests 
+	public static final int LISTENER_PORT=7777;
+	public static final String INPROC_CONNECTOR="inproc://lbWorkers";
+
+	//Number of concurrent threads servicing incoming requests
 	public static final int WORKER_POOL_SIZE=5;
 	private List<Thread> workers;
 	
 	//Curator client for connecting to ZK 
 	private CuratorFramework client;
 
-	//Unique FE id
-	private String feId;
+	private String lbId;
 	private Logger logger;
+	
+	public LoadBalancer(int regionId,ZContext context,String zkConnector)
+	{
+		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		lbId=String.format("LB-%d-%s",regionId,UtilMethods.ipAddress());
 
-	public Frontend(int regionId, ZContext context,
-			String zkConnector,String lbAddress){
-
-		logger=LogManager.getLogger(this.getClass().getSimpleName());
-		feId=String.format("FE-%d-%s",regionId,UtilMethods.ipAddress());
-
-		//initialize front facing Router socket
-		this.context= context;
+		this.context=context;
+		//initialize front-facing ROUTER socket to listen to topic creation requests
 		listener=context.createSocket(ZMQ.ROUTER);
 		listener.bind(String.format("tcp://*:%d",LISTENER_PORT));
 
-		//initialize backend distributer socket
+		//initialize backend distributer socket to distribute topic creation requests
 		distributor=context.createSocket(ZMQ.DEALER);
 		distributor.bind(INPROC_CONNECTOR);
-		
+	
+		//initialize Curator client for ZK connection
 		client=CuratorFrameworkFactory.newClient(zkConnector,
 				new ExponentialBackoffRetry(1000, 3));
 		client.start();
+
 		//create  worker threads to process incoming requests concurrently
 		workers= new ArrayList<Thread>();
 		for(int i=0;i<WORKER_POOL_SIZE;i++){
 			workers.add(new Thread(new WorkerThread(ZContext.shadow(context),
-					client,lbAddress)));
+					client)));
 		}
 
-		logger.debug("Initalized FE:{}",feId);
+		logger.debug("Initalized LB:{}",lbId);
 	}
 	
 	public void start(){
 		//start worker threads
-		logger.debug("FE:{} starting worker threads",feId);
+		logger.debug("LB:{} starting worker threads",lbId);
 		for(Thread t:workers){
 			t.start();
 		}
 		
-		//start ZMQ proxy to listen for incoming requests and forward them to a worker pool
-		logger.debug("FE:{} will start listening for incoming requests at port:{}",
-				feId,LISTENER_PORT);
+		//start ZMQ proxy to listen for incoming requests and forward them to worker pool
+		logger.debug("LB:{} will start listening for topic creation requests at port:{}",
+				lbId,LISTENER_PORT);
 		ZMQ.proxy(listener,distributor, null);
 		
-		//FE was terminated, perform clean-up
-		logger.debug("FE:{} proxy was terminated",feId);
+		//LB was terminated, perform clean-up
+		logger.debug("LB:{} proxy was terminated",lbId);
 		context.destroy();
 		CloseableUtils.closeQuietly(client);
 		
-		logger.debug("FE:{} will wait for worker threads to exit",feId);
+		logger.debug("LB:{} will wait for worker threads to exit",lbId);
 		try{
 			for (Thread t : workers) {
 				t.interrupt();
@@ -90,40 +95,39 @@ public class Frontend {
 			}
 		}catch(InterruptedException e){}
 
-		logger.debug("FE:{} exited",feId);
+		logger.debug("LB:{} exited",lbId);
 	}
 	
 	public static void main(String args[]){
-		if(args.length<3){
-			System.out.println("Usage: Frontend regionId zkConnector lbAddress");
+		if(args.length<2){
+			System.out.println("Usage: LoadBalancer regionId zkConnector");
 			return;
 		}
 		try{
-			//parse command line arguments
+			//parse commandline arguments
 			int regionId=Integer.parseInt(args[0]);
 			String zkConnector=args[1];
-			String lbAddress=args[2];
+
 			//Create ZContext
 			ZContext context=new ZContext();
-			//Initialize FE with shadowed ZContext
-			Frontend fe=new Frontend(regionId,
+			//Initialize LoadBalancer with shadowed Zcontext
+			LoadBalancer lb=new LoadBalancer(regionId,
 					ZContext.shadow(context),
-					zkConnector,lbAddress);
-	
-			//Register callback to handle SIGINT AND SIGTERM properly
+					zkConnector);
+			
+			//Register listener to handle SIGINT and SIGTERM
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
 					context.destroy();
 				}
 			});
-				 	        
-			//start FE
-			fe.start();
+
+			//start LB
+			lb.start();
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();
 		}
 	}
-
 }

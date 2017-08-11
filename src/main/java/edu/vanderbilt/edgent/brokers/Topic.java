@@ -3,6 +3,7 @@ package edu.vanderbilt.edgent.brokers;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
 
 /**
@@ -58,7 +59,7 @@ public class Topic implements Runnable {
 
 		logger.info("Topic:{} thread will start listening",topicName);
 		try{
-			while (!stopped && !Thread.currentThread().isInterrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
 				ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
 				if (receivedMsg != null) {
 					String msgTopic = new String(receivedMsg.getFirst().getData());
@@ -67,7 +68,10 @@ public class Topic implements Runnable {
 					sendSocket.send(msgContent);
 				}
 			}
-		}catch(Exception e){
+		}catch(ZMQException e){
+			logger.error(e.getMessage());
+		}
+		catch(Exception e){
 			logger.error(e.getMessage());
 		}
 		logger.debug("Topic:{} thread exited", topicName);
@@ -81,7 +85,7 @@ public class Topic implements Runnable {
 	 * and the thread will exit.  
 	 */
 	public void stop(){
-		stopped=true;
+		//stopped=true;
 		receiveSocket.close();
 		sendSocket.close();
 		logger.debug("Topic:{} receive and send sockets closed", topicName);

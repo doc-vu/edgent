@@ -6,9 +6,7 @@ import java.util.Queue;
 public class PortList {
 	private static Queue<Integer> pool; 
 	private static PortList instance=null;
-	/*
-	 * User port range: 1024-49151 
-	 */
+	//User port range: 1024-49151 
 	private static int START_RANGE= 5000;
 	private static int END_RANGE= 25000; 
 
