@@ -2,10 +2,10 @@ package edu.vanderbilt.edgent.brokers;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
-
 /**
  * This class models a Topic/Channel hosted at an Edge/Routing Broker. 
  * Each topic is managed by a thread which creates a ZMQ.SUB socket to 
@@ -13,29 +13,42 @@ import org.zeromq.ZMsg;
  * @author kharesp
  */
 public class Topic implements Runnable {
+	//Port at which hosting broker issues topic control messages
+	public static final int TOPIC_CONTROL_PORT=20126;
+	//Topic control messages 
+	public static final String TOPIC_DELETE_COMMAND="delete";
+
 	//Topic name
 	private String topicName;
 
+	//ZMQ SUB socket to receive control messages from hosting broker
+	private ZContext context;
+	private ZMQ.Socket topicControl;
 	//ZMQ send/receive socket pairs
 	private ZMQ.Socket receiveSocket;
 	private ZMQ.Socket sendSocket;
 
-	//Binding port numbers 
+	//poller to poll receiveSocket for data and topicControl for control msgs
+	private ZMQ.Poller poller;
+
+	//Binding port numbers for receiveSocket and sendSocket 
 	private int receivePort;
 	private int sendPort;
 
-	private volatile boolean stopped= false;
-
 	private Logger logger;
 	
-	public Topic(String topicName, ZMQ.Context context,int receivePort,int sendPort){
+	public Topic(String topicName, ZContext context,int receivePort,int sendPort){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName= topicName;
 		this.receivePort=receivePort;
 		this.sendPort=sendPort;
+		this.context=context;
 
-		receiveSocket= context.socket(ZMQ.SUB);
-		sendSocket= context.socket(ZMQ.PUB);
+		//instantiate ZMQ Sockets and poller
+		topicControl=context.createSocket(ZMQ.SUB);
+		receiveSocket= context.createSocket(ZMQ.SUB);
+		sendSocket= context.createSocket(ZMQ.PUB);
+		poller=context.createPoller(2);
 
 		logger.debug("Topic:{} initialized for receive port number:{} and send port number:{}",
 				topicName,receivePort,sendPort);
@@ -44,54 +57,73 @@ public class Topic implements Runnable {
 	/**
 	 * Listener loop for topic thread. 
 	 * Data received on receive port is forwarded to send port until 
-	 * the topic thread is stopped/interrupted.
+	 * the topic thread is stopped via control message received on topicControl socket
 	 */
 	@Override
 	public void run() {
+		//connect topicControl socket to hosting broker's TOPIC_CONTROL_PORT
+		topicControl.connect(String.format("tcp://localhost:%d",TOPIC_CONTROL_PORT));
+		//subscribe to receive topic control messages
+		topicControl.subscribe(topicName.getBytes());
+
+		//bind receiveSocket to receivePort and subscribe to receive topic's data
 		receiveSocket.bind(String.format("tcp://*:%d",receivePort));
 		receiveSocket.subscribe(topicName.getBytes());
 		logger.debug("Topic:{} ZMQ.SUB socket bound to port number:{} and subscribed to topic:{}",
 				topicName,receivePort,topicName);
+	
+		//register receiveSocket and topicControl with the poller
+		poller.register(receiveSocket, ZMQ.Poller.POLLIN);
+		poller.register(topicControl, ZMQ.Poller.POLLIN);
 
+		//bind sendSocket to sendPort to send topic's data 
 		sendSocket.bind(String.format("tcp://*:%d",sendPort));
 		logger.debug("Topic:{} ZMQ.PUB socket bound to port number:{}",
 				topicName,sendPort);
+	
+		// topic thread's listener loop
+		logger.info("Topic:{} thread will start listening", topicName);
+		while (!Thread.currentThread().isInterrupted()) {
+			try {
+				// block until either topicControl or receiveSocket have data
+				poller.poll(-1);
 
-		logger.info("Topic:{} thread will start listening",topicName);
-		try{
-			while (!Thread.currentThread().isInterrupted()) {
-				ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
-				if (receivedMsg != null) {
-					String msgTopic = new String(receivedMsg.getFirst().getData());
-					byte[] msgContent = receivedMsg.getLast().getData();
-					sendSocket.sendMore(msgTopic);
-					sendSocket.send(msgContent);
+				// in case receiveSocket has data
+				if (poller.pollin(0)) {
+					ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
+					if (receivedMsg != null) {
+						String msgTopic = new String(receivedMsg.getFirst().getData());
+						byte[] msgContent = receivedMsg.getLast().getData();
+						sendSocket.sendMore(msgTopic);
+						sendSocket.send(msgContent);
+					}
 				}
+				// in case topicControl has data
+				if (poller.pollin(1)) {
+					String[] data= topicControl.recvStr().split(" ");
+					System.out.println(data[1]);
+					logger.debug("Topic:{} received control msg:{}", topicName, data[1]);
+					if(data[1].equals(TOPIC_DELETE_COMMAND)){
+						break;
+					}
+				}
+			}catch (ZMQException e) {
+				logger.error(e.getMessage());
+				break;
+			}catch(Exception e){
+				logger.error(e.getMessage());
+				break;
 			}
-		}catch(ZMQException e){
-			logger.error(e.getMessage());
 		}
-		catch(Exception e){
-			logger.error(e.getMessage());
-		}
-		logger.debug("Topic:{} thread exited", topicName);
-	}
-
-
-	/**
-	 * Method to stop this topic thread. If this thread is not blocked on a receive
-	 * call, then setting the stop flag to true will cause the thread to exit. 
-	 * Otherwise, closing the receive socket will cause an exception to be thrown 
-	 * and the thread will exit.  
-	 */
-	public void stop(){
-		//stopped=true;
+		// clean up before exiting
 		receiveSocket.close();
 		sendSocket.close();
-		logger.debug("Topic:{} receive and send sockets closed", topicName);
-		logger.info("Topic:{} stopped", topicName);
+		topicControl.close();
+		context.destroy();
+		logger.info("Topic:{} deleted", topicName);
 	}
-	
+
+	//Accessors for topic Name,receivePort, sendPort 
 	public String name(){
 		return topicName;
 	}
@@ -103,5 +135,4 @@ public class Topic implements Runnable {
 	public int sendPort(){
 		return sendPort;
 	}
-	
 }
