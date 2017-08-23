@@ -2,7 +2,6 @@ package edu.vanderbilt.edgent.brokers;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
@@ -13,16 +12,9 @@ import org.zeromq.ZMsg;
  * @author kharesp
  */
 public class Topic implements Runnable {
-	//Port at which hosting broker issues topic control messages
-	public static final int TOPIC_CONTROL_PORT=20126;
-	//Topic control messages 
-	public static final String TOPIC_DELETE_COMMAND="delete";
-
 	//Topic name
 	private String topicName;
-
 	//ZMQ SUB socket to receive control messages from hosting broker
-	private ZContext context;
 	private ZMQ.Socket topicControl;
 	//ZMQ send/receive socket pairs
 	private ZMQ.Socket receiveSocket;
@@ -37,20 +29,19 @@ public class Topic implements Runnable {
 
 	private Logger logger;
 	
-	public Topic(String topicName, ZContext context,int receivePort,int sendPort){
+	public Topic(String topicName, ZMQ.Context context,int receivePort,int sendPort){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName= topicName;
 		this.receivePort=receivePort;
 		this.sendPort=sendPort;
-		this.context=context;
 
 		//instantiate ZMQ Sockets and poller
-		topicControl=context.createSocket(ZMQ.SUB);
-		receiveSocket= context.createSocket(ZMQ.SUB);
-		sendSocket= context.createSocket(ZMQ.PUB);
-		poller=context.createPoller(2);
+		topicControl=context.socket(ZMQ.SUB);
+		receiveSocket= context.socket(ZMQ.SUB);
+		sendSocket= context.socket(ZMQ.PUB);
+		poller=context.poller(2);
 
-		logger.debug("Topic:{} initialized for receive port number:{} and send port number:{}",
+		logger.info("Topic:{} initialized for receive port number:{} and send port number:{}",
 				topicName,receivePort,sendPort);
 	}
 
@@ -62,7 +53,7 @@ public class Topic implements Runnable {
 	@Override
 	public void run() {
 		//connect topicControl socket to hosting broker's TOPIC_CONTROL_PORT
-		topicControl.connect(String.format("tcp://localhost:%d",TOPIC_CONTROL_PORT));
+		topicControl.connect(String.format("tcp://localhost:%d",EdgeBroker.TOPIC_CONTROL_PORT));
 		//subscribe to receive topic control messages
 		topicControl.subscribe(topicName.getBytes());
 
@@ -101,9 +92,8 @@ public class Topic implements Runnable {
 				// in case topicControl has data
 				if (poller.pollin(1)) {
 					String[] data= topicControl.recvStr().split(" ");
-					System.out.println(data[1]);
 					logger.debug("Topic:{} received control msg:{}", topicName, data[1]);
-					if(data[1].equals(TOPIC_DELETE_COMMAND)){
+					if(data[1].equals(EdgeBroker.TOPIC_DELETE_COMMAND)){
 						break;
 					}
 				}
@@ -119,7 +109,7 @@ public class Topic implements Runnable {
 		receiveSocket.close();
 		sendSocket.close();
 		topicControl.close();
-		context.destroy();
+
 		logger.info("Topic:{} deleted", topicName);
 	}
 

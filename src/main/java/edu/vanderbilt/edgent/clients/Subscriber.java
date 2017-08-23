@@ -15,29 +15,15 @@ import org.zeromq.ZMsg;
 import edu.vanderbilt.edgent.types.DataSample;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
 import edu.vanderbilt.edgent.util.UtilMethods;
-
 /**
  * Client Subscriber end-point to test the system
  * @author kharesp
  *
  */
-public class Subscriber {
-	private String topicName;
-	//identifier of the region to which this subscriber belongs
-	@SuppressWarnings("unused")
-	private int regionId;
-
+public class Subscriber extends Client{
 	//Curator client to connect to zk 
 	private CuratorFramework client;
-	private String znodePath;
-
-	//ZMQ context and subscriber socket
-	private ZMQ.Context context;
-	private ZMQ.Socket socket;
-
-	//Number of expected samples to receive
-	private int sampleCount;
-	
+	private String expZnodePath;
 	//File to log recorded latencies of reception
 	private static String latencyFile;
 	private static PrintWriter writer;
@@ -46,14 +32,8 @@ public class Subscriber {
 	
 	public Subscriber(String topicName, int regionId, 
 			int runId, int sampleCount, String outDir,String zkConnector){
+		super(Client.TYPE_SUB,topicName,sampleCount);
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
-		
-		this.topicName= topicName;
-		this.regionId= regionId;
-		this.sampleCount=sampleCount;
-		
-		context=ZMQ.context(1);
-		socket=context.socket(ZMQ.SUB);
 
 		String hostName= UtilMethods.hostName();
 		String pid= UtilMethods.pid();
@@ -70,62 +50,76 @@ public class Subscriber {
 
 		client= CuratorFrameworkFactory.newClient(zkConnector,new ExponentialBackoffRetry(1000, 3));
 		client.start();
-		znodePath=String.format("/experiment/%s/sub/sub_%s_%s",runId,hostName,pid);
-		logger.debug("Initialized subscriber for topic:{}",topicName);
+		expZnodePath=String.format("/experiment/%s/sub/sub_%s_%s",runId,hostName,pid);
 	}
 	
-	
-	public void start(String ebLocator){
-		try {
-			//Connect to EB hosting the topic of interest
-			socket.connect(ebLocator);
-			socket.subscribe(topicName.getBytes());
-			logger.debug("Subscriber for topic:{} connected to EB locator:{}", topicName, ebLocator);
-
-			//Create znode for this subscriber under /experiment/runId/sub path
-			client.create().forPath(znodePath, new byte[0]);
-			logger.debug("Subscriber for topic:{} created znode at:{}", topicName, znodePath);
-			
-			//Receive data
-			receive();
-			logger.debug("Subscriber for topic:{} received received {} samples. Exiting", topicName, sampleCount);
-
-			//Close socket and latency file before exiting
-			writer.close();
-			socket.close();
-			context.term();
-			logger.debug("Subscriber for topic:{} ZMQ SUB socket closed.", topicName);
-
-			//Delete znode for this subscriber under /experiment/runId/sub path
-			client.delete().forPath(znodePath);
-			logger.debug("Subscriber for topic:{} deleted znode at:{}.", topicName,znodePath);
-			
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-		}finally{
-			CloseableUtils.closeQuietly(client);
-		}
-	}
 	
 	public void receive(){
-		for(int i=0; i<sampleCount; i++){
+		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
 			//Blocking receive call to get data
 			ZMsg receivedMsg= ZMsg.recvMsg(socket);
+			currCount++;
 
-			//Parse received data sample
-			long reception_ts= System.currentTimeMillis();
-			DataSample sample=DataSampleHelper.deserialize(receivedMsg.getLast().getData());
+			// Parse received data sample
+			long reception_ts = System.currentTimeMillis();
+			DataSample sample = DataSampleHelper.deserialize(receivedMsg.getLast().getData());
 
-			//log recorded latency
+			// log recorded latency
 			long latency = Math.abs(reception_ts - sample.tsMilisec());
-			writer.write(String.format("%d,%d,%d,%d\n",sample.sampleId(),
-					reception_ts,sample.tsMilisec(),latency));
+			writer.write(String.format("%d,%d,%d,%d\n", sample.sampleId(), reception_ts, sample.tsMilisec(), latency));
 
-			if(i%1000==0){
-				logger.debug("Subscriber for topic:{} received sample id:{} at reception_ts:{} latency:{}",
-						topicName,sample.sampleId(),reception_ts,latency);
+			//if (currCount % 1000 == 0) {
+				logger.debug("Subscriber for topic:{} received sample id:{} at reception_ts:{} latency:{}", topicName,
+						sample.sampleId(), reception_ts, latency);
+			//}
+		}
+	}
+	private void experimentSetup(){
+		try{
+			if(client.checkExists().forPath(expZnodePath)==null){
+				client.create().forPath(expZnodePath, new byte[0]);
+				logger.debug("Subscriber:{} for topic:{} created znode:{}", id, topicName, expZnodePath);
+			}
+		}catch(Exception e){
+			logger.error("Subscriber:{} for topic:{} caught exception:{}",id,topicName,e.getMessage());
+		}
+	}
+	
+	@Override
+	public void process() {
+		socket.subscribe(topicName.getBytes());
+		ZMQ.Poller poller= context.poller(1);
+		poller.register(socket,ZMQ.Poller.POLLIN);
+		experimentSetup();
+		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
+			poller.poll(5000);
+			if(poller.pollin(0)){
+				// Blocking receive call to get data
+				ZMsg receivedMsg = ZMsg.recvMsg(socket);
+				currCount++;
+
+				// Parse received data sample
+				long reception_ts = System.currentTimeMillis();
+				DataSample sample = DataSampleHelper.deserialize(receivedMsg.getLast().getData());
+
+				// log recorded latency
+				long latency = Math.abs(reception_ts - sample.tsMilisec());
+				writer.write(
+						String.format("%d,%d,%d,%d\n", sample.sampleId(), reception_ts, sample.tsMilisec(), latency));
+
+				// if (currCount % 1000 == 0) {
+				logger.debug("Subscriber for topic:{} received sample id:{} at reception_ts:{} latency:{}", topicName,
+						sample.sampleId(), reception_ts, latency);
+				// }
 			}
 		}
+	}
+
+	@Override
+	public void shutdown() {
+		writer.close();
+		System.out.println("closed zk");
+		CloseableUtils.closeQuietly(client);
 	}
 	
 	public static void main(String args[]){
@@ -142,13 +136,17 @@ public class Subscriber {
 			String zkConnector=args[5];
 			
 			Subscriber subscriber= new Subscriber(topicName,regionId,runId,sampleCount,outDir,zkConnector);
-			//TODO acquire EB locator for the topic of interest
-			int port=TemporaryHelper.topicReceivePort(topicName);
-			subscriber.start(String.format("tcp://10.2.2.47:%d",port));
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					//stop subscriber 
+					subscriber.stop();
+				}
+			});
+			subscriber.start();
 			
 		}catch(NumberFormatException e){
 			e.printStackTrace();
 		}
 	}
-
 }

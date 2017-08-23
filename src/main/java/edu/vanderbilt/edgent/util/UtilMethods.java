@@ -7,9 +7,14 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Utility methods to get ipAddress, hostName and process Id
+ * @author kharesp
+ *
+ */
 public class UtilMethods {
 	private static Logger logger= LogManager.getLogger(UtilMethods.class.getName());
-	
+
 	public static String ipAddress(){
 		String ip=null;
 		try {

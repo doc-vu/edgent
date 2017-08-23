@@ -19,7 +19,7 @@ public class Frontend {
 	private ZMQ.Socket listener;
 	private ZMQ.Socket distributor;
 	//Front facing Router and backend Dealer socket endpoints
-	public static final int LISTENER_PORT=5552;
+	public static final int LISTENER_PORT=4997;
 	public static final String INPROC_CONNECTOR="inproc://feWorkers";
 	
 	//FE Request Commands
@@ -58,11 +58,11 @@ public class Frontend {
 		//create  worker threads to process incoming requests concurrently
 		workers= new ArrayList<Thread>();
 		for(int i=0;i<WORKER_POOL_SIZE;i++){
-			workers.add(new Thread(new WorkerThread(ZContext.shadow(context),
+			workers.add(new Thread(new FeWorkerThread(ZContext.shadow(context),
 					client,lbAddress)));
 		}
 
-		logger.debug("Initalized FE:{}",feId);
+		logger.info("Initalized FE:{}",feId);
 	}
 	
 	public void start(){
@@ -73,14 +73,18 @@ public class Frontend {
 		}
 		
 		//start ZMQ proxy to listen for incoming requests and forward them to a worker pool
-		logger.debug("FE:{} will start listening for incoming requests at port:{}",
+		logger.info("FE:{} will start listening for incoming requests at port:{}",
 				feId,LISTENER_PORT);
 		ZMQ.proxy(listener,distributor, null);
 		
 		//FE was terminated, perform clean-up
-		logger.debug("FE:{} proxy was terminated",feId);
+		logger.info("FE:{} proxy was terminated",feId);
+
+		//clean-up
 		context.destroy();
+		logger.debug("FE:{} ZMQ context and sockets were closed",feId);
 		CloseableUtils.closeQuietly(client);
+		logger.debug("FE:{} ZK connection closed",feId);
 		
 		logger.debug("FE:{} will wait for worker threads to exit",feId);
 		try{
@@ -89,8 +93,9 @@ public class Frontend {
 				t.join();
 			}
 		}catch(InterruptedException e){}
+		logger.debug("FE:{} worker threads exited",feId);
 
-		logger.debug("FE:{} exited",feId);
+		logger.info("FE:{} exited cleanly",feId);
 	}
 	
 	public static void main(String args[]){
