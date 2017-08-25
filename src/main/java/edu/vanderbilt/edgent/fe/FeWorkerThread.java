@@ -72,13 +72,13 @@ public class FeWorkerThread implements Runnable {
 					String endpointAddress = args[3];
 					if(args.length==5){
 						String znodePath=args[4];
-						logger.info("WorkerThread:{} received a re-connection request"
+						logger.info("WorkerThread:{} received a re-connection request "
 							+ "for topic:{}, endpointType:{},ip:{}."
 							+ "Will delete pre-existing client znode:{}",workerId,topic,
 							endpointType,endpointAddress,znodePath);
 						deleteZnode(znodePath);
 					}else{
-						logger.info("WorkerThread:{} received request:{}"
+						logger.info("WorkerThread:{} received request:{} "
 								+ "for topic:{}, endpointType:{} and ip:{} ",workerId,
 								Frontend.CONNECTION_REQUEST,topic,endpointType,endpointAddress);
 					}
@@ -87,7 +87,7 @@ public class FeWorkerThread implements Runnable {
 				//process DISCONNECTION_REQUEST
 				else if (args[0].equals(Frontend.DISCONNECTION_REQUEST)) {
 					String znode = args[1];
-					logger.info("WorkerThread:{} received request:{}"
+					logger.info("WorkerThread:{} received request:{} "
 							+ "for znode:{}",workerId,Frontend.DISCONNECTION_REQUEST,znode);
 					deleteZnode(znode);
 					feSocket.send("ok");
@@ -104,9 +104,13 @@ public class FeWorkerThread implements Runnable {
 			}
 		
 		}
-		//Clean up: Close sockets and destroy context
+		//Set linger to 0
+		feSocket.setLinger(0);
+		lbSocket.setLinger(0);
+		//Close sockets 
 		feSocket.close();
 		lbSocket.close();
+		//destroy context
 		context.destroy();
 		logger.debug("WorkerThread:{} closed ZMQ sockets and context",workerId);
 		logger.info("WorkerThread:{} exited cleanly",workerId);

@@ -35,6 +35,16 @@ public class UtilMethods {
 		return hostname;
 	}
 	
+	public static int regionId(){
+		int regionId=-1;
+		try{
+			regionId= Integer.parseInt(ipAddress().split("\\.")[2]);
+		}catch(NumberFormatException e){
+        	logger.error(e.getMessage(),e);
+		}
+		return regionId;
+	}
+	
 	public static String pid(){
 		return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 	}

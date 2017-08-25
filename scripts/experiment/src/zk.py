@@ -19,6 +19,7 @@ class Zk(object):
   def stop(self):
     self._zk.stop()
 
+
   def setup(self):
     self.create_paths() 
     self.install_watches()

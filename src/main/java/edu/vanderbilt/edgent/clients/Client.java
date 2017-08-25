@@ -52,21 +52,31 @@ public abstract class Client {
   	protected String id;
   	protected Logger logger;	
   	
-  	public Client(String endpointType,String topicName,int sampleCount,String feAddress){
+  	public Client(String endpointType,String topicName,int sampleCount) throws Exception{
   		logger= LogManager.getLogger(this.getClass().getSimpleName());
 
+  		//stash passed arguments
   		this.endpointType=endpointType;
 		this.topicName=topicName;
 		this.sampleCount=sampleCount;
-		this.feAddress=feAddress;
-
-		znodePath="";
+		
+		//Client's unique id
 		id=String.format("%s_%s_%s",endpointType,UtilMethods.hostName(),UtilMethods.pid());
+
 		//initial state is disconnected from EB
 		connectionState= new AtomicInteger(STATE_DISCONNECTED);
 		//intial retry attempt count is 0
 		retryCount= new AtomicInteger(0);
+		//initially the znode path for the end-point is empty
+		znodePath="";
 
+		//get this client's region specific FE
+		feAddress=Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
+		if(feAddress==null){
+			logger.error("{}:{} for topic:{} could not located its region's FE",
+					endpointType,id,topicName);
+			throw new Exception("FE not found");
+		}
 		logger.info("{}:{} initialized for topic:{}",endpointType,id,topicName);
   	}
   	
@@ -112,7 +122,7 @@ public abstract class Client {
 				}
 			}
 			logger.info("{}:{} for topic:{} exited. Will call shutdown code",endpointType,id,topicName);
-			shutdown();
+			onExit();
 		}catch(Exception e){
 			logger.error("{}:{} for topic:{} caught exception:{}",
 					endpointType,id,topicName,e.getMessage());
@@ -121,7 +131,7 @@ public abstract class Client {
   	
   	public void stop(){
   		cleanup();
-  		shutdown();
+  		onExit();
   	}
   	
   	private void initializeZMQ(){
@@ -177,6 +187,7 @@ public abstract class Client {
   	
   	private void cleanup(){
 		//close socket
+  		socket.setLinger(0);
 		socket.close();
 		//wait for monitoring thread to exit
 		try {
@@ -188,8 +199,9 @@ public abstract class Client {
 					endpointType,id,topicName,e.getMessage());
 		}
 		//close fe request socket and context
+		feSocket.setLinger(0);
 		feSocket.close();
-		context.close();
+		context.term();
 		logger.debug("{}:{} for topic:{} closed ZMQ sockets,context and connection monitoring thread",
 				endpointType,id,topicName);
 	}
@@ -214,10 +226,12 @@ public abstract class Client {
 					retryCount.set(0);
 					//set connection state to CONNECTED
 					connectionState.set(STATE_CONNECTED);
-					//open waitset to allow client to start processing
-					connected.countDown();
 					logger.info("{}:{} for topic:{} monitoring thread:{} connected to EB:{}",
 							endpointType,id,topicName,Thread.currentThread().getName(),event.getAddress());
+					//execute onConnected implementation specific hook
+					onConnected();
+					//open waitset to allow client to start processing
+					connected.countDown();
 				}
 				if (event.getEvent() == ZMQ.EVENT_CONNECT_RETRIED) {//retrying connection to EB
 					//increment retry count
@@ -250,6 +264,7 @@ public abstract class Client {
 				}
 			}
 			pair.disconnect(CONNECTION_MONITORING_LOCATOR);
+			pair.setLinger(0);
 			pair.close();
 			logger.debug("{}:{} for topic:{} monitoring thread:{} exited",
 					endpointType,id,topicName,Thread.currentThread().getName());
@@ -257,9 +272,15 @@ public abstract class Client {
 	}
   	
   
+  	//hook which will get executed when socket connection is established
+  	public abstract void onConnected();
   	//processing logic carried out by client when connected
   	public abstract void process();
-  	//implementation specific cleanup performed before client exits
-  	public abstract void shutdown();
+  	/*
+  	 * implementation specific cleanup performed before client exits.
+  	 * onExit() can get called multiple times. onExit() should therefore be 
+  	 * indempotent.
+  	 */
+  	public abstract void onExit();
   	
 }

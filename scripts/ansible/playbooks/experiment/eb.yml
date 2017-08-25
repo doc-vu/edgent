@@ -11,5 +11,6 @@
       register: plist
       failed_when: plist.rc > 1
     - name: start edge broker   
-      shell: cd "{{ src_home }}" && ./scripts/start_eb.sh 
+      shell: cd "{{ src_home }}" && ./scripts/start_eb.sh "{{ zk_connector }}"
+        "{{ io_threads }}"
       when: "plist.stdout.find('EdgeBroker') == -1"  

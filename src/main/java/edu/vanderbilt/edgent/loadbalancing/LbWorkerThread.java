@@ -71,6 +71,9 @@ public class LbWorkerThread implements Runnable {
 				}
 			}
 		}
+		//set linger to 0 
+		listenerSocket.setLinger(0);
+		controlSocket.setLinger(0);
 		//close sockets before exiting
 		listenerSocket.close();
 		controlSocket.close();
@@ -108,6 +111,7 @@ public class LbWorkerThread implements Runnable {
 			if(e.code().equals(Code.NODEEXISTS)){
 				logger.info("WorkerThread:{} already topic:{} exists",workerId,topic);
 			}
+			logger.error("WorkerThread:{} caught exception:{}",workerId,e.getMessage());
 
 		}catch(Exception e){
 			logger.error("WorkerThread:{} caught exception:{}",workerId,e.getMessage());

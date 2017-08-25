@@ -36,10 +36,6 @@ public class EdgeBroker {
 	//Topic control messages
 	public static final String TOPIC_DELETE_COMMAND="delete";
 
-	//This broker's ipAddress and Id
-	private String ipAddress;
-	private String ebId;
-
 	//List of avaiable ports
 	private PortList ports;
 	//ZMQ Context
@@ -66,11 +62,16 @@ public class EdgeBroker {
 	//Executor to run the topic clean-up task periodically
 	private ScheduledExecutorService scheduler;
 	
+	//This broker's ipAddress,regionId and Id
+	private String ipAddress;
+	private int regionId;
+	private String ebId;
 	private Logger logger;
 
-	public EdgeBroker(int regionId,String zkConnector,int ioThreads){
+	public EdgeBroker(String zkConnector,int ioThreads){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		ipAddress= UtilMethods.ipAddress();
+		regionId= UtilMethods.regionId(); 
 		ebId=String.format("EB-%d-%s",regionId,ipAddress);
 
 		//create ZMQ Context and initialize ZMQ topic control socket
@@ -222,7 +223,7 @@ public class EdgeBroker {
 		try {
 			// delete this EB's znode under /topics/topic
 			client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
-			logger.debug("EdgeBroker:{} deleted its znode under /topics/%s path",ebId,topicName);
+			logger.debug("EdgeBroker:{} deleted its znode under /topics/{} path",ebId,topicName);
 
 
 			//check if there are other brokers hosting the topic, if not, delete topic znode
@@ -237,9 +238,9 @@ public class EdgeBroker {
 			logger.debug("EdgeBroker:{} deleted topic:{}'s sub-tree under its znode", ebId, topicName);
 
 			// send control message to topic thread to exit polling loop
-			topicControl.send(String.format("%s %s", topicName, TOPIC_DELETE_COMMAND));
-			logger.debug("EdgeBroker:{} sent:{} control message to topic:{} thread",
+			logger.debug("EdgeBroker:{} will send:{} control message to topic:{} thread",
 					ebId,TOPIC_DELETE_COMMAND,topicName);
+			topicControl.send(String.format("%s %s", topicName, TOPIC_DELETE_COMMAND));
 
 			// wait until topic thread exits
 			tThread.join();
@@ -268,9 +269,10 @@ public class EdgeBroker {
 		deleteAllTopics();
 
 		//close ZMQ topic control socket
+		topicControl.setLinger(0);
 		topicControl.close();
 		//close ZMQ Context
-		context.close();
+		context.term();
 		logger.debug("EdgeBroker:{} closed ZMQ sockets and context",ebId);
 		
 		try {
@@ -334,18 +336,17 @@ public class EdgeBroker {
 	}
 
 	public static void main(String args[]){
-		if(args.length<3){
-			System.out.println("Usage: EdgeBroker regionId zkConnector ioThreads");
+		if(args.length<2){
+			System.out.println("Usage: EdgeBroker zkConnector ioThreads");
 			return;
 		}
 		try{
 			//parse commandline arguments
-			int regionId=Integer.parseInt(args[0]);
-			String zkConnector=args[1];
-			int ioThreads=Integer.parseInt(args[2]);
+			String zkConnector=args[0];
+			int ioThreads=Integer.parseInt(args[1]);
 
 			//initialize EB
-			EdgeBroker eb= new EdgeBroker(regionId,zkConnector,
+			EdgeBroker eb= new EdgeBroker(zkConnector,
 					ioThreads);
 
 			//callback to handle SIGINT and SIGTERM

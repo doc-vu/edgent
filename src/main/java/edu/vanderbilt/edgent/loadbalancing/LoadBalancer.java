@@ -48,13 +48,17 @@ public class LoadBalancer {
 	private CuratorFramework client;
 
 	//Unique load balancer id
+	private String ipAddress;
+	private int regionId;
 	private String lbId;
 	private Logger logger;
 	
-	public LoadBalancer(int regionId,String zkConnector)
+	public LoadBalancer(String zkConnector)
 	{
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
-		lbId=String.format("LB-%d-%s",regionId,UtilMethods.ipAddress());
+		ipAddress=UtilMethods.ipAddress();
+		regionId= UtilMethods.regionId();
+		lbId=String.format("LB-%d-%s",regionId,ipAddress);
 
 		//Initialize ZMQ Context
 		context=ZMQ.context(1);
@@ -119,11 +123,17 @@ public class LoadBalancer {
 		}catch(InterruptedException e){}
 		logger.debug("LB:{}  worker threads have exited",lbId);
 	
-		//close all ZMQ sockets and context
+		//set linger to 0. close all ZMQ sockets
+		listener.setLinger(0);
+		distributor.setLinger(0);
+		controlSocket.setLinger(0);
+
 		listener.close();
 		distributor.close();
 		controlSocket.close();
-		context.close();
+		
+		//termiate context to release resources
+		context.term();
 		logger.debug("LB:{}  closed ZMQ sockets and context",lbId);
 
 		//close CuratorClient connection to ZK
@@ -133,41 +143,35 @@ public class LoadBalancer {
 	}
 	
 	public static void main(String args[]){
-		if(args.length<2){
-			System.out.println("Usage: LoadBalancer regionId zkConnector");
+		if(args.length<1){
+			System.out.println("Usage: LoadBalancer zkConnector");
 			return;
 		}
-		try{
-			//Parse commandline arguments
-			int regionId=Integer.parseInt(args[0]);
-			String zkConnector=args[1];
+		// Parse commandline arguments
+		String zkConnector = args[0];
 
-			//Instantiate LB
-			LoadBalancer lb=new LoadBalancer(regionId,
-					zkConnector);
-		
-			//Register callback to handle SIGINT and SIGTERM
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				@Override
-				public void run() {
-					//send SHUTDOWN_CONTROL_MSG interrupt LB 
-					ZMQ.Context context= ZMQ.context(1);
-					ZMQ.Socket socket=context.socket(ZMQ.PUSH);
-					socket.connect(String.format("tcp://127.0.0.1:%d",
-							LoadBalancer.LISTENER_PORT));
-					socket.send(String.format("%s",SHUTDOWN_CONTROL_MSG),0);
-					socket.close();
-					context.close();
-					//Allow LB to clean-up before exiting
-					lb.clean();
-				}
-			});
+		// Instantiate LB
+		LoadBalancer lb = new LoadBalancer(zkConnector);
 
-			//Start LB
-			lb.start();
+		// Register callback to handle SIGINT and SIGTERM
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				// send SHUTDOWN_CONTROL_MSG interrupt LB
+				ZMQ.Context context = ZMQ.context(1);
+				ZMQ.Socket socket = context.socket(ZMQ.PUSH);
+				socket.connect(String.format("tcp://127.0.0.1:%d", LoadBalancer.LISTENER_PORT));
+				socket.send(String.format("%s", SHUTDOWN_CONTROL_MSG), 0);
+				socket.setLinger(0);
+				socket.close();
+				context.term();
+				// Allow LB to clean-up before exiting
+				lb.clean();
+			}
+		});
+
+		// Start LB
+		lb.start();
 			
-		}catch(NumberFormatException e){
-			e.printStackTrace();
-		}
 	}
 }

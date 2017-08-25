@@ -6,7 +6,7 @@ import argparse
 #function for extracting edge broker utilization metrics. 
 #returns {'eb':{'cpu':%,'mem':%,'nw':kB/sec}} mapping
 #for all broker machines
-def util(log_dir,min_sub,step_size,max_sub):
+def util(log_dir,min_sub,step_size,max_sub,eb):
   broker_util_map={}
   for i in range(min_sub,max_sub+step_size,step_size):
     util_file='%s/%d/summary/summary_util.csv'%(log_dir,i)
@@ -14,14 +14,14 @@ def util(log_dir,min_sub,step_size,max_sub):
       #skip header
       next(f)
       for line in f:
-        if line.startswith('eb'):
-          hostname,cpu,mem,nw= line.split(',')
-          if hostname not in broker_util_map:
-            broker_util_map[hostname]={'cpu':[float(cpu)],'mem':[float(mem)],'nw':[float(nw)]}
-          else:
-            broker_util_map[hostname]['cpu'].append(float(cpu))
-            broker_util_map[hostname]['mem'].append(float(mem))
-            broker_util_map[hostname]['nw'].append(float(nw))
+        #if line.startswith(eb):
+        hostname,cpu,mem,nw= line.split(',')
+        if hostname not in broker_util_map:
+          broker_util_map[hostname]={'cpu':[float(cpu)],'mem':[float(mem)],'nw':[float(nw)]}
+        else:
+          broker_util_map[hostname]['cpu'].append(float(cpu))
+          broker_util_map[hostname]['mem'].append(float(mem))
+          broker_util_map[hostname]['nw'].append(float(nw))
   
   return broker_util_map
 
@@ -50,9 +50,9 @@ def latency(log_dir,min_sub,step_size,max_sub):
   
   return topic_latency_map
 
-def plot(log_dir,min_sub,step_size,max_sub):
+def plot(log_dir,min_sub,step_size,max_sub,eb):
   #get broker to utilization map
-  broker_util_map= util(log_dir,min_sub,step_size,max_sub)
+  broker_util_map= util(log_dir,min_sub,step_size,max_sub,eb)
   #get topic to latency map
   topic_latency_map= latency(log_dir,min_sub,step_size,max_sub)
   subscribers=range(min_sub,max_sub+step_size,step_size)
@@ -112,7 +112,8 @@ if __name__=="__main__":
   parser.add_argument('min_sub',type=int,help='min subscriber count with which the scalability test begins')
   parser.add_argument('step_size',type=int,help='step size used for increasing the #subscribers count')
   parser.add_argument('max_sub',type=int,help='max subscriber count at which the scalability test ends')
+  parser.add_argument('eb',help='name of hostmachine hosting the EB')
   args=parser.parse_args()
 
   #collate results and plot
-  plot(args.log_dir,args.min_sub,args.step_size,args.max_sub)
+  plot(args.log_dir,args.min_sub,args.step_size,args.max_sub,args.eb)

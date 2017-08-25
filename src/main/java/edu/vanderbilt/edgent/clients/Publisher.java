@@ -2,10 +2,12 @@ package edu.vanderbilt.edgent.clients;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
+import edu.vanderbilt.edgent.util.UtilMethods;
 /**
  * Client publisher end-point to test the system.
  * @author kharesp
@@ -30,14 +32,14 @@ public class Publisher extends Client {
 	private DistributedBarrier pubBarrier;	
 
 	
-	public Publisher(String topicName, int regionId,int runId,
-			int sampleCount, int sendInterval,String zkConnector,String feAddress){
+	public Publisher(String topicName, int runId,
+			int sampleCount, int sendInterval,String zkConnector) throws Exception{
 		//initialize Client endpoint by calling the super constructor
-		super(Client.TYPE_PUB,topicName,sampleCount,feAddress);
+		super(Client.TYPE_PUB,topicName,sampleCount);
 
 		//stash implementation specific state variables
-		this.regionId=regionId;
 		this.sendInterval=sendInterval;
+		regionId=UtilMethods.regionId();
 	
 		//initialize connection to ZK
 		client= CuratorFrameworkFactory.newClient(zkConnector,
@@ -50,18 +52,11 @@ public class Publisher extends Client {
 		pubBarrier= new DistributedBarrier(client,
 				String.format("/experiment/%s/barriers/pub", runId));
 	}
-	
-	@Override
-	public void shutdown(){
-		CloseableUtils.closeQuietly(client);
-		logger.info("{}:{} for topic:{} closed zk connection",endpointType,id,topicName);
-	}
 
 	@Override
 	public void process() {
 		//setup experiment 
-		experimentSetup();
-
+		waitForOtherPublishers();
 		//only publish while we are connected to EB and sampleCount has not been reached
 		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
 			//send data
@@ -86,17 +81,39 @@ public class Publisher extends Client {
 			}
 		}
 	}
-
 	
-	private void experimentSetup(){
-		try{
-			//create this publisher's experiment run specific znode 
+	@Override
+	public void onExit(){
+		try {
+			if(client.getState()==CuratorFrameworkState.STARTED){
+				client.delete().forPath(expZnodePath);
+			}
+		} catch (Exception e) {
+			logger.error("{}:{} for topic:{} caught exception:{}",endpointType,
+				id,e.getMessage());
+		}
+		CloseableUtils.closeQuietly(client);
+		logger.info("{}:{} for topic:{} deleted its experiment znode:{} and closed zk connection",
+				endpointType,id,topicName,expZnodePath);
+	}
+
+	@Override
+	public void onConnected() {
+		try {
 			if(client.checkExists().forPath(expZnodePath)==null){
 				client.create().forPath(expZnodePath, new byte[0]);
 				logger.info("{}:{} for topic:{} created its experiment znode:{}",endpointType,
 						id, topicName, expZnodePath);
 			}
+		} catch (Exception e) {
+			logger.error("{}:{} for topic:{} caught exception:{}",endpointType,
+					id,topicName,e.getMessage());
+		}
+	}
 
+	
+	private void waitForOtherPublishers(){
+		try{
 			//wait until all test publishers have joined
 			logger.info("{}:{} for topic:{} will wait on publisher barrier until all publishers have joined",
 					endpointType,id, topicName);
@@ -118,25 +135,22 @@ public class Publisher extends Client {
 
 
 	public static void main(String args[]){
-		if (args.length < 7) {
+		if (args.length < 5) {
 			System.out.println(
-					"Usage: Publisher topicName, regionId, runId, sampleCount, sendInterval, zkConnector, feAddress");
+					"Usage: Publisher topicName, runId, sampleCount, sendInterval, zkConnector");
 			return;
 		}
-
 		try{
 			//parse commandline arguments
 			String topicName = args[0];
-			int regionId = Integer.parseInt(args[1]);
-			int runId = Integer.parseInt(args[2]);
-			int sampleCount = Integer.parseInt(args[3]);
-			int sendInterval = Integer.parseInt(args[4]);
-			String zkConnector= args[5];
-			String feAddress= args[6];
+			int runId = Integer.parseInt(args[1]);
+			int sampleCount = Integer.parseInt(args[2]);
+			int sendInterval = Integer.parseInt(args[3]);
+			String zkConnector= args[4];
 
 			//initialize Publisher
-			Publisher publisher = new Publisher(topicName, regionId, runId,
-					sampleCount, sendInterval, zkConnector,feAddress);
+			Publisher publisher = new Publisher(topicName, runId,
+					sampleCount, sendInterval, zkConnector);
 
 			//Handle SIGINT and SIGTERM
 			Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -148,8 +162,9 @@ public class Publisher extends Client {
 			});
 			//start publisher
 			publisher.start();
-		}catch(NumberFormatException e){
+		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
+
 }

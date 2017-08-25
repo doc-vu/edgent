@@ -1,6 +1,7 @@
 package edu.vanderbilt.edgent.fe;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -13,6 +14,17 @@ import org.zeromq.ZMQ;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Frontend {
+	//region-specific FE locations
+	public static final HashMap<Integer,String> FE_LOCATIONS;
+	static{
+		FE_LOCATIONS= new HashMap<Integer,String>();
+		FE_LOCATIONS.put(30,"10.20.30.2");
+	}
+	
+	//FE Request Commands
+	public static final String CONNECTION_REQUEST="connect";
+	public static final String DISCONNECTION_REQUEST="disconnect";
+
 	//ZMQ Context
 	private ZContext context;
 	//Router and Dealer sockets for supporting multi-threaded operation
@@ -22,10 +34,6 @@ public class Frontend {
 	public static final int LISTENER_PORT=4997;
 	public static final String INPROC_CONNECTOR="inproc://feWorkers";
 	
-	//FE Request Commands
-	public static final String CONNECTION_REQUEST="connect";
-	public static final String DISCONNECTION_REQUEST="disconnect";
-	
 	//Number of concurrent threads servicing incoming requests 
 	public static final int WORKER_POOL_SIZE=5;
 	private List<Thread> workers;
@@ -34,14 +42,18 @@ public class Frontend {
 	private CuratorFramework client;
 
 	//Unique FE id
+	private String ipAddress;
+	private int regionId;
 	private String feId;
 	private Logger logger;
 
-	public Frontend(int regionId, ZContext context,
+	public Frontend(ZContext context,
 			String zkConnector,String lbAddress){
 
 		logger=LogManager.getLogger(this.getClass().getSimpleName());
-		feId=String.format("FE-%d-%s",regionId,UtilMethods.ipAddress());
+		ipAddress=UtilMethods.ipAddress();
+		regionId= UtilMethods.regionId();
+		feId=String.format("FE-%d-%s",regionId,ipAddress);
 
 		//initialize front facing Router socket
 		this.context= context;
@@ -80,6 +92,12 @@ public class Frontend {
 		//FE was terminated, perform clean-up
 		logger.info("FE:{} proxy was terminated",feId);
 
+		//set linger to 0 and close sockets
+		listener.setLinger(0);
+		distributor.setLinger(0);
+		listener.close();
+		distributor.close();
+
 		//clean-up
 		context.destroy();
 		logger.debug("FE:{} ZMQ context and sockets were closed",feId);
@@ -99,36 +117,29 @@ public class Frontend {
 	}
 	
 	public static void main(String args[]){
-		if(args.length<3){
-			System.out.println("Usage: Frontend regionId zkConnector lbAddress");
+		if(args.length<1){
+			System.out.println("Usage: Frontend zkConnector");
 			return;
 		}
-		try{
-			//parse command line arguments
-			int regionId=Integer.parseInt(args[0]);
-			String zkConnector=args[1];
-			String lbAddress=args[2];
-			//Create ZContext
-			ZContext context=new ZContext();
-			//Initialize FE with shadowed ZContext
-			Frontend fe=new Frontend(regionId,
-					ZContext.shadow(context),
-					zkConnector,lbAddress);
-	
-			//Register callback to handle SIGINT AND SIGTERM properly
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				@Override
-				public void run() {
-					context.destroy();
-				}
-			});
-				 	        
-			//start FE
-			fe.start();
-			
-		}catch(NumberFormatException e){
-			e.printStackTrace();
-		}
+		// parse command line arguments
+		String zkConnector = args[0];
+		// Create ZContext
+		ZContext context = new ZContext();
+		// Initialize FE with shadowed ZContext
+		// TODO: Currently, assuming that FE and LB are co-located
+		Frontend fe = new Frontend(ZContext.shadow(context),
+				zkConnector, "127.0.0.1");
+
+		// Register callback to handle SIGINT AND SIGTERM properly
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				context.destroy();
+			}
+		});
+
+		// start FE
+		fe.start();
 	}
 
 }

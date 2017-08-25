@@ -2,6 +2,7 @@
 - include: set_ansible_ssh_host.yml
 
 - hosts: all
+  become: yes
   gather_facts: False
   vars:
     - log: /dev/null
@@ -9,4 +10,8 @@
   - name: command string to be executed 
     debug: "msg={{ command }}"
   - name: execute command 
-    shell:  "( ( nohup {{ command }} 1>{{ log }} 2>&1 ) & )"
+    #shell:  "( ( nohup {{ command }} 1>{{ log }} 2>&1 ) & )"
+    shell:  "{{ command }}"
+    register: res
+  - name: print command stdout
+    debug: "msg={{ res.stdout }}"

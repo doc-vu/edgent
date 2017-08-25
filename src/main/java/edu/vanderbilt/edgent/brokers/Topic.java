@@ -105,7 +105,11 @@ public class Topic implements Runnable {
 				break;
 			}
 		}
-		// clean up before exiting
+		//set linger to 0
+		receiveSocket.setLinger(0);
+		sendSocket.setLinger(0);
+		topicControl.setLinger(0);
+		//close sockets
 		receiveSocket.close();
 		sendSocket.close();
 		topicControl.close();

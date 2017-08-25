@@ -42,13 +42,12 @@ class Experiment(object):
     self.zk.wait('finished')
 
     #wait for monitoring processes to exit before collecting logs
+    print("\n\n\nAll subscribers have exited. Will wait for monitors to exit, before collecting logs")
     self.zk.wait('logs')
 
     #collect logs
     print("\n\n\nCollecting logs")
     self.collect_logs()
-
-    #collate results
 
     #copy test configuration
     self.copy_conf()
@@ -72,9 +71,9 @@ class Experiment(object):
     
     
   def kill_existing_processes(self):
-    #kill existing monitoring processes on brokers
+    #kill existing monitoring processes on all hosts(clients, brokers, felbs) 
     command_string='cd %s && ansible-playbook playbooks/util/kill.yml  --limit %s\
-      --extra-vars="pattern=Monitor"'%(metadata.ansible,self.conf.brokers)
+      --extra-vars="pattern=Monitor"'%(metadata.ansible,self.conf.hosts)
     subprocess.check_call(['bash','-c', command_string])
 
     #kill existing publishers and subscriber processes on clients

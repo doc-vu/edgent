@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
 import org.zeromq.ZMQ;
@@ -23,15 +24,18 @@ public class Subscriber extends Client{
 	private CuratorFramework client;
 	//Subscriber's znode for this experiment's run
 	private String expZnodePath;
+	
+	private long startTs;
+	private long endTs;
 
 	//File to log recorded latencies of reception
 	private static PrintWriter writer;
 	private static String latencyFile;
 	
-	public Subscriber(String topicName, int regionId, 
-			int runId, int sampleCount, String outDir,String zkConnector,String feAddress){
+	public Subscriber(String topicName, int runId, int sampleCount, 
+			String outDir,String zkConnector) throws Exception{
 		//initialize client endpoint by calling the super constructor
-		super(Client.TYPE_SUB,topicName,sampleCount,feAddress);
+		super(Client.TYPE_SUB,topicName,sampleCount);
 
 		String hostName= UtilMethods.hostName();
 		String pid= UtilMethods.pid();
@@ -63,9 +67,6 @@ public class Subscriber extends Client{
 		//initialize ZMQ poller for non-blocking receive 
 		ZMQ.Poller poller= context.poller(1);
 		poller.register(socket,ZMQ.Poller.POLLIN);
-
-		//setup experiment
-		experimentSetup();
 		
 		//listener loop will execute until all samples are not received while still connected to EB 
 		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
@@ -74,6 +75,9 @@ public class Subscriber extends Client{
 			if(poller.pollin(0)){//on data reception
 				ZMsg receivedMsg = ZMsg.recvMsg(socket);
 				currCount++;
+				if(currCount==1){
+					startTs=System.currentTimeMillis();
+				}
 
 				// Parse received data sample
 				long reception_ts = System.currentTimeMillis();
@@ -90,9 +94,29 @@ public class Subscriber extends Client{
 				}
 			}
 		}
+		endTs=System.currentTimeMillis();
+		double thput=(1000.0*sampleCount)/(endTs-startTs);
+		logger.info("{}:{} for topic:{} observed a throughput of {} msgs/sec",endpointType,id,topicName,thput);
 	}
 
-	private void experimentSetup(){
+	@Override
+	public void onExit() {
+		writer.close();
+		try {
+			if(client.getState()==CuratorFrameworkState.STARTED){
+				client.delete().forPath(expZnodePath);
+			}
+		} catch (Exception e) {
+			logger.error("{}:{} for topic:{} caught exception:{}",endpointType,
+				id,e.getMessage());
+		}
+		CloseableUtils.closeQuietly(client);
+		logger.info("{}:{} for topic:{} deleted its experiment znode:{} and closed zk connection",endpointType,
+				id,topicName,expZnodePath);
+	}
+	
+	@Override
+	public void onConnected() {
 		try{
 			if(client.checkExists().forPath(expZnodePath)==null){
 				client.create().forPath(expZnodePath, new byte[0]);
@@ -105,33 +129,23 @@ public class Subscriber extends Client{
 		}
 	}
 
-	@Override
-	public void shutdown() {
-		writer.close();
-		CloseableUtils.closeQuietly(client);
-		logger.info("{}:{} for topic:{} closed zk connection",endpointType,
-				id,topicName);
-	}
-	
 	public static void main(String args[]){
-		if(args.length<7){
-			System.out.println("Usage: Subscriber topicName, regionId, runId, sampleCount, "
-					+ "outDir, zkConnector, feAddress");
+		if(args.length<5){
+			System.out.println("Usage: Subscriber topicName, runId, sampleCount, "
+					+ "outDir, zkConnector");
 			return;
 		}
 		try{
 			//parse commandline arguments
 			String topicName= args[0];
-			int regionId= Integer.parseInt(args[1]);
-			int runId= Integer.parseInt(args[2]);
-			int sampleCount= Integer.parseInt(args[3]);
-			String outDir= args[4];
-			String zkConnector=args[5];
-			String feAddress=args[6];
+			int runId= Integer.parseInt(args[1]);
+			int sampleCount= Integer.parseInt(args[2]);
+			String outDir= args[3];
+			String zkConnector=args[4];
 		
 			//initialize subscriber
-			Subscriber subscriber= new Subscriber(topicName,regionId,runId,
-					sampleCount,outDir,zkConnector,feAddress);
+			Subscriber subscriber= new Subscriber(topicName,runId,
+					sampleCount,outDir,zkConnector);
 
 			//handle SIGTERM and SIGINT
 			Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -144,8 +158,9 @@ public class Subscriber extends Client{
 			//start subscriber
 			subscriber.start();
 			
-		}catch(NumberFormatException e){
+		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
+
 }

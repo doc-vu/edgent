@@ -14,10 +14,24 @@ class Conf(object):
           self.run_id=line.rstrip().partition(':')[2]
         #rbs
         elif line.startswith('rbs'):
-          self.rbs=line.rstrip().partition(':')[2].split(',')
+          rbs=line.rstrip().partition(':')[2]
+          if(rbs):
+            self.rbs=rbs.split(',')
+          else:
+            self.rbs=[]
         #ebs
         elif line.startswith('ebs'):
-          self.ebs=line.rstrip().partition(':')[2].split(',')
+          ebs=line.rstrip().partition(':')[2]
+          if(ebs):
+            self.ebs=ebs.split(',')
+          else:
+            self.ebs=[]
+        elif line.startswith('felbs'):
+          felbs=line.rstrip().partition(':')[2]
+          if(felbs):
+            self.felbs=felbs.split(',')
+          else:
+            self.felbs=[]
         #client host machines
         elif line.startswith('clients'):
           self.clients=line.rstrip().partition(':')[2].split(',')
@@ -62,28 +76,12 @@ class Conf(object):
           print('invalid line:%s'%(line))
     
     #eb and rb brokers
-    self.brokers= ','.join(self.ebs)+','+','.join(self.rbs)
+    self.brokers=','.join(self.ebs + self.rbs) 
+    #all infrastructure nodes
+    self.infrastructure= ','.join(self.ebs+self.rbs+self.felbs)
     #all host machines
-    self.hosts=self.brokers+','+','.join(self.clients)
-    
-    #region to number of client subscriber machines map
-    self.region_clientsubscribers_map={}
-    for client in self.subscribers.keys():
-      region=client[3:client.index('-')]
-      if region in self.region_clientsubscribers_map:
-        self.region_clientsubscribers_map[region]+=1
-      else:
-        self.region_clientsubscribers_map[region]=1
+    self.hosts= ','.join(self.ebs + self.rbs + self.felbs + self.clients)
 
-    #region to number of client publisher machines map
-    self.region_clientpublishers_map={}
-    for client in self.publishers.keys():
-      region=client[3:client.index('-')]
-      if region in self.region_clientpublishers_map:
-        self.region_clientpublishers_map[region]+=1
-      else:
-        self.region_clientpublishers_map[region]=1
-      
     #client machine to number of hosted subscribers map  
     self.client_numSubscribers={ client: sum([int(num_sub) for num_sub in topics.values()]) for client,topics in self.subscribers.items() }
     #client machine to number of hosted publishers map

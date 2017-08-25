@@ -1,0 +1,15 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+  tasks:
+    - name: check if lb is running
+      shell: ps aux | grep LoadBalancer | grep -v grep
+      register: plist
+      failed_when: plist.rc > 1
+    - name: start fe
+      shell: cd "{{ src_home }}" && ./scripts/start_lb.sh "{{ zk_connector }}"
+      when: "plist.stdout.find('LoadBalancer') == -1"  
