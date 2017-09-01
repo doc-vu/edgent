@@ -73,8 +73,8 @@ public abstract class Client {
 		//get this client's region specific FE
 		feAddress=Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
 		if(feAddress==null){
-			logger.error("{}:{} for topic:{} could not located its region's FE",
-					endpointType,id,topicName);
+			logger.error("{}:{} for topic:{} could not located its region's FE.Region id:{}",
+					endpointType,id,topicName,UtilMethods.regionId());
 			throw new Exception("FE not found");
 		}
 		logger.info("{}:{} initialized for topic:{}",endpointType,id,topicName);
@@ -221,6 +221,8 @@ public abstract class Client {
 			pair.connect(CONNECTION_MONITORING_LOCATOR);
 			while (true) {
 				ZMQ.Event event = ZMQ.Event.recv(pair);
+				logger.debug("{}:{} for topic:{} monitoring thread:{} got event",endpointType,
+						id,topicName,Thread.currentThread().getName());
 				if (event.getEvent() == ZMQ.EVENT_CONNECTED) {//Connected to EB
 					//set retry count to 0
 					retryCount.set(0);

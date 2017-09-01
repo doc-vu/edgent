@@ -19,6 +19,7 @@ public class Topic implements Runnable {
 	//ZMQ send/receive socket pairs
 	private ZMQ.Socket receiveSocket;
 	private ZMQ.Socket sendSocket;
+	private ZMQ.Socket lbSocket;
 
 	//poller to poll receiveSocket for data and topicControl for control msgs
 	private ZMQ.Poller poller;
@@ -26,19 +27,23 @@ public class Topic implements Runnable {
 	//Binding port numbers for receiveSocket and sendSocket 
 	private int receivePort;
 	private int sendPort;
+	private int lbPort;
 
 	private Logger logger;
 	
-	public Topic(String topicName, ZMQ.Context context,int receivePort,int sendPort){
+	public Topic(String topicName, ZMQ.Context context,
+			int receivePort,int sendPort,int lbPort){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName= topicName;
 		this.receivePort=receivePort;
 		this.sendPort=sendPort;
+		this.lbPort=lbPort;
 
 		//instantiate ZMQ Sockets and poller
 		topicControl=context.socket(ZMQ.SUB);
 		receiveSocket= context.socket(ZMQ.SUB);
 		sendSocket= context.socket(ZMQ.PUB);
+		lbSocket= context.socket(ZMQ.PUB);
 		poller=context.poller(2);
 
 		logger.info("Topic:{} initialized for receive port number:{} and send port number:{}",
@@ -69,8 +74,13 @@ public class Topic implements Runnable {
 
 		//bind sendSocket to sendPort to send topic's data 
 		sendSocket.bind(String.format("tcp://*:%d",sendPort));
-		logger.debug("Topic:{} ZMQ.PUB socket bound to port number:{}",
+		logger.debug("Topic:{} ZMQ.PUB send socket bound to port number:{}",
 				topicName,sendPort);
+
+		//bind sendSocket to sendPort to send topic's data 
+		lbSocket.bind(String.format("tcp://*:%d",lbPort));
+		logger.debug("Topic:{}  ZMQ.PUB lb socket bound to port number:{}",
+				topicName,lbPort);
 	
 		// topic thread's listener loop
 		logger.info("Topic:{} thread will start listening", topicName);
@@ -83,6 +93,7 @@ public class Topic implements Runnable {
 				if (poller.pollin(0)) {
 					ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
 					if (receivedMsg != null) {
+						System.out.println("Received data");
 						String msgTopic = new String(receivedMsg.getFirst().getData());
 						byte[] msgContent = receivedMsg.getLast().getData();
 						sendSocket.sendMore(msgTopic);
@@ -96,6 +107,9 @@ public class Topic implements Runnable {
 					if(data[1].equals(EdgeBroker.TOPIC_DELETE_COMMAND)){
 						break;
 					}
+					if(data[1].equals(EdgeBroker.TOPIC_LB_COMMAND)){
+						lbSocket.send(String.format("%s lb",topicName));
+					}
 				}
 			}catch (ZMQException e) {
 				logger.error(e.getMessage());
@@ -108,10 +122,12 @@ public class Topic implements Runnable {
 		//set linger to 0
 		receiveSocket.setLinger(0);
 		sendSocket.setLinger(0);
+		lbSocket.setLinger(0);
 		topicControl.setLinger(0);
 		//close sockets
 		receiveSocket.close();
 		sendSocket.close();
+		lbSocket.close();
 		topicControl.close();
 
 		logger.info("Topic:{} deleted", topicName);

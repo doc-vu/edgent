@@ -35,7 +35,7 @@ public class FeWorkerThread implements Runnable {
 	private String workerId;
 	private Logger logger;
 	
-	private static final int TOPIC_CREATION_TIMEOUT_SEC=40;
+	private static final int TOPIC_CREATION_TIMEOUT_SEC=10;
 
 	public FeWorkerThread(ZContext context,
 			CuratorFramework client,String lbAddress){

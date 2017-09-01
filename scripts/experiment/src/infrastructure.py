@@ -53,10 +53,16 @@ class Infrastructure(object):
       self._zk.delete(metadata.topics_path,recursive=True)
     if self._zk.exists(metadata.eb_path):
       self._zk.delete(metadata.eb_path,recursive=True)
+    if self._zk.exists(metadata.topic_level_lb_path):
+      self._zk.delete(metadata.topic_level_lb_path,recursive=True)
+    if self._zk.exists(metadata.eb_level_lb_path):
+      self._zk.delete(metadata.eb_level_lb_path,recursive=True)
 
     #create /eb and /topics path
     self._zk.ensure_path(metadata.topics_path) 
     self._zk.ensure_path(metadata.eb_path) 
+    self._zk.ensure_path(metadata.topic_level_lb_path)
+    self._zk.ensure_path(metadata.eb_level_lb_path)
 
   def setup_infrastructure(self):
     #ensure netem rules are set on RBs

@@ -18,7 +18,7 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  * @author kharesp
  *
  */
-public class LoadBalancer {
+public class LoadBalancer implements Runnable{
 	//ZMQ.Context
 	private ZMQ.Context context;
 	//ZMQ PULL socket to listen for incoming topic creation requests
@@ -29,9 +29,9 @@ public class LoadBalancer {
 	private ZMQ.Socket controlSocket;
 
 	//Front-Facing port at which topic creation requests are received 
-	public static final int LISTENER_PORT=4999;
+	public static final int LISTENER_PORT=8741;
 	//Internal Port for issuing control messages 
-	public static final int CONTROL_PORT=4998;
+	public static final int CONTROL_PORT=6955;
 	//Internal inproc connector to which pool threads connect to receive requests
 	public static final String INPROC_CONNECTOR="inproc://lbWorkers";
 	//Topic Name on which control messages will be issued by LB 
@@ -53,7 +53,7 @@ public class LoadBalancer {
 	private String lbId;
 	private Logger logger;
 	
-	public LoadBalancer(String zkConnector)
+	public LoadBalancer(String zkConnector) 
 	{
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		ipAddress=UtilMethods.ipAddress();
@@ -62,15 +62,6 @@ public class LoadBalancer {
 
 		//Initialize ZMQ Context
 		context=ZMQ.context(1);
-		//Initialize all ZMQ sockets
-		listener=context.socket(ZMQ.PULL);
-		listener.bind(String.format("tcp://*:%d",LISTENER_PORT));
-
-		distributor=context.socket(ZMQ.PUSH);
-		distributor.bind(INPROC_CONNECTOR);
-		
-		controlSocket=context.socket(ZMQ.PUB);
-		controlSocket.bind(String.format("tcp://*:%d",CONTROL_PORT));
 
 		//Initialize CuratorClient for ZK connection
 		client=CuratorFrameworkFactory.newClient(zkConnector,
@@ -86,8 +77,18 @@ public class LoadBalancer {
 
 		logger.info("Initalized LB:{}",lbId);
 	}
-	
-	public void start(){
+
+	@Override 
+	public void run(){
+		//Initialize all ZMQ sockets
+		listener=context.socket(ZMQ.PULL);
+		listener.bind(String.format("tcp://*:%d",LISTENER_PORT));
+
+		distributor=context.socket(ZMQ.PUSH);
+		distributor.bind(INPROC_CONNECTOR);
+		
+		controlSocket=context.socket(ZMQ.PUB);
+		controlSocket.bind(String.format("tcp://*:%d",CONTROL_PORT));
 		//Start Lb Worker threads
 		for(Thread t:workers){
 			t.start();
@@ -98,19 +99,21 @@ public class LoadBalancer {
 				lbId,LISTENER_PORT);
 		//Listener loop: forwards topic creation requests to worker pool
 		while(true){
-			String data = new String(listener.recv(0));
+			String data = listener.recvStr(); 
+			System.out.println(data);
 			//Exit listener loop if SHUTDOWN_CONTROL_MSG is received
 			if (data.equals(SHUTDOWN_CONTROL_MSG)){
 				logger.info("LB:{} received {} signal.",lbId,SHUTDOWN_CONTROL_MSG);
 				//send shutdown_control_msg to all worker threads
 				controlSocket.send(String.format("%s %s",
-						CONTROL_TOPIC,SHUTDOWN_CONTROL_MSG), 0);
+						CONTROL_TOPIC,SHUTDOWN_CONTROL_MSG));
 				break;
 			}
 			//forward topic creation requests to the worker pool
 			distributor.send(data, 0);
 		}
 		logger.info("LB:{} exited listener loop.",lbId);
+		clean();
 	}
 	
 	public void clean(){
@@ -152,6 +155,7 @@ public class LoadBalancer {
 
 		// Instantiate LB
 		LoadBalancer lb = new LoadBalancer(zkConnector);
+		Thread lbThread= new Thread(lb);
 
 		// Register callback to handle SIGINT and SIGTERM
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -161,17 +165,17 @@ public class LoadBalancer {
 				ZMQ.Context context = ZMQ.context(1);
 				ZMQ.Socket socket = context.socket(ZMQ.PUSH);
 				socket.connect(String.format("tcp://127.0.0.1:%d", LoadBalancer.LISTENER_PORT));
-				socket.send(String.format("%s", SHUTDOWN_CONTROL_MSG), 0);
+				socket.send(String.format("%s", SHUTDOWN_CONTROL_MSG));
+				try{
+					lbThread.join();
+				}catch(Exception e){}
 				socket.setLinger(0);
 				socket.close();
 				context.term();
-				// Allow LB to clean-up before exiting
-				lb.clean();
 			}
 		});
-
 		// Start LB
-		lb.start();
-			
+		lbThread.start();
 	}
+
 }

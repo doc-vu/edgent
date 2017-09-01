@@ -86,6 +86,10 @@ public class LbWorkerThread implements Runnable {
 			client.create()
 				.forPath(String.format("/topics/%s",topic));
 			logger.info("WorkerThread:{} created topic znode:/topics/{}",workerId,topic);
+			//create topic znode under /lb/topics path
+			client.create()
+				.forPath(String.format("/lb/topics/%s",topic));
+			logger.info("WorkerThread:{} created topic znode:/lb/topics/{}",workerId,topic);
 
 			//get a list of EBs in the system
 			List<String> ebs= client.getChildren().forPath("/eb");

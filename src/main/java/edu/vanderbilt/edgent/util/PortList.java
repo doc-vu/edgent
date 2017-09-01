@@ -12,8 +12,8 @@ public class PortList {
 	private static LinkedBlockingQueue<Integer> pool; 
 	private static PortList instance=null;
 	/*User port range is: 1024-49151*/
-	private static int START_RANGE= 5000;
-	private static int END_RANGE= 25000; 
+	private static int START_RANGE= 24100;
+	private static int END_RANGE= 25100; 
 
 	/**
 	 * Singleton instance 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.imps.CuratorFrameworkState;
@@ -32,11 +33,14 @@ public class Subscriber extends Client{
 	private static PrintWriter writer;
 	private static String latencyFile;
 	
+	private AtomicBoolean interrupted;
+	
 	public Subscriber(String topicName, int runId, int sampleCount, 
 			String outDir,String zkConnector) throws Exception{
 		//initialize client endpoint by calling the super constructor
 		super(Client.TYPE_SUB,topicName,sampleCount);
-
+		
+		interrupted= new AtomicBoolean(false);
 		String hostName= UtilMethods.hostName();
 		String pid= UtilMethods.pid();
 		String file_name = topicName + "_" + hostName + "_" + pid + ".csv";
@@ -65,18 +69,18 @@ public class Subscriber extends Client{
 		//subscribe to the topic
 		socket.subscribe(topicName.getBytes());
 		//initialize ZMQ poller for non-blocking receive 
-		ZMQ.Poller poller= context.poller(1);
-		poller.register(socket,ZMQ.Poller.POLLIN);
-		
+		ZMQ.Poller poller= context.poller(1);		
+		poller.register(socket,ZMQ.Poller.POLLIN);	
+
 		//listener loop will execute until all samples are not received while still connected to EB 
 		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
-			//block for a maximum of 5 seconds for data
-			poller.poll(5000);
-			if(poller.pollin(0)){//on data reception
+			logger.debug("{}:{} for topic:{} will poll for data",endpointType,id,topicName);
+			poller.poll(2000);
+			if (poller.pollin(0)) {
 				ZMsg receivedMsg = ZMsg.recvMsg(socket);
 				currCount++;
-				if(currCount==1){
-					startTs=System.currentTimeMillis();
+				if (currCount == 1) {
+					startTs = System.currentTimeMillis();
 				}
 
 				// Parse received data sample
@@ -85,12 +89,12 @@ public class Subscriber extends Client{
 
 				// log recorded latency
 				long latency = Math.abs(reception_ts - sample.tsMilisec());
-				writer.write(String.format("%d,%d,%d,%d\n",
-						sample.sampleId(), reception_ts, sample.tsMilisec(), latency));
+				writer.write(
+						String.format("%d,%d,%d,%d\n", sample.sampleId(), reception_ts, sample.tsMilisec(), latency));
 
 				if (currCount % 1000 == 0) {
-					logger.debug("{}:{} for topic:{} received sample id:{} at reception_ts:{} latency:{}",
-							endpointType,id,topicName, sample.sampleId(), reception_ts, latency);
+					logger.debug("{}:{} for topic:{} received sample id:{} at reception_ts:{} latency:{}", endpointType,
+							id, topicName, sample.sampleId(), reception_ts, latency);
 				}
 			}
 		}
@@ -101,6 +105,8 @@ public class Subscriber extends Client{
 
 	@Override
 	public void onExit() {
+		interrupted.set(true);
+		
 		writer.close();
 		try {
 			if(client.getState()==CuratorFrameworkState.STARTED){
