@@ -2,7 +2,6 @@ package edu.vanderbilt.edgent.brokers;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -20,62 +19,57 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.zookeeper.data.Stat;
 import org.zeromq.ZMQ;
 import edu.vanderbilt.edgent.util.PortList;
 import edu.vanderbilt.edgent.util.UtilMethods;
+
 /**
  * EdgeBroker managing local/intra-region data dissemination concerns.
  * @author kharesp
  */
 public class EdgeBroker implements Runnable{
-	//Periodic interval after which pruning thread is scheduled
-	public static final int PERIODIC_PRUNING_INTERVAL_SEC=120;
-	//Time interval after which an unused topic is removed
-	public static final int TOPIC_EXPIRY_PERIOD_SEC=20;
-
-	//Port at which hosting broker issues topic control messages
+	//Port at which broker issues topic control messages for hosted topics
 	public static final int TOPIC_CONTROL_PORT=4993;
 	//Topic control messages
-	public static final String TOPIC_DELETE_COMMAND="delete";
-	public static final String TOPIC_CREATION_COMMAND="create";
-	public static final String TOPIC_LB_COMMAND="lb";
-	public static final String EXIT_COMMAND="exit";
+	public static final String TOPIC_DELETE_COMMAND="DELETE_TOPIC";
+	public static final String TOPIC_CREATION_COMMAND="CREATE_TOPIC";
+	public static final String TOPIC_LB_COMMAND="LB_TOPIC";
+	public static final String EB_EXIT_COMMAND="EXIT_EB";
+
+	//Periodic interval after which pruning thread is scheduled
+	public static final int PERIODIC_PRUNING_INTERVAL_SEC=120;
 
 	//List of avaiable ports
 	private PortList ports;
 	//ZMQ Context
 	private ZMQ.Context context;
-	//ZMQ PUB socket to issue topic
-	//control messages for hosted topics
+	//ZMQ PUB socket to issue topic control messages for hosted topics
 	private ZMQ.Socket topicControl;
-
-	/* HashTables to maintain hosted topics and 
-	 * corresponding topic Threads. All HashTable operations
-	 * are synchronized for consistency during concurrent access:e.g.,
-	 * ZK callback will insert a new topic, while a 
-	 * periodic clean-up thread will remove a topic with no 
-	 * interested end-points. 
-	 */
-	private Hashtable<String,Topic> hostedTopics;
-	private Hashtable<String,Thread> topicThreads;
-	private HashMap<String,PathChildrenCache> topicLevelLbActions;
 
 	//Curator client for ZK connection
 	private CuratorFramework client;
+
+	//Maintains references to currently hosted topics
+	private HashMap<String,Topic> hostedTopics;
+	//Maintains references to currently hosted topic threads
+	private HashMap<String,Thread> topicThreads;
+	/*Maintains references PathChildrenCache listeners for topic znode /lb/topics/topic to 
+	listen for topic level rebalancing commands issued by LB*/
+	private HashMap<String,PathChildrenCache> topicLbListeners;
+
 	//ZK path children listener, to listen for topic assignment to this broker
 	private PathChildrenCache topicAssignmentListener;
 
 	//Executor to run the topic clean-up task periodically
 	private ScheduledExecutorService scheduler;
-	
+
+	//Shared queue in which ZK callbacks place commands for EB to act on
 	private LinkedBlockingQueue<String> queue;
 	
-	//This broker's ipAddress,regionId and Id
+	//This broker's ipAddress,regionId and id
 	private String ipAddress;
 	private int regionId;
 	private String ebId;
-	
 	
 	private Logger logger;
 
@@ -87,9 +81,9 @@ public class EdgeBroker implements Runnable{
 
 		this.context = ZMQ.context(ioThreads);
 		//initialize state information
-		hostedTopics= new Hashtable<String,Topic>();
-		topicThreads= new Hashtable<String,Thread>();
-		topicLevelLbActions=new HashMap<String,PathChildrenCache>();
+		hostedTopics= new HashMap<String,Topic>();
+		topicThreads= new HashMap<String,Thread>();
+		topicLbListeners=new HashMap<String,PathChildrenCache>();
 		
 		//singleton list of available port numbers
 		ports= PortList.getInstance();
@@ -106,11 +100,16 @@ public class EdgeBroker implements Runnable{
 	}
 
 
+	/**
+	 * Entry-point for EB thread
+	 */
 	@Override
 	public void run()
 	{
 		try{
-			// create ZMQ Context and initialize ZMQ topic control socket
+			logger.info("EdgeBroker:{} started",ebId);
+
+			//Initialize ZMQ topic control socket
 			topicControl = context.socket(ZMQ.PUB);
 			topicControl.bind(String.format("tcp://*:%d", TOPIC_CONTROL_PORT));
 
@@ -127,52 +126,28 @@ public class EdgeBroker implements Runnable{
 					//new topic was assigned to this EB 
 					if(event.getType()==Type.CHILD_ADDED){
 						String path=event.getData().getPath();
-						String topic=path.split("/")[3];
-						logger.info("EB:{} was assigned topic:{}",ebId,topic);
-
-						queue.add(String.format("%s,%s,%d,%d,%d",
-								TOPIC_CREATION_COMMAND,topic,
-								ports.acquire(),ports.acquire(),ports.acquire()));
+						String topicName=path.split("/")[3];
+						logger.info("EB:{} was assigned topic:{}",ebId,topicName);
+						//place TOPIC_CREATION_COMMAND in EB's queue
+						queue.add(String.format("%s,%s",TOPIC_CREATION_COMMAND,topicName));
 					}
-					
 				}
 			});
+			//start listening for topic assignment to this EB
 			topicAssignmentListener.start();
 
-			// schedule periodic pruning of topics
+			// schedule periodic pruning of topics hosted on this EB
 			scheduler = Executors.newScheduledThreadPool(1);
-			scheduler.scheduleWithFixedDelay(new Prune(), 
+			scheduler.scheduleWithFixedDelay(new Prune(ebId,client,queue), 
 					PERIODIC_PRUNING_INTERVAL_SEC, PERIODIC_PRUNING_INTERVAL_SEC,
 					TimeUnit.SECONDS);
 
-			boolean listen=true;
-			while(listen && !Thread.currentThread().isInterrupted()){
-				String command=queue.take();
-				System.out.println("EB loop extracted command: "+ command);
-				String[] args=command.split(",");
-				switch(args[0]){
-				case TOPIC_CREATION_COMMAND:
-					String topic=args[1];
-					int receivePort=Integer.parseInt(args[2]);
-					int sendPort=Integer.parseInt(args[3]);
-					int controlPort=Integer.parseInt(args[4]);
-					createTopic(topic,receivePort,sendPort,controlPort);
-					break;
-				case TOPIC_DELETE_COMMAND:
-					deleteTopic(args[1]);
-					break;
-				case EXIT_COMMAND:
-					listen=false;
-					System.out.println("set listen to false");
-					break;
-				case TOPIC_LB_COMMAND:
-					testLb(args[1]);
-					break;
-				default:
-						break;
-				};
-			}
-			System.out.println("EB listener loop exited. Calling cleanup");
+			//start listening for incoming processing requests
+			logger.info("EdgeBroker:{} will start listening for incoming requests",ebId);
+			listen();
+		
+			logger.info("EdgeBroker:{} will cleanup before exiting",ebId);
+			//cleanup before exiting
 			cleanup();
 
 		}catch(Exception e){
@@ -180,6 +155,55 @@ public class EdgeBroker implements Runnable{
 					ebId,e.getMessage());
 			cleanup();
 		}
+		logger.info("EdgeBroker:{} exited",ebId);
+	}
+
+	/** 
+	 * EB listener loop will process incoming commands 
+	 */
+	private void listen(){
+		while(!Thread.currentThread().isInterrupted()){
+			try {
+				String command = queue.take();
+				String[] args = command.split(",");
+				String commandType=args[0];
+				if(commandType.equals(TOPIC_CREATION_COMMAND)){
+					String topicName=args[1];
+					logger.info("EdgeBroker:{} will process command:{} for topic:{}",
+							ebId,TOPIC_CREATION_COMMAND,topicName);
+					createTopic(topicName);
+				
+				}else if(commandType.equals(TOPIC_DELETE_COMMAND)){
+					String topicName=args[1];
+					logger.info("EdgeBroker:{} will process command:{} for topic:{}",
+							ebId,TOPIC_DELETE_COMMAND,topicName);
+					deleteTopic(topicName);
+					break;
+				}else if(commandType.equals(TOPIC_LB_COMMAND)){
+					String topicName=args[1];
+					logger.info("EdgeBroker:{} will process command:{} for topic:{}",
+							ebId,TOPIC_LB_COMMAND,topicName);
+					testLb(topicName);
+				}else if(commandType.equals(EB_EXIT_COMMAND)){
+					logger.info("EdgeBroker:{} received command:{}. Will exit listener loop.",
+							ebId,EB_EXIT_COMMAND);
+					break;
+				}else{
+					logger.debug("EdgeBroker:{} received invalid command:{}",
+							ebId,commandType);
+				}
+			} catch (InterruptedException e) {
+				logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Adds EB_EXIT_COMMAND to EB's queue to shutdown EB's listener loop
+	 */
+	public void shutdown(){
+		queue.add(EB_EXIT_COMMAND);
 	}
 	
 	/**
@@ -189,13 +213,18 @@ public class EdgeBroker implements Runnable{
 	 * is hosted on this EB.
 	 * @param topicName 
 	 */
-	public void createTopic(String topicName,int receivePort, int sendPort,int controlPort){
+	private void createTopic(String topicName){
 		logger.debug("EdgeBroker:{} will create topic:{}",ebId,topicName);
 
 		if(!hostedTopics.containsKey(topicName)){
+			//Acquire port numbers for new topic's receive, send and control ports
+			int receivePort = ports.acquire();
+			int sendPort = ports.acquire();
+			int lbPort = ports.acquire();
+
 			//Instantiate topic
 			Topic topic= new Topic(topicName,context,
-					receivePort,sendPort,controlPort);
+					receivePort,sendPort,lbPort);
 			//Add created topic instance to hostedTopics map
 			hostedTopics.put(topicName,topic);
 			
@@ -208,10 +237,9 @@ public class EdgeBroker implements Runnable{
 
 			try {
 				// register listener for receiving topic level LB directives for
-				// this topic
 				PathChildrenCache cache = new PathChildrenCache(client, String.format("/lb/topics/%s", topicName),
 						true);
-				topicLevelLbActions.put(topicName, cache);
+				topicLbListeners.put(topicName, cache);
 				cache.getListenable().addListener(new PathChildrenCacheListener() {
 					@Override
 					public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
@@ -221,37 +249,46 @@ public class EdgeBroker implements Runnable{
 					}
 				});
 				cache.start();
+				logger.debug("EdgeBroker:{} installed listener for /lb/topics/{} to receive rebalancing commands for topic:{}",
+						ebId,topicName,topicName);
+
 				// create /topics/topicName/ebId
-				client.create().creatingParentsIfNeeded().forPath(String.format("/topics/%s/%s", topicName, ebId),
-						String.format("%s,%d,%d,%d", ipAddress, receivePort, sendPort, controlPort).getBytes());
+				client.create().creatingParentsIfNeeded()
+					.forPath(String.format("/topics/%s/%s", topicName, ebId),
+						String.format("%s,%d,%d,%d", ipAddress, receivePort, sendPort, lbPort).getBytes());
 				logger.debug("EdgeBroker:{} created its znode under /topics/{}", ebId, topicName);
 			} catch (Exception e) {
 				logger.error("EdgeBroker:{} caught exception:{}", ebId, e.getMessage());
 			}
+
 			logger.info("EdgeBroker:{} created topic:{}", ebId, topicName);
 		}else{
 			logger.error("EdgeBroker:{} topic:{} already exists",ebId,topicName);
 		}
 	}
-	
 
 	/**
 	 * Deletes a topic hosted on this EB.
 	 * @param topicName
-	 * @throws InterruptedException 
 	 */
-	public void deleteTopic(String topicName) {
+	private void deleteTopic(String topicName) {
 		if(hostedTopics.containsKey(topicName))
 		{
-			//remove Topic and topic thread from hostedTopics and topicThreads map
+			//remove Topic from hostedTopics 
 			Topic topic= hostedTopics.remove(topicName);
+
+			//remove topic thread from topicThreads map
 			Thread topicThread= topicThreads.remove(topicName);
-			PathChildrenCache topicLbCache= topicLevelLbActions.remove(topicName);
+
+			//remove and close this topic's lb command listener
+			PathChildrenCache topicLbCache= topicLbListeners.remove(topicName);
 			try {
 				topicLbCache.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
 			}
+
+			logger.debug("EdgeBroker:{} will delete topic:{}",ebId,topicName);
 			deleteTopic(topicName, topic,topicThread);
 			logger.info("EdgeBroker:{} deleted topic:{}", ebId,topicName);
 		}else{
@@ -259,18 +296,12 @@ public class EdgeBroker implements Runnable{
 		}
 	}
 
-	private void testLb(String topic){
-		for(int i=0;i<1000;i++){
-			topicControl.send(String.format("%s %s",topic,EdgeBroker.TOPIC_LB_COMMAND));
-		}
-	}
 	/**
 	 * Deletes all topics hosted on this EB
-	 * @throws InterruptedException 
 	 */
-	public void deleteAllTopics()
+	private void deleteAllTopics()
 	{
-		/* HashTable's iterator is fail-fast. We can't iterate and modify the 
+		/* HashMap's iterator is fail-fast. We can't iterate and modify the 
 		 * contents at the same time. Only iterator's remove method can be used
 		 * to modify contents while iterating over the contents.
 		*/
@@ -281,8 +312,17 @@ public class EdgeBroker implements Runnable{
 			Topic topic= pair.getValue();
 			//remove topic from hostedTopics map 
 			iter.remove();
+
 			//remove topic thread from topicThreads map
 			Thread topicThread= topicThreads.remove(pair.getKey());
+
+			//remove and close this topic's lb command listener
+			PathChildrenCache topicLbCache= topicLbListeners.remove(topicName);
+			try {
+				topicLbCache.close();
+			} catch (IOException e) {
+				logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
+			}
 
 			logger.debug("EdgeBroker:{} will delete topic:{}",ebId,topicName);
 			deleteTopic(topicName,topic,topicThread);
@@ -290,19 +330,31 @@ public class EdgeBroker implements Runnable{
 		}
 	}
 
+	/**
+	 * Helper method for deleting hosted topic. Method first removes this EB's
+	 * znode under /topics/topicName/ebId to indicate that this topic is 
+	 * no longer hosted on this EB. 
+	 * If there are no other EBs in the system also hosting this topic,
+	 * then it removes the topic's znode at /topics/topicName and /lb/topics/topicName,
+	 * to indicate that this topic no longer exists in the system. 
+	 * It deletes this topic's sub-tree under /eb/ebId to signify that topic is not 
+	 * hosted on this EB.
+	 * @param topicName
+	 * @param topic
+	 * @param tThread
+	 */
 	private void deleteTopic(String topicName, Topic topic, Thread tThread) {
 		try {
-			System.out.println("delte topic called!!!");
 			// delete this EB's znode under /topics/topic
 			client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
-			logger.debug("EdgeBroker:{} deleted its znode under /topics/{} path",ebId,topicName);
+			logger.debug("EdgeBroker:{} deleted its znode /topics/{}/{}",ebId,topicName,ebId);
 
 
 			//check if there are other brokers hosting the topic, if not, delete topic znode
 			List<String> hosting_ebs= client.getChildren().forPath(String.format("/topics/%s", topicName));
 			if(hosting_ebs.isEmpty()){
 				client.delete().forPath(String.format("/topics/%s", topicName));
-				client.delete().forPath(String.format("/lb/topics/%s", topicName));
+				client.delete().deletingChildrenIfNeeded().forPath(String.format("/lb/topics/%s", topicName));
 				logger.debug("EdgeBroker:{} deleted topic:{} from the system as there are no hosting EBs",ebId,topicName);
 			}
 
@@ -316,24 +368,29 @@ public class EdgeBroker implements Runnable{
 			topicControl.send(String.format("%s %s", topicName, TOPIC_DELETE_COMMAND));
 
 			// wait until topic thread exits
-			System.out.println("will join on topic thread");
 			tThread.join();
 			logger.debug("EdgeBroker:{} topic:{} thread has exited",
 					ebId,topicName);
-			System.out.println("join exited");
 
 			// release receiver and sender port numbers of this topic for reuse
 			ports.release(topic.receivePort());
 			ports.release(topic.sendPort());
+			ports.release(topic.lbPort());
 		} catch (Exception e) {
 			logger.error("EdgeBroker:{} caught exception:{}", ebId, e.getMessage());
+		}
+	}
+
+	private void testLb(String topic){
+		for(int i=0;i<10;i++){
+			topicControl.send(String.format("%s %s",topic,EdgeBroker.TOPIC_LB_COMMAND));
 		}
 	}
 
 	/**
 	 * Performs clean up before exiting
 	 */
-	public void cleanup() 
+	private void cleanup() 
 	{
 		//shutdown scheduled executor service 
 		scheduler.shutdown();
@@ -354,6 +411,8 @@ public class EdgeBroker implements Runnable{
 			if(topicAssignmentListener!=null){
 				topicAssignmentListener.close();
 			}
+			logger.debug("EdgeBroker:{} closed its topic assignment listner",ebId);
+
 			client.delete().forPath(String.format("/eb/%s",ebId));
 			logger.debug("EdgeBroker:{} deleted its znode under /eb",ebId);
 		} catch (Exception e) {
@@ -363,57 +422,9 @@ public class EdgeBroker implements Runnable{
 		
 		CloseableUtils.closeQuietly(client);
 		logger.debug("EdgeBroker:{} closed ZK connection",ebId);
-		logger.info("EdgeBroker:{} exited",ebId);
 	}
 	
-	public void shutdown(){
-		queue.add(EXIT_COMMAND);
-	}
 	
-	private class Prune implements Runnable{
-		private Logger logger;
-		public Prune(){
-			logger= LogManager.getLogger(this.getClass().getSimpleName());
-		}
-		@Override
-		public void run() {
-			try {
-				logger.info("Periodic pruning scheduled on thread:{}",Thread.currentThread().getName());
-				//Acquire list of hosted topics at this broker
-				List<String> topics=client.getChildren().forPath(String.format("/eb/%s",ebId));
-				//For each topic, check if any interested endpoint exists
-				for(String topic: topics){
-					logger.debug("Periodic pruning thread:{}: assessing topic:{}",
-							Thread.currentThread().getName(),topic);
-						List<String> publishers= client.getChildren().forPath(String.format("/eb/%s/%s/pub",ebId,topic));
-						if (publishers.isEmpty()) {
-							List<String> subscribers = client.getChildren()
-									.forPath(String.format("/eb/%s/%s/sub", ebId, topic));
-							if (subscribers.isEmpty()) {
-								//both publishers and subscribers for this topic don't exist
-								// delete topic if it is older than set-timeout 
-								Stat topicStat=client.checkExists().
-										forPath(String.format("/topics/%s",topic));
-								long elapsed_milisec=System.currentTimeMillis()-topicStat.getCtime();
-								logger.debug("Periodic pruning thread:{} topic:{} was created at:{} elapsed time:{}",
-										Thread.currentThread().getName(),topic,topicStat.getCtime(),elapsed_milisec/1000);
-								if(elapsed_milisec/1000 > TOPIC_EXPIRY_PERIOD_SEC){
-									logger.info("Periodic pruning thread:{}: "
-												+ "will delete topic:{}",
-										Thread.currentThread().getName(), topic);
-									queue.add(String.format("%s,%s", TOPIC_DELETE_COMMAND,topic));
-								}
-							}
-						}
-				}
-
-			} catch (Exception e) {
-				logger.error("Periodic pruning thread:{} caught exception:{}",Thread.currentThread().getName(),
-						e.getMessage());
-			}
-		}
-	}
-
 	public static void main(String args[]){
 		if(args.length<2){
 			System.out.println("Usage: EdgeBroker zkConnector ioThreads");
@@ -424,7 +435,7 @@ public class EdgeBroker implements Runnable{
 			String zkConnector=args[0];
 			int ioThreads=Integer.parseInt(args[1]);
 
-			//initialize EB
+			//initialize EB 
 			EdgeBroker eb= new EdgeBroker(zkConnector,
 					ioThreads);
 			Thread ebThread= new Thread(eb);
@@ -433,13 +444,16 @@ public class EdgeBroker implements Runnable{
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
+					//shutdown EB's execution
 					eb.shutdown();
 					try{
+						//wait until EB exits
 						ebThread.join();
 					}catch(InterruptedException e){}
 				}
 			});
 
+			//start Eb
 			ebThread.start();
 
 		}catch(NumberFormatException e){

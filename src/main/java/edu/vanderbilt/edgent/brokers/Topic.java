@@ -3,7 +3,6 @@ package edu.vanderbilt.edgent.brokers;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
 /**
  * This class models a Topic/Channel hosted at an Edge/Routing Broker. 
@@ -14,17 +13,21 @@ import org.zeromq.ZMsg;
 public class Topic implements Runnable {
 	//Topic name
 	private String topicName;
+	//ZMQ context
+	private ZMQ.Context context;
 	//ZMQ SUB socket to receive control messages from hosting broker
-	private ZMQ.Socket topicControl;
-	//ZMQ send/receive socket pairs
+	private ZMQ.Socket controlSocket;
+	//ZMQ SUB socket to receive topic data 
 	private ZMQ.Socket receiveSocket;
+	//ZMQ PUB socket to send topic data
 	private ZMQ.Socket sendSocket;
+	//ZMQ PUB socket to send LB commands for this topic
 	private ZMQ.Socket lbSocket;
 
-	//poller to poll receiveSocket for data and topicControl for control msgs
+	//poller to poll receiveSocket for data and controlSocket for control msgs
 	private ZMQ.Poller poller;
 
-	//Binding port numbers for receiveSocket and sendSocket 
+	//Binding port numbers for receiveSocket,sendSocket and lbSocket
 	private int receivePort;
 	private int sendPort;
 	private int lbPort;
@@ -35,74 +38,74 @@ public class Topic implements Runnable {
 			int receivePort,int sendPort,int lbPort){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName= topicName;
+		this.context=context;
 		this.receivePort=receivePort;
 		this.sendPort=sendPort;
 		this.lbPort=lbPort;
 
-		//instantiate ZMQ Sockets and poller
-		topicControl=context.socket(ZMQ.SUB);
-		receiveSocket= context.socket(ZMQ.SUB);
-		sendSocket= context.socket(ZMQ.PUB);
-		lbSocket= context.socket(ZMQ.PUB);
-		poller=context.poller(2);
-
-		logger.info("Topic:{} initialized for receive port number:{} and send port number:{}",
-				topicName,receivePort,sendPort);
+		logger.info("Topic:{} initialized for receive port:{} send port:{} and lb port:{} ",
+				topicName,receivePort,sendPort,lbPort);
 	}
 
 	/**
 	 * Listener loop for topic thread. 
 	 * Data received on receive port is forwarded to send port until 
-	 * the topic thread is stopped via control message received on topicControl socket
+	 * the topic thread is stopped via control message received on controlSocket
 	 */
 	@Override
 	public void run() {
-		//connect topicControl socket to hosting broker's TOPIC_CONTROL_PORT
-		topicControl.connect(String.format("tcp://localhost:%d",EdgeBroker.TOPIC_CONTROL_PORT));
+		//instantiate ZMQ Sockets and poller
+		controlSocket=context.socket(ZMQ.SUB);
+		receiveSocket= context.socket(ZMQ.SUB);
+		sendSocket= context.socket(ZMQ.PUB);
+		lbSocket= context.socket(ZMQ.PUB);
+		poller=context.poller(2);
+
+		//connect control socket to hosting broker's TOPIC_CONTROL_PORT
+		controlSocket.connect(String.format("tcp://localhost:%d",EdgeBroker.TOPIC_CONTROL_PORT));
 		//subscribe to receive topic control messages
-		topicControl.subscribe(topicName.getBytes());
+		controlSocket.subscribe(topicName.getBytes());
 
 		//bind receiveSocket to receivePort and subscribe to receive topic's data
 		receiveSocket.bind(String.format("tcp://*:%d",receivePort));
 		receiveSocket.subscribe(topicName.getBytes());
-		logger.debug("Topic:{} ZMQ.SUB socket bound to port number:{} and subscribed to topic:{}",
+		logger.debug("Topic:{} receive socket bound to port:{} and subscribed to topic:{}",
 				topicName,receivePort,topicName);
 	
-		//register receiveSocket and topicControl with the poller
+		//register receiveSocket and controlSocket with the poller
 		poller.register(receiveSocket, ZMQ.Poller.POLLIN);
-		poller.register(topicControl, ZMQ.Poller.POLLIN);
+		poller.register(controlSocket, ZMQ.Poller.POLLIN);
 
 		//bind sendSocket to sendPort to send topic's data 
 		sendSocket.bind(String.format("tcp://*:%d",sendPort));
-		logger.debug("Topic:{} ZMQ.PUB send socket bound to port number:{}",
+		logger.debug("Topic:{} send socket bound to port number:{}",
 				topicName,sendPort);
 
-		//bind sendSocket to sendPort to send topic's data 
+		//bind lbSocket to lbPort to send LB commands for this topic
 		lbSocket.bind(String.format("tcp://*:%d",lbPort));
-		logger.debug("Topic:{}  ZMQ.PUB lb socket bound to port number:{}",
+		logger.debug("Topic:{}  LB socket bound to port number:{}",
 				topicName,lbPort);
 	
 		// topic thread's listener loop
 		logger.info("Topic:{} thread will start listening", topicName);
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
-				// block until either topicControl or receiveSocket have data
+				// block until either controlSocket or receiveSocket have data
 				poller.poll(-1);
 
 				// in case receiveSocket has data
 				if (poller.pollin(0)) {
 					ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
 					if (receivedMsg != null) {
-						System.out.println("Received data");
 						String msgTopic = new String(receivedMsg.getFirst().getData());
 						byte[] msgContent = receivedMsg.getLast().getData();
 						sendSocket.sendMore(msgTopic);
 						sendSocket.send(msgContent);
 					}
 				}
-				// in case topicControl has data
+				// in case controlSocket has data
 				if (poller.pollin(1)) {
-					String[] data= topicControl.recvStr().split(" ");
+					String[] data= controlSocket.recvStr().split(" ");
 					logger.debug("Topic:{} received control msg:{}", topicName, data[1]);
 					if(data[1].equals(EdgeBroker.TOPIC_DELETE_COMMAND)){
 						break;
@@ -111,29 +114,27 @@ public class Topic implements Runnable {
 						lbSocket.send(String.format("%s lb",topicName));
 					}
 				}
-			}catch (ZMQException e) {
-				logger.error(e.getMessage());
-				break;
 			}catch(Exception e){
-				logger.error(e.getMessage());
+				logger.error("Topic:{} caught exception:{}",
+						topicName,e.getMessage());
 				break;
 			}
 		}
 		//set linger to 0
+		controlSocket.setLinger(0);
 		receiveSocket.setLinger(0);
 		sendSocket.setLinger(0);
 		lbSocket.setLinger(0);
-		topicControl.setLinger(0);
 		//close sockets
+		controlSocket.close();
 		receiveSocket.close();
 		sendSocket.close();
 		lbSocket.close();
-		topicControl.close();
 
 		logger.info("Topic:{} deleted", topicName);
 	}
 
-	//Accessors for topic Name,receivePort, sendPort 
+	//Accessors for topic Name,receivePort, sendPort, lbPort
 	public String name(){
 		return topicName;
 	}
@@ -144,5 +145,9 @@ public class Topic implements Runnable {
 	
 	public int sendPort(){
 		return sendPort;
+	}
+
+	public int lbPort(){
+		return lbPort;
 	}
 }

@@ -1,57 +1,81 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.subscriber;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 import edu.vanderbilt.edgent.fe.Frontend;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Receiver implements Runnable{
+	//Endpoint at which monitoring is done 
+	private static final String CONNECTION_MONITORING_LOCATOR="inproc://monitor";
+  	private static final int MAX_RETRY_COUNT=15;
+  	private static final int POLL_INTERVAL_MILISEC=5000;
+  	public static final int STATE_CONNECTED=1;
+  	public static final int STATE_DISCONNECTED=0;
+
+	//ZMQ context
 	private ZMQ.Context context;
+	//ZMQ REQ socket to query FE 
 	private ZMQ.Socket feSocket;
+	//ZMQ PUB socket to send control messages to LbListener thread 
 	private ZMQ.Socket lbSocket;
+	//ZMQ SUB socket to receive topic data from EB
 	private ZMQ.Socket subSocket;
+	//ZMQ SUB socket to receive control messages from Subscriber 
 	private ZMQ.Socket ctrlSocket;
-	private ZMQ.Socket pushSocket;
-	
-	private ReconfigurationListener reconfListener;
-	private Thread reconfListenerThread;
+	//ZMQ PUSH socket to send data to collector thread 
+	private ZMQ.Socket collectorSocket;
+
+	//Subscriber's socket connector at which it issues control messages
+	private String controlConnector;
+	/*Subscriber container's socket connector at which it receives 
+	commands to enqueue in its queue */
+	private String subQueueConnector;
+	//Collector thread's socket connector at which it receives data 
+	private String collectorConnector;
+
+	//LbListener thread to receive topic level Lb commands 
+	private LbListener lbListener;
+	private Thread lbListenerThread;
+	//Monitor thread to monitor Receiver's connection status to EB
 	private Thread monitoringThread;
-	
+
+	//Latch to signal connection/disconnection with EB
 	private CountDownLatch connected;
+	//Current state of connection with the EB
 	protected AtomicInteger connectionState;
+	//Number of times connection to the same EB location has been attempted
   	private AtomicInteger retryCount;
+  	//Flag to indicate whether Receiver's polling loop is engaged
   	private AtomicBoolean exited;
   	
 	private String topicName;
-	private String receiverControlConnector;
-	private String lbQueueConnector;
-	private String collectorConnector;
-
+	//Receiver's znode location
 	private String znodePath;
+	//Address of EB to connect to
 	private String ebAddress;
 	@SuppressWarnings("unused")
+	//Hosting EB's exposed Topic ports 
 	private String topicListenerPort;
 	private String topicSendPort;
-	private String topicControlPort;
+	private String topicLbPort;
 
 	private String id;
-
-	private static final String CONNECTION_MONITORING_LOCATOR="inproc://monitor";
-  	protected static final int STATE_CONNECTED=1;
-  	protected static final int STATE_DISCONNECTED=0;
-  	private static final int MAX_RETRY_COUNT=15;
-  	private static final int POLL_INTERVAL_MILISEC=5000;
+	private Logger logger;
 
 	public Receiver(String topicName,int id,
-			String receiverControlConnector,
-			String lbQueueConnector,
+			String controlConnector,
+			String subQueueConnector,
 			String collectorConnector){
+        logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName=topicName;
-		this.receiverControlConnector=receiverControlConnector;
-		this.lbQueueConnector=lbQueueConnector;
+		this.controlConnector=controlConnector;
+		this.subQueueConnector=subQueueConnector;
 		this.collectorConnector=collectorConnector;
 
 		this.id=String.format("sub_%s_%s_%s_%d",topicName,
@@ -59,7 +83,7 @@ public class Receiver implements Runnable{
 		connectionState= new AtomicInteger(STATE_DISCONNECTED);
 		retryCount= new AtomicInteger(0);
 		exited= new AtomicBoolean(false);
-		System.out.println("Receiver initialized");
+		logger.debug("Receiver:{} initialized",id);
 	}
 
 	@Override
@@ -104,17 +128,17 @@ public class Receiver implements Runnable{
 		lbSocket=context.socket(ZMQ.PUB);
 		subSocket=context.socket(ZMQ.SUB);
 		ctrlSocket=context.socket(ZMQ.SUB);
-		ctrlSocket.connect(receiverControlConnector);
+		ctrlSocket.connect(controlConnector);
 		ctrlSocket.subscribe(topicName.getBytes());
-		pushSocket=context.socket(ZMQ.PUSH);
-		pushSocket.connect(collectorConnector);
+		collectorSocket=context.socket(ZMQ.PUSH);
+		collectorSocket.connect(collectorConnector);
 
 		System.out.println("Receiver will start LB thread");
 		String reconfControlConnector=String.format("inproc://%s", id);
-		reconfListener=new ReconfigurationListener(topicName,context,
-				reconfControlConnector,lbQueueConnector,connected);
-		reconfListenerThread= new Thread(reconfListener);
-		reconfListenerThread.start();
+		lbListener=new LbListener(topicName,context,
+				reconfControlConnector,subQueueConnector,connected);
+		lbListenerThread= new Thread(lbListener);
+		lbListenerThread.start();
 	
 		System.out.println("Receiver will start Monitor thread");
 		subSocket.monitor(CONNECTION_MONITORING_LOCATOR, 
@@ -147,7 +171,7 @@ public class Receiver implements Runnable{
 			ebAddress=locatorParts[0];
 			topicListenerPort=locatorParts[1];
 			topicSendPort=locatorParts[2];
-			topicControlPort=locatorParts[3];
+			topicLbPort=locatorParts[3];
 			
 			return String.format("tcp://%s:%s", ebAddress, topicSendPort);
 		}else{
@@ -166,7 +190,7 @@ public class Receiver implements Runnable{
 			poller.poll(POLL_INTERVAL_MILISEC);
 			if (poller.pollin(0)) {
 				ZMsg receivedMsg = ZMsg.recvMsg(subSocket);
-				pushSocket.send(receivedMsg.getLast().getData());
+				collectorSocket.send(receivedMsg.getLast().getData());
 			}
 			if(poller.pollin(1)){
 				String command= ctrlSocket.recvStr();
@@ -185,9 +209,9 @@ public class Receiver implements Runnable{
 		try{
 			System.out.println("Receiver will close LB thread");
 			if(connected.getCount()>0){
-				reconfListenerThread.interrupt();
+				lbListenerThread.interrupt();
 			}
-			reconfListenerThread.join();
+			lbListenerThread.join();
 			System.out.println("Receiver LB thread has exited");
 			System.out.println("Receiver will close Monitor thread");
 			monitoringThread.join();
@@ -201,8 +225,8 @@ public class Receiver implements Runnable{
 		lbSocket.close();
 		ctrlSocket.setLinger(0);
 		ctrlSocket.close();
-		pushSocket.setLinger(0);
-		pushSocket.close();
+		collectorSocket.setLinger(0);
+		collectorSocket.close();
 		System.out.println("Receiver will terminate its ZMQ context");
 		context.term();
 		System.out.println("Receiver ZMQ context terminated");
@@ -235,7 +259,7 @@ public class Receiver implements Runnable{
 					retryCount.set(0);
 					//set connection state to CONNECTED
 					connectionState.set(STATE_CONNECTED);
-					reconfListener.setTopicControlLocator(String.format("tcp://%s:%s",ebAddress,topicControlPort));
+					lbListener.setTopicControlLocator(String.format("tcp://%s:%s",ebAddress,topicLbPort));
 					//open waitset to allow client to start processing
 					connected.countDown();
 				}

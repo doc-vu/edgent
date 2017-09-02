@@ -1,9 +1,9 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.subscriber;
 
 import java.util.concurrent.CountDownLatch;
 import org.zeromq.ZMQ;
 
-public class ReconfigurationListener implements Runnable{
+public class LbListener implements Runnable{
 	private String topicName;
 	private ZMQ.Context context;
 	private ZMQ.Socket listenerSocket;
@@ -15,7 +15,7 @@ public class ReconfigurationListener implements Runnable{
 	private String lbQueueConnector;
 	private CountDownLatch connected;
 	
-	public ReconfigurationListener(String topicName,ZMQ.Context context,
+	public LbListener(String topicName,ZMQ.Context context,
 			String controlConnector,String lbQueueConnector,CountDownLatch connected){
 		this.topicName=topicName;
 		this.context=context;

@@ -108,6 +108,7 @@ public class LbWorkerThread implements Runnable {
 				logger.info("WorkerThread:{} assigned topic:{} to EB:{}", workerId, topic, selectedEb);
 			}else{
 				client.delete().forPath(String.format("/topics/%s", topic));
+				client.delete().forPath(String.format("/lb/topics/%s", topic));
 				logger.error("WorkerThread:{} topic:{} cannot be hosted. Deleted topic:{}",
 						workerId,topic,topic);
 			}
