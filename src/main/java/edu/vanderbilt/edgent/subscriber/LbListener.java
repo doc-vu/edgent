@@ -1,91 +1,114 @@
 package edu.vanderbilt.edgent.subscriber;
 
 import java.util.concurrent.CountDownLatch;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 
 public class LbListener implements Runnable{
-	private String topicName;
+	public static final String LB_EXIT_COMMAND="exit";
+	//ZMQ context
 	private ZMQ.Context context;
-	private ZMQ.Socket listenerSocket;
+	//ZMQ SUB socket at which topic level lb commands are received from EB
+	private ZMQ.Socket subSocket;
+	//ZMQ PULL socket at which control commands are received from Receiver  
 	private ZMQ.Socket controlSocket;
-	private ZMQ.Socket pushSocket;
+	//ZMQ PUSH socket to send lb commands to subscriber container
+	private ZMQ.Socket commandSocket;
 
+	//EB's topic control socket connector at which LB commands are issued
+	private String ebConnector;
+	//Receiver's command socket at which control messages are issued
 	private String controlConnector;
-	private String topicControlLocator;
-	private String lbQueueConnector;
+	//Subscriber container's queue in which received LB commands are sent
+	private String subQueueConnector;
+
+	//connection state indicator
 	private CountDownLatch connected;
+	private String topicName;
+	private Logger logger;
 	
 	public LbListener(String topicName,ZMQ.Context context,
-			String controlConnector,String lbQueueConnector,CountDownLatch connected){
+			String controlConnector,String subQueueConnector,
+			CountDownLatch connected){
+        logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName=topicName;
 		this.context=context;
+		ebConnector=null;
 		this.controlConnector=controlConnector;
-		this.lbQueueConnector=lbQueueConnector;
-		topicControlLocator=null;
+		this.subQueueConnector=subQueueConnector;
 		this.connected=connected;
-		System.out.println("Receiver LB thread initilized");
+
+		logger.debug("LB Listener initialized");
 	}
 
 	@Override
 	public void run() {
-		System.out.println("Receiver LB thread started");
-		listenerSocket=context.socket(ZMQ.SUB);
-		controlSocket=context.socket(ZMQ.SUB);
+		logger.info("LB Listener:{} started",Thread.currentThread().getName());
+		subSocket=context.socket(ZMQ.SUB);
+		controlSocket=context.socket(ZMQ.PULL);
+		commandSocket=context.socket(ZMQ.PUSH);
+
 		controlSocket.connect(controlConnector);
-		controlSocket.subscribe(topicName.getBytes());
-		pushSocket=context.socket(ZMQ.PUSH);
-		pushSocket.connect(lbQueueConnector);
+		commandSocket.connect(subQueueConnector);
 		try {
-			System.out.println("Receiver LB thread will wait until connected to EB");
+			logger.info("LB Listener:{} will wait until connected to EB",Thread.currentThread().getName());
 			connected.await();
 		}catch(InterruptedException e){
+			logger.error("LB Listener:{} caught exception:{}",
+					Thread.currentThread().getName(),e.getMessage());
 			cleanup();
-			System.out.println("Receiver LB thread has exited");
 			return;
 		}
-		if(topicControlLocator!=null){
-			listenerSocket.connect(topicControlLocator);
-			listenerSocket.subscribe(topicName.getBytes());
+		if(ebConnector!=null){
+			subSocket.connect(ebConnector);
+			subSocket.subscribe(topicName.getBytes());
+
 			ZMQ.Poller poller = context.poller(2);
-			poller.register(listenerSocket, ZMQ.Poller.POLLIN);
+			poller.register(subSocket, ZMQ.Poller.POLLIN);
 			poller.register(controlSocket, ZMQ.Poller.POLLIN);
 
+			logger.info("LB Listener:{} will start listening",
+					Thread.currentThread().getName());
 			while (true) {
 				try {
 					poller.poll(-1);
-					if (poller.pollin(0)) {
-						String reconfCommand = listenerSocket.recvStr();
-						System.out.println("Receiver LB thread got LB command:" + reconfCommand);
-						pushSocket.send(reconfCommand);
+					if (poller.pollin(0)) {//process LB command
+						String reconfCommand = subSocket.recvStr();
+						//forward LB commands from EB to sub queue
+						commandSocket.send(reconfCommand);
 					}
-					if (poller.pollin(1)) {
+					if (poller.pollin(1)) {//process control command
 						String command = controlSocket.recvStr();
-						System.out.println("Receiver LB thread got control command:" + command);
-						break;
+						if(command.equals(LB_EXIT_COMMAND)){
+							break;
+						}
 					}
 				} catch (Exception e) {
+					logger.error("LB Listener:{} caught exception:{}",
+							Thread.currentThread().getName(),e.getMessage());
 					break;
 				}
 			}
 		}
 		cleanup();
-		System.out.println("Receiver LB thread has exited");
-	}
-	
-	public void setTopicControlLocator(String topicControlLocator){
-		this.topicControlLocator=topicControlLocator;
+		logger.info("LB Listener:{} has exited",Thread.currentThread().getName());
 	}
 	
 	private void cleanup(){
-		System.out.println("Receiver LB thread cleanup called");
 		//set linger to 0
-		listenerSocket.setLinger(0);
+		subSocket.setLinger(0);
 		controlSocket.setLinger(0);
-		pushSocket.setLinger(0);
+		commandSocket.setLinger(0);
 		//close sockets
-		listenerSocket.close();
+		subSocket.close();
 		controlSocket.close();
-		pushSocket.close();
-		System.out.println("Receiver LB thread closed all sockets");
+		commandSocket.close();
+		logger.info("LB Listener:{} closed ZMQ context and sockets",
+				Thread.currentThread().getName());
+	}
+
+	public void setTopicControlLocator(String ebConnector){
+		this.ebConnector=ebConnector;
 	}
 }

@@ -22,7 +22,7 @@ public class Receiver implements Runnable{
 	private ZMQ.Context context;
 	//ZMQ REQ socket to query FE 
 	private ZMQ.Socket feSocket;
-	//ZMQ PUB socket to send control messages to LbListener thread 
+	//ZMQ PUSH socket to send control messages to LbListener thread 
 	private ZMQ.Socket lbSocket;
 	//ZMQ SUB socket to receive topic data from EB
 	private ZMQ.Socket subSocket;
@@ -89,72 +89,80 @@ public class Receiver implements Runnable{
 	@Override
 	public void run() {
 		try {
-			System.out.println("Receiver started");
+			logger.info("Receiver:{} started",id);
 			while (!Thread.currentThread().isInterrupted() && !exited.get()) {
 				connected = new CountDownLatch(1);
+				logger.info("Receiver:{} will initialize ZMQ, monitoring and lb listener thread",id);
 				initializeZMQ();
+				logger.info("Receiver:{} will query FE for hosting EB's location",id);
 				String ebLocator = queryFe();
 				if (ebLocator == null) {
-					System.out.println("Receiver received invalid EB location");
+					logger.info("Receiver:{} received invalid EB address",id);
 					cleanup();
 					break;
 				} else {
-					System.out.println("Receiver will try to connect to EB");
+					logger.info("Receiver:{} received EB address:{}. Will atttempt connecting to EB",id,ebLocator);
 					subSocket.connect(ebLocator);
 					connected.await();
 					if (connectionState.get() == STATE_CONNECTED) {
-						System.out.println("Receiver connected to EB. Will call process");
+						logger.info("Receiver:{} connected to EB:{}. Will start listening",id,ebLocator);
 						process();
 					}
 					cleanup();
 				}
 			}
 		} catch (InterruptedException e) {
-			System.out.println("Receiver caught exception:" + e.getMessage());
+			logger.error("Receiver:{} caught exception:{}",id,e.getMessage());
 			cleanup();
 		} finally {
 			onExit();
 		}
 	}
 	
-	public int connected(){
-		return connectionState.get();
-	}
-	
 	private void initializeZMQ(){
-		System.out.println("Receiver initializing ZMQ");
+		//create ZMQ context
 		context=ZMQ.context(1);
+		//create ZMQ sockets
 		feSocket=context.socket(ZMQ.REQ);
-		lbSocket=context.socket(ZMQ.PUB);
+		lbSocket=context.socket(ZMQ.PUSH);
 		subSocket=context.socket(ZMQ.SUB);
 		ctrlSocket=context.socket(ZMQ.SUB);
+		collectorSocket=context.socket(ZMQ.PUSH);
+
+		//connect/bind socket endpoints
 		ctrlSocket.connect(controlConnector);
 		ctrlSocket.subscribe(topicName.getBytes());
-		collectorSocket=context.socket(ZMQ.PUSH);
 		collectorSocket.connect(collectorConnector);
 
-		System.out.println("Receiver will start LB thread");
-		String reconfControlConnector=String.format("inproc://%s", id);
+		String feAddress=Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
+		feSocket.connect(String.format("tcp://%s:%d",feAddress,Frontend.LISTENER_PORT));
+
+		String lbListenerConnector=String.format("inproc://%s", id);
+		lbSocket.bind(lbListenerConnector);
+
+		logger.debug("Receiver:{} initialized ZMQ context and sockets",id);
+
+		//start LB listener thread
 		lbListener=new LbListener(topicName,context,
-				reconfControlConnector,subQueueConnector,connected);
+				lbListenerConnector,subQueueConnector,connected);
 		lbListenerThread= new Thread(lbListener);
 		lbListenerThread.start();
-	
-		System.out.println("Receiver will start Monitor thread");
+
+		logger.debug("Receiver:{} started topic's LB listener thread",id);
+
+		//start connection monitoring thread
 		subSocket.monitor(CONNECTION_MONITORING_LOCATOR, 
 				ZMQ.EVENT_CONNECTED + ZMQ.EVENT_DISCONNECTED +
 				ZMQ.EVENT_CONNECT_RETRIED + ZMQ.EVENT_MONITOR_STOPPED);
 		monitoringThread= new Thread(new Monitor(context,connected));
 		monitoringThread.start();
-
-		String feAddress=Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
-		feSocket.connect(String.format("tcp://%s:%d",feAddress,Frontend.LISTENER_PORT));
-		lbSocket.bind(reconfControlConnector);
+		
+		logger.debug("Receiver:{} started connection monitoring thread",id);
 	}
-	
 
 	private String queryFe(){
-		System.out.println("Receiver will query FE for EB location");
+		//query FE for hosting EB's location
+		logger.info("Receiver:{} will query FE for hosting EB's location",id);
 		feSocket.send(String.format("%s,%s,%s,%s,%s",
 				Frontend.CONNECTION_REQUEST,
 				topicName,
@@ -162,63 +170,78 @@ public class Receiver implements Runnable{
 				UtilMethods.ipAddress(),
 				znodePath));
 		String res= feSocket.recvStr();
-		System.out.println("Receiver: Fe responded with:"+res);
 
-		if(!res.startsWith("Error")){
+		if(res.startsWith("Error")){
+			logger.error("Receiver:{} FE responded with error:{}",id,res);
+			return null;
+		}else{
+			//parse FE query result
 			String[] parts= res.split(";");
-			znodePath = parts[1];
+			//EB location
 			String[] locatorParts = parts[0].split(",");
 			ebAddress=locatorParts[0];
 			topicListenerPort=locatorParts[1];
 			topicSendPort=locatorParts[2];
 			topicLbPort=locatorParts[3];
+			//Receiver's created znode path
+			znodePath = parts[1];
+
+			logger.info("Receiver:{} FE query result: EB:{} znode:{}",
+					id,parts[0],parts[1]);
 			
 			return String.format("tcp://%s:%s", ebAddress, topicSendPort);
-		}else{
-			return null;
 		}
 	}
 	
 	private void  process(){
-		System.out.println("Receiver Process called");
 		subSocket.subscribe(topicName.getBytes());
 		ZMQ.Poller poller = context.poller(2);
 		poller.register(subSocket, ZMQ.Poller.POLLIN);
 		poller.register(ctrlSocket, ZMQ.Poller.POLLIN);
 
-		while (!Thread.currentThread().isInterrupted() && connectionState.get() == STATE_CONNECTED){
+		//poll for data and control messages
+		while (!Thread.currentThread().isInterrupted() &&
+				connectionState.get() == STATE_CONNECTED){
 			poller.poll(POLL_INTERVAL_MILISEC);
-			if (poller.pollin(0)) {
+			if (poller.pollin(0)) {//process data 
 				ZMsg receivedMsg = ZMsg.recvMsg(subSocket);
+				//forward received message to collector thread
 				collectorSocket.send(receivedMsg.getLast().getData());
 			}
-			if(poller.pollin(1)){
+			if(poller.pollin(1)){//process control message
 				String command= ctrlSocket.recvStr();
-				System.out.println("Receiver received control message:"+command);
-				exited.set(true);
-				break;
+				if(command.equals(Subscriber.SUBSCRIBER_EXIT_COMMAND)){
+					exited.set(true);
+					break;
+				}
 			}
 		}
 	}
 
 	private void cleanup(){
-		System.out.println("Receiver cleanup called");
+		logger.info("Receiver:{} will cleanup ZMQ and close monitoring, LB threads",id);
+		//close subscriber socket
 		subSocket.setLinger(0);
 		subSocket.close();
-		lbSocket.send(String.format("%s,stop", topicName));
+		//send exit signal to LB listener thread
+		lbSocket.send(String.format("%s",LbListener.LB_EXIT_COMMAND));
 		try{
-			System.out.println("Receiver will close LB thread");
+			//if lb listener thread is waiting for connection to get established, interrupt its wait
 			if(connected.getCount()>0){
 				lbListenerThread.interrupt();
 			}
+			//wait until lb listener thread exits
 			lbListenerThread.join();
-			System.out.println("Receiver LB thread has exited");
-			System.out.println("Receiver will close Monitor thread");
+			logger.debug("Receiver:{} lb listener thread has exited",id);
+			//wait until monitoring thread exits
 			monitoringThread.join();
-			System.out.println("Receiver Monitor thread has exited");
+			logger.debug("Receiver:{} connection monitoring thread has exited",id);
 		}catch(InterruptedException e){
-			
+			logger.error("Receiver:{} caught exception:{}",id,e.getMessage());
 		}
+		//Request FE to remove this endpoint's znode
+		feSocket.send(String.format("%s,%s", Frontend.DISCONNECTION_REQUEST, znodePath));
+		//close all ZMQ sockets
 		feSocket.setLinger(0);
 		feSocket.close();
 		lbSocket.setLinger(0);
@@ -227,44 +250,56 @@ public class Receiver implements Runnable{
 		ctrlSocket.close();
 		collectorSocket.setLinger(0);
 		collectorSocket.close();
-		System.out.println("Receiver will terminate its ZMQ context");
+		//terminate ZMQ context
 		context.term();
-		System.out.println("Receiver ZMQ context terminated");
+
+		logger.info("Receiver:{} cleaned-up ZMQ and closed monitoring, LB threads",id);
 	}
 
 	private void onExit(){
-		//feSocket.send(String.format("%s,%s", Frontend.DISCONNECTION_REQUEST, znodePath));
-		System.out.println("Receiver thread has exited");
+		logger.info("Receiver:{} has exited",id);
+	}
+
+	public int connected(){
+		return connectionState.get();
 	}
 
 	private class Monitor implements Runnable{
 		private CountDownLatch connected;
 		private ZMQ.Context context;
+		private Logger logger;
+
 		public Monitor(ZMQ.Context context,CountDownLatch latch){
+			logger= LogManager.getLogger(this.getClass().getSimpleName());
 			this.context=context;
 			connected=latch;
-			System.out.println("Receiver Monitor initialized");
+			logger.debug("Monitor initialized");
 		}
 
 		@Override
 		public void run() {
-			System.out.println("Receiver Monitor thread started");
+			logger.info("Monitor:{} started",Thread.currentThread().getName());
 			ZMQ.Socket pair = context.socket(ZMQ.PAIR);
 			pair.connect(CONNECTION_MONITORING_LOCATOR);
+
 			while (!Thread.currentThread().isInterrupted()) {
 				ZMQ.Event event = ZMQ.Event.recv(pair);
+
 				if (event.getEvent() == ZMQ.EVENT_CONNECTED) {//Connected to EB
-					System.out.println("Receiver Monitor state:connected");
+					logger.info("Monitor:{} connection state: connected",
+							Thread.currentThread().getName());
 					//set retry count to 0
 					retryCount.set(0);
 					//set connection state to CONNECTED
 					connectionState.set(STATE_CONNECTED);
+					//set EB connector for LB listener thread 
 					lbListener.setTopicControlLocator(String.format("tcp://%s:%s",ebAddress,topicLbPort));
 					//open waitset to allow client to start processing
 					connected.countDown();
 				}
 				if (event.getEvent() == ZMQ.EVENT_CONNECT_RETRIED) {//retrying connection to EB
-					System.out.println("Receiver Monitor state:retrying connection");
+					logger.info("Monitor:{} connection state: retrying",
+							Thread.currentThread().getName());
 					//increment retry count
 					int val=retryCount.getAndIncrement();
 					//set connection state to DISCONNECTED 
@@ -278,7 +313,8 @@ public class Receiver implements Runnable{
 					}
 				}
 				if (event.getEvent() == ZMQ.EVENT_DISCONNECTED) {//disconnected from EB
-					System.out.println("Receiver Monitor state:disconnected");
+					logger.info("Monitor:{} connection state: disconnected",
+							Thread.currentThread().getName());
 					//set retry count to 0
 					retryCount.set(0);
 					//set connection state to DISCONNECTED
@@ -286,14 +322,16 @@ public class Receiver implements Runnable{
 					break;
 				}
 				if(event.getEvent()== ZMQ.EVENT_MONITOR_STOPPED){//socket being monitored was closed
-					System.out.println("Receiver Monitor received stopped signal");
+					logger.info("Monitor:{} connection state: socket closed",
+							Thread.currentThread().getName());
 					break;
 				}
 			}
 			pair.disconnect(CONNECTION_MONITORING_LOCATOR);
 			pair.setLinger(0);
 			pair.close();
-			System.out.println("Receiver Monitor thread has exited");
+			logger.info("Monitor:{} exited",
+					Thread.currentThread().getName());
 		}
 	}
 }
