@@ -11,17 +11,17 @@ public class LbListener implements Runnable{
 	private ZMQ.Context context;
 	//ZMQ SUB socket at which topic level lb commands are received from EB
 	private ZMQ.Socket subSocket;
-	//ZMQ PULL socket at which control commands are received from Receiver  
+	//ZMQ PULL socket at which control commands are received from Worker thread 
 	private ZMQ.Socket controlSocket;
-	//ZMQ PUSH socket to send lb commands to subscriber container
+	//ZMQ PUSH socket to send lb commands to this worker's parent container
 	private ZMQ.Socket commandSocket;
 
 	//EB's topic control socket connector at which LB commands are issued
 	private String ebConnector;
-	//Receiver's command socket at which control messages are issued
+	//Worker's command socket at which control messages are issued
 	private String controlConnector;
-	//Subscriber container's queue in which received LB commands are sent
-	private String subQueueConnector;
+	//Parent container's queue in which received LB commands are sent
+	private String queueConnector;
 
 	//connection state indicator
 	private CountDownLatch connected;
@@ -29,15 +29,15 @@ public class LbListener implements Runnable{
 	private Logger logger;
 	
 	public LbListener(String topicName,ZMQ.Context context,
-			String controlConnector,String subQueueConnector,
+			String controlConnector,String queueConnector,
 			CountDownLatch connected){
         logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.topicName=topicName;
 		this.context=context;
-		ebConnector=null;
 		this.controlConnector=controlConnector;
-		this.subQueueConnector=subQueueConnector;
+		this.queueConnector=queueConnector;
 		this.connected=connected;
+		ebConnector=null;
 
 		logger.debug("LB Listener initialized");
 	}
@@ -45,12 +45,15 @@ public class LbListener implements Runnable{
 	@Override
 	public void run() {
 		logger.info("LB Listener:{} started",Thread.currentThread().getName());
+		//initialize ZMQ sockets
 		subSocket=context.socket(ZMQ.SUB);
 		controlSocket=context.socket(ZMQ.PULL);
 		commandSocket=context.socket(ZMQ.PUSH);
 
 		controlSocket.connect(controlConnector);
-		commandSocket.connect(subQueueConnector);
+		commandSocket.connect(queueConnector);
+		
+		//wait until connected to EB
 		try {
 			logger.info("LB Listener:{} will wait until connected to EB",Thread.currentThread().getName());
 			connected.await();
@@ -60,6 +63,7 @@ public class LbListener implements Runnable{
 			cleanup();
 			return;
 		}
+		//Connected to EB
 		if(ebConnector!=null){
 			subSocket.connect(ebConnector);
 			subSocket.subscribe(topicName.getBytes());
@@ -81,6 +85,8 @@ public class LbListener implements Runnable{
 					if (poller.pollin(1)) {//process control command
 						String command = controlSocket.recvStr();
 						if(command.equals(LB_EXIT_COMMAND)){
+							logger.info("LB Listener:{} got control msg:{}",
+									Thread.currentThread().getName(),LB_EXIT_COMMAND);
 							break;
 						}
 					}

@@ -3,11 +3,12 @@ package edu.vanderbilt.edgent.endpoints;
 import org.zeromq.ZMQ;
 
 public class Subscriber extends Container{
+	//Base port number at which the collector thread of Subscriber container listens for data
 	public static final int SUBSCRIBER_COLLECTOR_BASE_PORT_NUM=7000;
-	//Connector for the collector thread
-	private String collectorConnector;
 	//Collector Thread
 	private Thread collectorThread;
+	//Connector for the collector thread
+	private String collectorConnector;
 	//expected number of samples
 	private int sampleCount;
 	private int subId;
@@ -15,7 +16,7 @@ public class Subscriber extends Container{
 	public Subscriber(String topicName,int id,int sampleCount){
 		super(topicName,Container.ENDPOINT_TYPE_SUB,id);
 		this.sampleCount=sampleCount;
-		this.subId=0;
+		subId=0;
 		collectorConnector=String.format("tcp://*:%d",
 				(SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
 	}
@@ -26,13 +27,14 @@ public class Subscriber extends Container{
 		collectorThread = new Thread(new Collector(context, topicName, commandConnector, queueConnector,
 				collectorConnector, sampleCount));
 		collectorThread.start();
-		logger.debug("Container:{} started its data collector thread", containerId);
+		logger.info("Container:{} started its data collector thread", containerId);
 
 		workers.put(subId, new Receiver(topicName,Worker.ENDPOINT_TYPE_SUB, subId,
 				commandConnector,queueConnector,collectorConnector));
 		workerThreads.put(subId, new Thread(workers.get(subId)));
 		subId++;
 		workerThreads.get(0).start();
+		logger.info("Container:{} started its default receiver thread", containerId);
 	}
 
 	@Override

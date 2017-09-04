@@ -132,7 +132,7 @@ public abstract class Container implements Runnable{
 	}
 	
 	public String commandConnector(){
-		return commandConnector();
+		return commandConnector;
 	}
 	
 	public abstract void initialize();

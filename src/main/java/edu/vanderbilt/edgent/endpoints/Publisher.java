@@ -3,59 +3,71 @@ package edu.vanderbilt.edgent.endpoints;
 import org.zeromq.ZMQ;
 
 public class Publisher extends Container{
+	//Base port number for the producer thread at which data is sent out
 	public static final int PUBLISHER_PRODUCER_BASE_PORT_NUM=10000;
-	private String producerConnector;
-	private int pubId;
-	private int sampleCount;
-	private int sendInterval;
+	//Producer instance
 	private Producer producer;
+	//Thread running the data producer
 	private Thread producerThread;
+	//Connector at which producer thread publishes data
+	private String producerConnector;
+
+	private int pubId;
+	//number of samples to send
+	private int sampleCount;
+	//sending rate of publisher
+	private int sendInterval;
 
 	public Publisher(String topicName,int id,
 			int sampleCount,int sendInterval) {
 		super(topicName, Container.ENDPOINT_TYPE_PUB, id);
-		pubId=0;
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
-		this.producerConnector=String.format("tcp://*:%d",
+		pubId=0;
+		producerConnector=String.format("tcp://*:%d",
 				(PUBLISHER_PRODUCER_BASE_PORT_NUM+pubId));
 	}
 
 	@Override
 	public void initialize() {
-		//start worker thread
+		//create default sender thread with pubId=0
 		workers.put(pubId, new Sender(topicName,Worker.ENDPOINT_TYPE_PUB, pubId,
 				commandConnector,queueConnector,producerConnector));
 		workerThreads.put(pubId, new Thread(workers.get(pubId)));
 		pubId++;
+		//start default sender thread
 		workerThreads.get(0).start();
-	
+		logger.info("Container:{} started its default sender thread", containerId);
+
+		//wait until default sender thread is in the connected state, before starting the producer
 		while(workers.get(0).connected()==Worker.STATE_DISCONNECTED){
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return;
+				logger.error("Container:{} caught exception:{}",
+						containerId,e.getMessage());
 			}
 		}
 		if(workers.get(0).connected()==Worker.STATE_CONNECTED){
 			// start the producer thread
-			System.out.println("Started producer");
 			producer=new Producer(context, topicName,  queueConnector,
 					producerConnector, sampleCount,sendInterval);
 			producerThread = new Thread(producer);
 			producerThread.start();
+			logger.info("Container:{} started its data producer thread", containerId);
 		}
 	}
 
 	@Override
 	public void cleanup() {
-		try{
-			producer.stop();
-			producerThread.join();
-		}catch(InterruptedException e){
-			logger.error("Container:{} caught exception:{}",
-					containerId,e.getMessage());
+		if (producer != null) {
+			try {
+				producer.stop();
+				producerThread.join();
+			} catch (InterruptedException e) {
+				logger.error("Container:{} caught exception:{}",
+						containerId, e.getMessage());
+			}
 		}
 	}
 	
@@ -71,7 +83,7 @@ public class Publisher extends Container{
 			int sampleCount=Integer.parseInt(args[2]);
 			int sendInterval=Integer.parseInt(args[3]);
 			
-			//initialize subscriber
+			//initialize publisher 
 			Publisher pub=new Publisher(topicName,id,sampleCount,sendInterval);
 			Thread pubThread = new Thread(pub);
 

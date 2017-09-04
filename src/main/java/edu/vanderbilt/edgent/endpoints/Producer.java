@@ -1,7 +1,6 @@
 package edu.vanderbilt.edgent.endpoints;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
@@ -55,18 +54,26 @@ public class Producer implements Runnable {
 		commandSocket=context.socket(ZMQ.PUSH);
 		commandSocket.connect(queueConnector);
 	
+		//TODO: Adhoc sleep to prevent loss of initially sent data samples
+		try{
+			Thread.sleep(5000);
+		}catch(InterruptedException e){
+			logger.error("Producer thread:{} for topic:{} caught exception:{}",
+					Thread.currentThread().getName(),topicName,e.getMessage());
+		}
+	
 		while (!Thread.currentThread().isInterrupted() && 
-				!stopped.get() && currCount < sampleCount) {
+				!stopped.get() && (currCount < sampleCount || sampleCount==-1)) {
 			try {
+				//send data 
 				pubSocket.sendMore(topicName.getBytes());
-				pubSocket.send(DataSampleHelper.serialize(currCount, // sample
-																		// id
+				pubSocket.send(DataSampleHelper.serialize(currCount, // sample id
 						regionId, runId, priority, System.currentTimeMillis(), payloadSize));
-				currCount++;
 				if (currCount % 1000 == 0) {
 					logger.debug("Producer for topic:{} sent:{} samples", topicName, currCount);
 				}
-				System.out.println(currCount);
+
+				currCount++;
 
 				// sleep for average inter-arrival time
 				long sleep_interval = exponentialInterarrival(sendInterval);
@@ -78,13 +85,16 @@ public class Producer implements Runnable {
 				break;
 			}
 		}
+		//send exit signal to parent Publisher container if all messages have been sent
 		if(currCount==sampleCount){
 			commandSocket.send(Publisher.CONTAINER_EXIT_COMMAND);
 		}
-		
+	
+		//set linger to 0
 		pubSocket.setLinger(0);
 		commandSocket.setLinger(0);
-		
+	
+		//close sockets
 		pubSocket.close();
 		commandSocket.close();
 	}

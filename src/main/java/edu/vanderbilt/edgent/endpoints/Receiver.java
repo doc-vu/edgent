@@ -4,7 +4,9 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 public class Receiver extends Worker{
-	private ZMQ.Socket collectorSocket;  
+	//ZMQ PUSH socket at which Receiver sends data to the collector thread 
+	private ZMQ.Socket senderSocket;  
+	//Connector at which collector thread listens for incoming data
 	private String collectorConnector;
 
 	public Receiver(String topicName, String endpointType, 
@@ -15,8 +17,9 @@ public class Receiver extends Worker{
 
 	@Override
 	public void initialize() {
-		collectorSocket=context.socket(ZMQ.PUSH);
-		collectorSocket.connect(collectorConnector);
+		//initialize sender socket
+		senderSocket=context.socket(ZMQ.PUSH);
+		senderSocket.connect(collectorConnector);
 	}
 
 	@Override
@@ -33,7 +36,7 @@ public class Receiver extends Worker{
 			if (poller.pollin(0)) {//process data 
 				ZMsg receivedMsg = ZMsg.recvMsg(socket);
 				//forward received message to collector thread
-				collectorSocket.send(receivedMsg.getLast().getData());
+				senderSocket.send(receivedMsg.getLast().getData());
 			}
 			if(poller.pollin(1)){//process control message
 				String command= ctrlSocket.recvStr();
@@ -48,8 +51,9 @@ public class Receiver extends Worker{
 
 	@Override
 	public void close() {
-		collectorSocket.setLinger(0);
-		collectorSocket.close();
+		//close the sender socket
+		senderSocket.setLinger(0);
+		senderSocket.close();
 	}
 
 }

@@ -121,7 +121,11 @@ public class FeWorkerThread implements Runnable {
 			client.delete().forPath(znode);
 			logger.debug("WorkerThread:{} deleted client znode:{}",workerId,
 					znode);
-		} catch (Exception e) {
+		}catch(KeeperException e){
+			if(e.code()==KeeperException.Code.NONODE){
+				logger.info("WorkerThread:{} znode:{} does not exist",workerId,znode);
+			}
+		}catch (Exception e) {
 			logger.error("WorkerThread:{} caught exception:{}",
 					workerId,e.getMessage());
 		}

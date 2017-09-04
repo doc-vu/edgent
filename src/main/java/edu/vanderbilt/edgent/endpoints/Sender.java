@@ -4,7 +4,9 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
 public class Sender extends Worker{
-	private ZMQ.Socket producerSocket;
+	//ZMQ SUB socket at which Sender thread listens for data produced by the Producer thread
+	private ZMQ.Socket receiverSocket;
+	//Connector at which the producer thread publishes data
 	private String producerConnector;
 
 	public Sender(String topicName, String endpointType, int id,
@@ -15,15 +17,16 @@ public class Sender extends Worker{
 
 	@Override
 	public void initialize() {
-		producerSocket=context.socket(ZMQ.SUB);
-		producerSocket.connect(producerConnector);
-		producerSocket.subscribe(topicName.getBytes());
+		//instantiate the receiver socket
+		receiverSocket=context.socket(ZMQ.SUB);
+		receiverSocket.connect(producerConnector);
+		receiverSocket.subscribe(topicName.getBytes());
 	}
 
 	@Override
 	public void process() {
 		ZMQ.Poller poller = context.poller(2);
-		poller.register(producerSocket, ZMQ.Poller.POLLIN);
+		poller.register(receiverSocket, ZMQ.Poller.POLLIN);
 		poller.register(ctrlSocket, ZMQ.Poller.POLLIN);
 
 		//poll for data and control messages
@@ -31,7 +34,7 @@ public class Sender extends Worker{
 				connectionState.get() == STATE_CONNECTED){
 			poller.poll(POLL_INTERVAL_MILISEC);
 			if (poller.pollin(0)) {//process data 
-				ZMsg receivedMsg = ZMsg.recvMsg(producerSocket);
+				ZMsg receivedMsg = ZMsg.recvMsg(receiverSocket);
 				socket.sendMore(receivedMsg.getFirst().getData());
 				socket.send(receivedMsg.getLast().getData());
 			}
@@ -48,8 +51,9 @@ public class Sender extends Worker{
 
 	@Override
 	public void close() {
-		producerSocket.setLinger(0);
-		producerSocket.close();
+		//close receiver socket
+		receiverSocket.setLinger(0);
+		receiverSocket.close();
 	}
 
 }

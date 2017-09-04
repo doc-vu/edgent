@@ -37,9 +37,10 @@ public class Collector implements Runnable{
 		this.context=context;
 		this.topicName=topicName;
 		this.controlConnector=controlConnector;
-		this.collectorConnector=collectorConnector;
 		this.subQueueConnector=subQueueConnector;
+		this.collectorConnector=collectorConnector;
 		this.sampleCount=sampleCount;
+
 		currCount=0;
 		logger.debug("Collector initialized");
 	}
@@ -72,8 +73,8 @@ public class Collector implements Runnable{
 				DataSample sample = DataSampleHelper.deserialize(collectorSocket.recv());
 				currCount++;
 				if(currCount%1000==0){
-					logger.debug("Collector thread:{} received sample:{}",
-							Thread.currentThread().getName(),sample.sampleId());
+					logger.debug("Collector thread:{} received sample:{}, currCount:{}",
+							Thread.currentThread().getName(),sample.sampleId(),currCount);
 				}
 				if(currCount==sampleCount){
 					logger.info("Collector thread:{} received all {} messages",
