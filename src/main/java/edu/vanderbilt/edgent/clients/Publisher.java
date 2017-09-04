@@ -2,7 +2,6 @@ package edu.vanderbilt.edgent.clients;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
@@ -49,14 +48,14 @@ public class Publisher extends Client {
 		//publisher's znode for this experiment's run
 		expZnodePath= String.format("/experiment/%s/pub/%s",
 				runId,id);
-		pubBarrier= new DistributedBarrier(client,
-				String.format("/experiment/%s/barriers/pub", runId));
+		//pubBarrier= new DistributedBarrier(client,
+		//		String.format("/experiment/%s/barriers/pub", runId));
 	}
 
 	@Override
 	public void process() {
 		//setup experiment 
-		waitForOtherPublishers();
+		//waitForOtherPublishers();
 		//only publish while we are connected to EB and sampleCount has not been reached
 		while(connectionState.get()==Client.STATE_CONNECTED && currCount<sampleCount){
 			//send data
@@ -84,6 +83,7 @@ public class Publisher extends Client {
 	
 	@Override
 	public void onExit(){
+		/*
 		try {
 			if(client.getState()==CuratorFrameworkState.STARTED){
 				client.delete().forPath(expZnodePath);
@@ -92,6 +92,7 @@ public class Publisher extends Client {
 			logger.error("{}:{} for topic:{} caught exception:{}",endpointType,
 				id,e.getMessage());
 		}
+		*/
 		CloseableUtils.closeQuietly(client);
 		logger.info("{}:{} for topic:{} deleted its experiment znode:{} and closed zk connection",
 				endpointType,id,topicName,expZnodePath);
@@ -99,6 +100,7 @@ public class Publisher extends Client {
 
 	@Override
 	public void onConnected() {
+		/*
 		try {
 			if(client.checkExists().forPath(expZnodePath)==null){
 				client.create().forPath(expZnodePath, new byte[0]);
@@ -109,6 +111,7 @@ public class Publisher extends Client {
 			logger.error("{}:{} for topic:{} caught exception:{}",endpointType,
 					id,topicName,e.getMessage());
 		}
+		*/
 	}
 
 	

@@ -20,9 +20,9 @@ public class Subscriber implements Runnable{
 	//Type of commands processed by the Subscriber
 	public static final String SUBSCRIBER_EXIT_COMMAND="exit";
 	//base port numbers used by Subscriber
-	public static final int SUBSCRIBER_COMMAND_BASE_PORT_NUM=16000;
-	public static final int SUBSCRIBER_COLLECTOR_BASE_PORT_NUM=9000;
-	public static final int SUBSCRIBER_QUEUE_BASE_PORT_NUM=4000; 
+	public static final int SUBSCRIBER_COMMAND_BASE_PORT_NUM=16100;
+	public static final int SUBSCRIBER_COLLECTOR_BASE_PORT_NUM=9100;
+	public static final int SUBSCRIBER_QUEUE_BASE_PORT_NUM=4100; 
 
 	//ZMQ context
 	private ZMQ.Context context;
@@ -112,7 +112,7 @@ public class Subscriber implements Runnable{
 
 		//Stop receiver and collector threads before exiting
 		logger.debug("Subscriber:{} will stop receiver and collector threads",subId);
-		commandSocket.send(String.format("%s,%s",topicName,SUBSCRIBER_EXIT_COMMAND));
+		commandSocket.send(String.format("%s %s",topicName,SUBSCRIBER_EXIT_COMMAND));
 		try {
 			for (int receiverId: receivers.keySet()) {
 				Receiver receiver= receivers.get(receiverId);

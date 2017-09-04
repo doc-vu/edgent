@@ -20,6 +20,7 @@ public class Frontend {
 		FE_LOCATIONS= new HashMap<Integer,String>();
 		FE_LOCATIONS.put(30,"10.20.30.2");
 		FE_LOCATIONS.put(0,"127.0.0.1");
+		FE_LOCATIONS.put(1,"127.0.1.1");
 	}
 	
 	//FE Request Commands

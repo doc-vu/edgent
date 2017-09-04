@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.subscriber;
+package edu.vanderbilt.edgent.endpoints;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,7 +8,6 @@ import edu.vanderbilt.edgent.types.DataSampleHelper;
 
 public class Collector implements Runnable{
 	private static final int POLL_INTERVAL_MILISEC=5000;
-
 	//ZMQ context
 	private ZMQ.Context context;
 	//ZMQ socket at which Collector thread will receive data
@@ -79,16 +78,16 @@ public class Collector implements Runnable{
 				if(currCount==sampleCount){
 					logger.info("Collector thread:{} received all {} messages",
 							Thread.currentThread().getName(),sampleCount);
-					commandSocket.send(Subscriber.SUBSCRIBER_EXIT_COMMAND);
+					commandSocket.send(Subscriber.CONTAINER_EXIT_COMMAND);
 					break;
 				}
 			}
 			if(poller.pollin(1)){
 				String command= controlSocket.recvStr();
 				String[] args= command.split(" ");
-				if(args[1].equals(Subscriber.SUBSCRIBER_EXIT_COMMAND)){
+				if(args[1].equals(Subscriber.CONTAINER_EXIT_COMMAND)){
 					logger.info("Collector thread:{} received command:{}",
-							Thread.currentThread().getName(),Subscriber.SUBSCRIBER_EXIT_COMMAND);
+							Thread.currentThread().getName(),Subscriber.CONTAINER_EXIT_COMMAND);
 					break;
 				}
 			}

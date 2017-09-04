@@ -70,6 +70,8 @@ public abstract class Client {
 		//initially the znode path for the end-point is empty
 		znodePath="";
 
+		System.out.println(UtilMethods.ipAddress());
+		System.out.println(UtilMethods.regionId());
 		//get this client's region specific FE
 		feAddress=Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
 		if(feAddress==null){
