@@ -1,6 +1,9 @@
 package edu.vanderbilt.edgent.endpoints;
 
 import org.zeromq.ZMQ;
+import edu.vanderbilt.edgent.types.ContainerCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
+
 
 public class Subscriber extends Container{
 	//Base port number at which the collector thread of Subscriber container listens for data
@@ -11,12 +14,10 @@ public class Subscriber extends Container{
 	private String collectorConnector;
 	//expected number of samples
 	private int sampleCount;
-	private int subId;
 
 	public Subscriber(String topicName,int id,int sampleCount){
-		super(topicName,Container.ENDPOINT_TYPE_SUB,id);
+		super( topicName,Container.ENDPOINT_TYPE_SUB,id);
 		this.sampleCount=sampleCount;
-		subId=0;
 		collectorConnector=String.format("tcp://*:%d",
 				(SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
 	}
@@ -28,13 +29,11 @@ public class Subscriber extends Container{
 				collectorConnector, sampleCount));
 		collectorThread.start();
 		logger.info("Container:{} started its data collector thread", containerId);
+	}
 
-		workers.put(subId, new Receiver(topicName,Worker.ENDPOINT_TYPE_SUB, subId,
-				commandConnector,queueConnector,collectorConnector));
-		workerThreads.put(subId, new Thread(workers.get(subId)));
-		subId++;
-		workerThreads.get(0).start();
-		logger.info("Container:{} started its default receiver thread", containerId);
+	@Override
+	public void onConnected(){
+		//no-op
 	}
 
 	@Override
@@ -70,7 +69,7 @@ public class Subscriber extends Container{
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
 						pushSocket.connect(sub.queueConnector());
-						pushSocket.send(Subscriber.CONTAINER_EXIT_COMMAND);
+						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 						subThread.join();
 						pushSocket.setLinger(0);
 						pushSocket.close();
@@ -85,5 +84,13 @@ public class Subscriber extends Container{
 		}catch(NumberFormatException e){
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public Worker createWorker(int uuid, String ebId, String topicConnector) {
+		return new Receiver(containerId, uuid,
+				topicName, Worker.ENDPOINT_TYPE_SUB,ebId,
+				topicConnector,
+				commandConnector, queueConnector, collectorConnector);
 	}
 }

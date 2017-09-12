@@ -3,15 +3,22 @@ package edu.vanderbilt.edgent.endpoints;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import edu.vanderbilt.edgent.types.WorkerCommand;
+import edu.vanderbilt.edgent.types.WorkerCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
+
 public class Sender extends Worker{
 	//ZMQ SUB socket at which Sender thread listens for data produced by the Producer thread
 	private ZMQ.Socket receiverSocket;
 	//Connector at which the producer thread publishes data
 	private String producerConnector;
 
-	public Sender(String topicName, String endpointType, int id,
+	public Sender(String containerId, int uuid,
+			String topicName, String endpointType,
+			String ebId,String topicConnector,
 			String controlConnector, String queueConnector,String producerConnector) {
-		super(topicName, endpointType, id, controlConnector, queueConnector);
+		super(containerId, uuid,topicName, endpointType,ebId,topicConnector,
+				controlConnector, queueConnector);
 		this.producerConnector=producerConnector;
 	}
 
@@ -39,11 +46,19 @@ public class Sender extends Worker{
 				socket.send(receivedMsg.getLast().getData());
 			}
 			if(poller.pollin(1)){//process control message
-				String command= ctrlSocket.recvStr();
-				String[] args= command.split(" ");
-				if(args[1].equals(Publisher.CONTAINER_EXIT_COMMAND)){
+				ZMsg msg= ZMsg.recvMsg(ctrlSocket);
+				WorkerCommand command= WorkerCommandHelper.deserialize(msg.getLast().getData());
+
+				if(command.type()==Commands.CONTAINER_EXIT_COMMAND){
 					exited.set(true);
 					break;
+				}
+				if(command.type()==Commands.WORKER_EXIT_COMMAND){
+					String ebId=command.ebId();
+					if(ebId.equals(ebId())){
+						exited.set(true);
+						break;
+					}
 				}
 			}
 		}

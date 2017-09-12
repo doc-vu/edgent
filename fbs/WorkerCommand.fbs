@@ -1,0 +1,8 @@
+namespace edu.vanderbilt.edgent.types;
+
+table WorkerCommand {
+  type: int;
+  ebId: string;
+}
+
+root_type WorkerCommand;

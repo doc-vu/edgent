@@ -61,7 +61,7 @@ public class Prune implements Runnable {
 							if(elapsed_milisec/1000 > TOPIC_EXPIRY_PERIOD_SEC){
 								logger.info("EdgeBroker:{} Periodic pruning thread:{} will delete topic:{}",
 									ebId,Thread.currentThread().getName(),topicName);
-								queue.add(String.format("%s,%s", EdgeBroker.TOPIC_DELETE_COMMAND,topicName));
+								queue.add(String.format("%s,%s", EdgeBroker.EB_TOPIC_DELETE_COMMAND,topicName));
 							}
 						}
 					}

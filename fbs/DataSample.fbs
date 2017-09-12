@@ -1,0 +1,12 @@
+namespace edu.vanderbilt.kharesp.types;
+
+table DataSample {
+  sampleId:int;
+  regionId:int;
+  runId:int;
+  priority:int;
+  tsMilisec:ulong;
+  payload:[int];
+}
+
+root_type DataSample;

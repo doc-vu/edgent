@@ -3,8 +3,14 @@ package edu.vanderbilt.edgent.endpoints;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
+
+import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.DataSample;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
+import edu.vanderbilt.edgent.types.WorkerCommand;
+import edu.vanderbilt.edgent.types.WorkerCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
 
 public class Collector implements Runnable{
 	private static final int POLL_INTERVAL_MILISEC=5000;
@@ -72,23 +78,23 @@ public class Collector implements Runnable{
 			if(poller.pollin(0)){
 				DataSample sample = DataSampleHelper.deserialize(collectorSocket.recv());
 				currCount++;
-				if(currCount%1000==0){
+				//if(currCount%1000==0){
 					logger.debug("Collector thread:{} received sample:{}, currCount:{}",
 							Thread.currentThread().getName(),sample.sampleId(),currCount);
-				}
+				//}
 				if(currCount==sampleCount){
 					logger.info("Collector thread:{} received all {} messages",
 							Thread.currentThread().getName(),sampleCount);
-					commandSocket.send(Subscriber.CONTAINER_EXIT_COMMAND);
+					commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 					break;
 				}
 			}
 			if(poller.pollin(1)){
-				String command= controlSocket.recvStr();
-				String[] args= command.split(" ");
-				if(args[1].equals(Subscriber.CONTAINER_EXIT_COMMAND)){
-					logger.info("Collector thread:{} received command:{}",
-							Thread.currentThread().getName(),Subscriber.CONTAINER_EXIT_COMMAND);
+				ZMsg msg= ZMsg.recvMsg(controlSocket);
+				WorkerCommand command=WorkerCommandHelper.deserialize(msg.getLast().getData());
+				if(command.type()==Commands.CONTAINER_EXIT_COMMAND){
+					logger.info("Collector thread:{} received CONTAINER_EXIT_COMMAND:{}",
+							Thread.currentThread().getName(),Commands.CONTAINER_EXIT_COMMAND);
 					break;
 				}
 			}

@@ -9,6 +9,8 @@ import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
+
+import edu.vanderbilt.edgent.util.PortList;
 import edu.vanderbilt.edgent.util.UtilMethods;
 /**
  * LoadBalancer is responsible for the following operations: 
@@ -19,6 +21,11 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  *
  */
 public class LoadBalancer implements Runnable{
+	//topic replication modes
+	public static final String REPLICATION_ALL_SUB="all_sub";
+	public static final String REPLICATION_ALL_PUB="all_pub";
+	public static final String REPLICATION_NONE="none";
+
 	//ZMQ.Context
 	private ZMQ.Context context;
 	//ZMQ PULL socket to listen for incoming topic creation requests
@@ -28,12 +35,10 @@ public class LoadBalancer implements Runnable{
 	//ZMQ PUB socket to issue control messages to worker threads 
 	private ZMQ.Socket controlSocket;
 
-	//Front-Facing port at which topic creation requests are received 
-	public static final int LISTENER_PORT=8741;
-	//Internal Port for issuing control messages 
-	public static final int CONTROL_PORT=6955;
 	//Internal inproc connector to which pool threads connect to receive requests
 	public static final String INPROC_CONNECTOR="inproc://lbWorkers";
+	//Internal inproc connector at which control messages are sent to worker threads
+	public static final String IPROC_CONTROL_CONNECTOR="inproc://lbControl";
 	//Topic Name on which control messages will be issued by LB 
 	public static final String CONTROL_TOPIC="lbControl";
 	//Control messages
@@ -82,13 +87,13 @@ public class LoadBalancer implements Runnable{
 	public void run(){
 		//Initialize all ZMQ sockets
 		listener=context.socket(ZMQ.PULL);
-		listener.bind(String.format("tcp://*:%d",LISTENER_PORT));
+		listener.bind(String.format("tcp://*:%d",PortList.LB_LISTENER_PORT));
 
 		distributor=context.socket(ZMQ.PUSH);
 		distributor.bind(INPROC_CONNECTOR);
 		
 		controlSocket=context.socket(ZMQ.PUB);
-		controlSocket.bind(String.format("tcp://*:%d",CONTROL_PORT));
+		controlSocket.bind(String.format("inproc://lbControl"));
 		//Start Lb Worker threads
 		for(Thread t:workers){
 			t.start();
@@ -96,11 +101,10 @@ public class LoadBalancer implements Runnable{
 		logger.debug("LB:{} started worker threads",lbId);
 
 		logger.info("LB:{} will start listening for topic creation requests at:{}",
-				lbId,LISTENER_PORT);
+				lbId,PortList.LB_LISTENER_PORT);
 		//Listener loop: forwards topic creation requests to worker pool
 		while(true){
 			String data = listener.recvStr(); 
-			System.out.println(data);
 			//Exit listener loop if SHUTDOWN_CONTROL_MSG is received
 			if (data.equals(SHUTDOWN_CONTROL_MSG)){
 				logger.info("LB:{} received {} signal.",lbId,SHUTDOWN_CONTROL_MSG);
@@ -110,7 +114,7 @@ public class LoadBalancer implements Runnable{
 				break;
 			}
 			//forward topic creation requests to the worker pool
-			distributor.send(data, 0);
+			distributor.send(data);
 		}
 		logger.info("LB:{} exited listener loop.",lbId);
 		clean();
@@ -164,7 +168,7 @@ public class LoadBalancer implements Runnable{
 				// send SHUTDOWN_CONTROL_MSG interrupt LB
 				ZMQ.Context context = ZMQ.context(1);
 				ZMQ.Socket socket = context.socket(ZMQ.PUSH);
-				socket.connect(String.format("tcp://127.0.0.1:%d", LoadBalancer.LISTENER_PORT));
+				socket.connect(String.format("tcp://127.0.0.1:%d", PortList.LB_LISTENER_PORT));
 				socket.send(String.format("%s", SHUTDOWN_CONTROL_MSG));
 				try{
 					lbThread.join();

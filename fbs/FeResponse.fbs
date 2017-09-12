@@ -1,0 +1,17 @@
+namespace edu.vanderbilt.edgent.types;
+
+table TopicConnector{
+  ebId:string;
+  ebAddress:string;
+  receivePort:int;
+  sendPort:int;
+  controlPort:int;
+}
+
+table FeResponse{
+  code:int;
+  msg:string;
+  connectors:[TopicConnector];
+}
+
+root_type FeResponse;

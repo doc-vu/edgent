@@ -1,0 +1,15 @@
+include "FeResponse.fbs";
+namespace edu.vanderbilt.edgent.types;
+
+table ContainerCommand {
+  type:int;
+  containerId:string;
+  topicConnector: TopicConnector; 
+}
+
+table TopicCommand {
+  type: int;
+  containerCommand: ContainerCommand;
+}
+
+root_type TopicCommand;

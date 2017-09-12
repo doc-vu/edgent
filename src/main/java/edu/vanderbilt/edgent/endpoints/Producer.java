@@ -5,7 +5,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
+
+import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
+import edu.vanderbilt.edgent.util.Commands;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Producer implements Runnable {
@@ -69,9 +72,9 @@ public class Producer implements Runnable {
 				pubSocket.sendMore(topicName.getBytes());
 				pubSocket.send(DataSampleHelper.serialize(currCount, // sample id
 						regionId, runId, priority, System.currentTimeMillis(), payloadSize));
-				if (currCount % 1000 == 0) {
+				//if (currCount % 1000 == 0) {
 					logger.debug("Producer for topic:{} sent:{} samples", topicName, currCount);
-				}
+				//}
 
 				currCount++;
 
@@ -87,7 +90,7 @@ public class Producer implements Runnable {
 		}
 		//send exit signal to parent Publisher container if all messages have been sent
 		if(currCount==sampleCount){
-			commandSocket.send(Publisher.CONTAINER_EXIT_COMMAND);
+			commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 		}
 	
 		//set linger to 0

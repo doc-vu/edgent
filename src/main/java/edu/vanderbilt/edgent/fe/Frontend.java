@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
+import edu.vanderbilt.edgent.util.PortList;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Frontend {
@@ -23,21 +24,21 @@ public class Frontend {
 		FE_LOCATIONS.put(1,"127.0.1.1");
 	}
 	
-	//FE Request Commands
-	public static final String CONNECTION_REQUEST="connect";
-	public static final String DISCONNECTION_REQUEST="disconnect";
+	//FE Response codes
+	public static final int RESPONSE_OK=0;
+	public static final int RESPONSE_ERROR=1;
 
 	//ZMQ Context
 	private ZContext context;
 	//Router and Dealer sockets for supporting multi-threaded operation
 	private ZMQ.Socket listener;
 	private ZMQ.Socket distributor;
-	//Front facing Router and backend Dealer socket endpoints
-	public static final int LISTENER_PORT=4997;
+	//backend Dealer socket endpoint
 	public static final String INPROC_CONNECTOR="inproc://feWorkers";
 	
 	//Number of concurrent threads servicing incoming requests 
 	public static final int WORKER_POOL_SIZE=5;
+	//List of FeWorker threads
 	private List<Thread> workers;
 	
 	//Curator client for connecting to ZK 
@@ -60,7 +61,7 @@ public class Frontend {
 		//initialize front facing Router socket
 		this.context= context;
 		listener=context.createSocket(ZMQ.ROUTER);
-		listener.bind(String.format("tcp://*:%d",LISTENER_PORT));
+		listener.bind(String.format("tcp://*:%d",PortList.FE_LISTENER_PORT));
 
 		//initialize backend distributer socket
 		distributor=context.createSocket(ZMQ.DEALER);
@@ -69,6 +70,7 @@ public class Frontend {
 		client=CuratorFrameworkFactory.newClient(zkConnector,
 				new ExponentialBackoffRetry(1000, 3));
 		client.start();
+
 		//create  worker threads to process incoming requests concurrently
 		workers= new ArrayList<Thread>();
 		for(int i=0;i<WORKER_POOL_SIZE;i++){
@@ -81,14 +83,14 @@ public class Frontend {
 	
 	public void start(){
 		//start worker threads
-		logger.debug("FE:{} starting worker threads",feId);
+		logger.info("FE:{} will start worker threads",feId);
 		for(Thread t:workers){
 			t.start();
 		}
 		
 		//start ZMQ proxy to listen for incoming requests and forward them to a worker pool
 		logger.info("FE:{} will start listening for incoming requests at port:{}",
-				feId,LISTENER_PORT);
+				feId,PortList.FE_LISTENER_PORT);
 		ZMQ.proxy(listener,distributor, null);
 		
 		//FE was terminated, perform clean-up
@@ -100,12 +102,15 @@ public class Frontend {
 		listener.close();
 		distributor.close();
 
-		//clean-up
+		//destroy ZMQ context
 		context.destroy();
 		logger.debug("FE:{} ZMQ context and sockets were closed",feId);
+
+		//close ZK connection
 		CloseableUtils.closeQuietly(client);
 		logger.debug("FE:{} ZK connection closed",feId);
-		
+	
+		//wait for worker threads to exit
 		logger.debug("FE:{} will wait for worker threads to exit",feId);
 		try{
 			for (Thread t : workers) {
@@ -113,7 +118,7 @@ public class Frontend {
 				t.join();
 			}
 		}catch(InterruptedException e){}
-		logger.debug("FE:{} worker threads exited",feId);
+		logger.debug("FE:{} worker threads have exited",feId);
 
 		logger.info("FE:{} exited cleanly",feId);
 	}

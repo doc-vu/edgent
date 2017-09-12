@@ -2,6 +2,10 @@ package edu.vanderbilt.edgent.endpoints;
 
 import org.zeromq.ZMQ;
 
+import edu.vanderbilt.edgent.types.ContainerCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
+
+
 public class Publisher extends Container{
 	//Base port number for the producer thread at which data is sent out
 	public static final int PUBLISHER_PRODUCER_BASE_PORT_NUM=10000;
@@ -12,7 +16,6 @@ public class Publisher extends Container{
 	//Connector at which producer thread publishes data
 	private String producerConnector;
 
-	private int pubId;
 	//number of samples to send
 	private int sampleCount;
 	//sending rate of publisher
@@ -23,39 +26,23 @@ public class Publisher extends Container{
 		super(topicName, Container.ENDPOINT_TYPE_PUB, id);
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
-		pubId=0;
 		producerConnector=String.format("tcp://*:%d",
-				(PUBLISHER_PRODUCER_BASE_PORT_NUM+pubId));
+				(PUBLISHER_PRODUCER_BASE_PORT_NUM+id));
 	}
 
 	@Override
 	public void initialize() {
-		//create default sender thread with pubId=0
-		workers.put(pubId, new Sender(topicName,Worker.ENDPOINT_TYPE_PUB, pubId,
-				commandConnector,queueConnector,producerConnector));
-		workerThreads.put(pubId, new Thread(workers.get(pubId)));
-		pubId++;
-		//start default sender thread
-		workerThreads.get(0).start();
-		logger.info("Container:{} started its default sender thread", containerId);
+		//no-op
+	}
 
-		//wait until default sender thread is in the connected state, before starting the producer
-		while(workers.get(0).connected()==Worker.STATE_DISCONNECTED){
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				logger.error("Container:{} caught exception:{}",
-						containerId,e.getMessage());
-			}
-		}
-		if(workers.get(0).connected()==Worker.STATE_CONNECTED){
-			// start the producer thread
-			producer=new Producer(context, topicName,  queueConnector,
-					producerConnector, sampleCount,sendInterval);
-			producerThread = new Thread(producer);
-			producerThread.start();
-			logger.info("Container:{} started its data producer thread", containerId);
-		}
+	@Override
+	public void onConnected(){
+		System.out.println("ON CONNECTED CALLED!!!!");
+		// start the producer thread
+		producer = new Producer(context, topicName, queueConnector, producerConnector, sampleCount, sendInterval);
+		producerThread = new Thread(producer);
+		producerThread.start();
+		logger.info("Container:{} started its data producer thread", containerId);
 	}
 
 	@Override
@@ -95,7 +82,7 @@ public class Publisher extends Container{
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
 						pushSocket.connect(pub.queueConnector());
-						pushSocket.send(Subscriber.CONTAINER_EXIT_COMMAND);
+						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 						pubThread.join();
 						pushSocket.setLinger(0);
 						pushSocket.close();
@@ -110,6 +97,14 @@ public class Publisher extends Container{
 		}catch(NumberFormatException e){
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public Worker createWorker(int uuid,String ebId, String topicConnector) {
+		return new Sender(containerId, uuid, 
+				topicName, Worker.ENDPOINT_TYPE_PUB,ebId, 
+				topicConnector,
+				commandConnector, queueConnector,producerConnector);
 	}
 
 }

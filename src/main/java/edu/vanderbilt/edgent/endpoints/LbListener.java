@@ -4,6 +4,9 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
+import edu.vanderbilt.edgent.types.ContainerCommand;
+import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 
 public class LbListener implements Runnable{
 	public static final String LB_EXIT_COMMAND="exit";
@@ -28,7 +31,7 @@ public class LbListener implements Runnable{
 	private String topicName;
 	private Logger logger;
 	
-	public LbListener(String topicName,ZMQ.Context context,
+	public LbListener(String topicName,ZMQ.Context context,String ebConnector,
 			String controlConnector,String queueConnector,
 			CountDownLatch connected){
         logger= LogManager.getLogger(this.getClass().getSimpleName());
@@ -37,7 +40,7 @@ public class LbListener implements Runnable{
 		this.controlConnector=controlConnector;
 		this.queueConnector=queueConnector;
 		this.connected=connected;
-		ebConnector=null;
+		this.ebConnector=ebConnector;
 
 		logger.debug("LB Listener initialized");
 	}
@@ -78,9 +81,13 @@ public class LbListener implements Runnable{
 				try {
 					poller.poll(-1);
 					if (poller.pollin(0)) {//process LB command
-						String reconfCommand = subSocket.recvStr();
+						ZMsg msg= ZMsg.recvMsg(subSocket);
+						byte[] data=msg.getLast().getData();
+						ContainerCommand containerCommand= ContainerCommandHelper.deserialize(data);
+						logger.debug("LB Listener:{} received reconf command:{}",
+								Thread.currentThread().getName(),containerCommand.type());
 						//forward LB commands from EB to sub queue
-						commandSocket.send(reconfCommand);
+						commandSocket.send(data);
 					}
 					if (poller.pollin(1)) {//process control command
 						String command = controlSocket.recvStr();
@@ -110,11 +117,8 @@ public class LbListener implements Runnable{
 		subSocket.close();
 		controlSocket.close();
 		commandSocket.close();
-		logger.info("LB Listener:{} closed ZMQ context and sockets",
+		logger.info("LB Listener:{} closed  sockets",
 				Thread.currentThread().getName());
 	}
 
-	public void setTopicControlLocator(String ebConnector){
-		this.ebConnector=ebConnector;
-	}
 }

@@ -1,0 +1,11 @@
+namespace edu.vanderbilt.edgent.types;
+
+table FeRequest {
+  type:int;
+  topicName:string;
+  endpointType:string;
+  containerId:string;
+  ebId:string;
+}
+
+root_type FeRequest;

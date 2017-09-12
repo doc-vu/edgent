@@ -42,8 +42,7 @@ public class LbWorkerThread implements Runnable {
 
 		//create ZMQ subscriber socket to receive control messages
 		controlSocket=context.socket(ZMQ.SUB);
-		controlSocket.connect(String.format("tcp://127.0.0.1:%d",
-				LoadBalancer.CONTROL_PORT));
+		controlSocket.connect(LoadBalancer.IPROC_CONTROL_CONNECTOR);
 		controlSocket.subscribe(LoadBalancer.CONTROL_TOPIC.getBytes());
 	
 		//initialize ZMQ poller
@@ -65,8 +64,9 @@ public class LbWorkerThread implements Runnable {
 			if (poller.pollin(1)) {
 				// process control messages
 				String[] args = controlSocket.recvStr().split(" ");
-				if (args[1].equals(LoadBalancer.SHUTDOWN_CONTROL_MSG)) {
-					logger.info("WorkerThread:{} received control msg:{}",workerId,args[1]);
+				String controlMsg=args[1];
+				if (controlMsg.equals(LoadBalancer.SHUTDOWN_CONTROL_MSG)) {
+					logger.info("WorkerThread:{} received control msg:{}",workerId,controlMsg);
 					break;
 				}
 			}
@@ -82,14 +82,10 @@ public class LbWorkerThread implements Runnable {
 	
 	private void create(String topic){
 		try{
-			//create topic znode under /topics
+			//create topic znode under: /topics/topicName
 			client.create()
-				.forPath(String.format("/topics/%s",topic));
+				.forPath(String.format("/topics/%s",topic),LoadBalancer.REPLICATION_NONE.getBytes());
 			logger.info("WorkerThread:{} created topic znode:/topics/{}",workerId,topic);
-			//create topic znode under /lb/topics path
-			client.create()
-				.forPath(String.format("/lb/topics/%s",topic));
-			logger.info("WorkerThread:{} created topic znode:/lb/topics/{}",workerId,topic);
 
 			//get a list of EBs in the system
 			List<String> ebs= client.getChildren().forPath("/eb");
@@ -100,15 +96,16 @@ public class LbWorkerThread implements Runnable {
 				logger.debug("WorkerThread:{} selected EB:{} for hosting topic:{}", 
 						workerId, selectedEb, topic);
 
-				// create topic znode under selected EB's znode
+				//create eb znode under: /lb/topics/topicName/selectedEb 
 				client.create().creatingParentsIfNeeded().
-					forPath(String.format("/eb/%s/%s/pub", selectedEb, topic));
-				client.create().creatingParentsIfNeeded().
-					forPath(String.format("/eb/%s/%s/sub", selectedEb, topic));
+					forPath(String.format("/lb/topics/%s/%s",topic,selectedEb));
+				
+				// create topic znode under selected EB's znode: /eb/selectedEb/topic
+				client.create().forPath(String.format("/eb/%s/%s", selectedEb, topic));
+				
 				logger.info("WorkerThread:{} assigned topic:{} to EB:{}", workerId, topic, selectedEb);
 			}else{
 				client.delete().forPath(String.format("/topics/%s", topic));
-				client.delete().forPath(String.format("/lb/topics/%s", topic));
 				logger.error("WorkerThread:{} topic:{} cannot be hosted. Deleted topic:{}",
 						workerId,topic,topic);
 			}
