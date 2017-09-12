@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.loadbalancing;
+package edu.vanderbilt.edgent.loadbalancer;
 
 import java.util.List;
 import org.apache.curator.framework.CuratorFramework;
@@ -82,7 +82,12 @@ public class LbWorkerThread implements Runnable {
 	
 	private void create(String topic){
 		try{
-			//create topic znode under: /topics/topicName
+			/* Create topic znode under: /topics/topicName
+			 * Creation of topic znode acts like a locking mechanism, where 
+			 * if the topicName znode already exists this topic creation request
+			 * is considered to be a consecutive/simultaneous creation request 
+			 * received while the topic is being created by the system.
+			 */
 			client.create()
 				.forPath(String.format("/topics/%s",topic),LoadBalancer.REPLICATION_NONE.getBytes());
 			logger.info("WorkerThread:{} created topic znode:/topics/{}",workerId,topic);

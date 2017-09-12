@@ -3,12 +3,11 @@ package edu.vanderbilt.edgent.util;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Utility methods to get ipAddress, hostName and process Id
+ * Utility methods to get ipAddress, hostName, region Id and process Id
  * @author kharesp
  *
  */

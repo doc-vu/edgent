@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.loadbalancing;
+package edu.vanderbilt.edgent.rebalancing;
 
 import java.util.concurrent.CountDownLatch;
 

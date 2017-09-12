@@ -7,6 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
 
+import edu.vanderbilt.edgent.util.Commands;
+
 public class Prune implements Runnable {
 	//Time interval after which an unused topic is removed
 	private static final int TOPIC_EXPIRY_PERIOD_SEC=60;
@@ -31,7 +33,7 @@ public class Prune implements Runnable {
 			logger.info("EdgeBroker:{} Periodic pruning scheduled on thread:{}",
 					ebId,Thread.currentThread().getName());
 
-			//Acquire list of hosted topics at this broker
+			//Acquire list of hosted topics at this broker at: /eb/ebId
 			List<String> topics=client.getChildren().forPath(String.format("/eb/%s",ebId));
 
 			//For each topic, check if any interested endpoint exists
@@ -39,12 +41,12 @@ public class Prune implements Runnable {
 				logger.debug("Periodic pruning thread:{}: assessing topic:{}",
 						Thread.currentThread().getName(),topicName);
 
-					//get list of publishers for topicName
+					//get list of publishers for topicName under: /eb/ebId/topicName/pub
 					List<String> publishers= client.getChildren().
 							forPath(String.format("/eb/%s/%s/pub",ebId,topicName));
 
 					if (publishers.isEmpty()) {
-						//get list of subscribers for topicName
+						//get list of subscribers for topicName under: /eb/ebId/topicName/sub
 						List<String> subscribers = client.getChildren()
 								.forPath(String.format("/eb/%s/%s/sub", ebId, topicName));
 
@@ -61,7 +63,7 @@ public class Prune implements Runnable {
 							if(elapsed_milisec/1000 > TOPIC_EXPIRY_PERIOD_SEC){
 								logger.info("EdgeBroker:{} Periodic pruning thread:{} will delete topic:{}",
 									ebId,Thread.currentThread().getName(),topicName);
-								queue.add(String.format("%s,%s", EdgeBroker.EB_TOPIC_DELETE_COMMAND,topicName));
+								queue.add(String.format("%s,%s", Commands.EB_TOPIC_DELETE_COMMAND,topicName));
 							}
 						}
 					}

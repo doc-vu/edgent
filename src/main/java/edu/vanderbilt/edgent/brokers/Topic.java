@@ -10,6 +10,7 @@ import edu.vanderbilt.edgent.types.ContainerCommand;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.TopicCommand;
 import edu.vanderbilt.edgent.types.TopicCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
 import edu.vanderbilt.edgent.util.UtilMethods;
 /**
  * This class models a Topic/Channel hosted at an Edge/Routing Broker. 
@@ -18,10 +19,6 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  * @author kharesp
  */
 public class Topic implements Runnable {
-	//Types of Topic level commands    
-	public static final int TOPIC_DELETE_COMMAND=0;
-	public static final int TOPIC_LB_COMMAND=1;
-
 	//Topic name
 	private String topicName;
 	//ZMQ context
@@ -35,27 +32,31 @@ public class Topic implements Runnable {
 	//ZMQ PUB socket to send LB commands for this topic
 	private ZMQ.Socket lbSocket;
 
+	//EB's socket at which topic control commands are issued 
+	private String ebControlConnector;
+
 	//poller to poll receiveSocket for data and controlSocket for control msgs
 	private ZMQ.Poller poller;
 
-	//Binding port numbers for receiveSocket,sendSocket and lbSocket
+	//Binding port numbers for receiveSocket,sendSocket and lbSocket for this topic
 	private int receivePort;
 	private int sendPort;
 	private int lbPort;
+	//string representation of this Topic's connector
 	private String topicConnector;
-	//EB's socket connector at which topic control commands are issued
-	private String topicControlConnector;
 
+	//state variables to track if topic is properly initialized and listening for incoming data
 	private boolean listening;
 	private CountDownLatch initialized;
 	private Logger logger;
 	
-	public Topic(String topicName, ZMQ.Context context,String topicControlConnector,
+	public Topic(String topicName, ZMQ.Context context,String ebControlConnector,
 			int receivePort,int sendPort,int lbPort,CountDownLatch initialized){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		//stash constructor arguments
 		this.topicName= topicName;
 		this.context=context;
-		this.topicControlConnector=topicControlConnector;
+		this.ebControlConnector=ebControlConnector;
 		this.receivePort=receivePort;
 		this.sendPort=sendPort;
 		this.lbPort=lbPort;
@@ -84,13 +85,12 @@ public class Topic implements Runnable {
 		poller=context.poller(2);
 
 		try{
-			// connect control socket to hosting broker's TOPIC_CONTROL_PORT
-			controlSocket.connect(topicControlConnector);
-			// subscribe to receive topic control messages
+			//connect to EB's socket at which topic control messages are issued
+			controlSocket.connect(ebControlConnector);
+			// subscribe to receive topic control messages for this topicName
 			controlSocket.subscribe(topicName.getBytes());
 
-			// bind receiveSocket to receivePort and subscribe to receive
-			// topic's data
+			// bind receiveSocket to receivePort and subscribe to receive this topic's data
 			receiveSocket.bind(String.format("tcp://*:%d", receivePort));
 			receiveSocket.subscribe(topicName.getBytes());
 			logger.debug("Topic:{} receive socket bound to port:{} and subscribed to topic:{}", topicName, receivePort,
@@ -108,12 +108,14 @@ public class Topic implements Runnable {
 			lbSocket.bind(String.format("tcp://*:%d", lbPort));
 			logger.debug("Topic:{}  LB socket bound to port number:{}", topicName, lbPort);
 		}catch(ZMQException e){
+			//sendPort/receivePort/lbPort numbers are in use
 			logger.error("Topic:{} caught exception:{}",topicName,e.getMessage());
 			initialized.countDown();
 			cleanup();
 			return;
 		}
-	
+
+		//If topic ports:receivePort,sendPort and lbPort are properly initialized, set listening to true
 		listening=true;
 		initialized.countDown();
 
@@ -122,7 +124,7 @@ public class Topic implements Runnable {
 		logger.info("Topic:{} thread will start listening", topicName);
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
-				// block until either controlSocket or receiveSocket have data
+				// block until either controlSocket or receiveSocket has data
 				poller.poll(-1);
 
 				// in case receiveSocket has data
@@ -139,15 +141,19 @@ public class Topic implements Runnable {
 					ZMsg controlMsg= ZMsg.recvMsg(controlSocket);
 					String topicName= new String(controlMsg.getFirst().getData());
 					TopicCommand command= TopicCommandHelper.deserialize(controlMsg.getLast().getData());
-					if(command.type()== Topic.TOPIC_DELETE_COMMAND){
+					//process TOPIC_DELETE_COMMAND
+					if(command.type()== Commands.TOPIC_DELETE_COMMAND){
 						logger.debug("Topic:{} received TOPIC_DELETE_COMMAND",topicName);
 						break;
 					}
-					if(command.type()== Topic.TOPIC_LB_COMMAND){
+					//process TOPIC_LB_COMMAND
+					else if(command.type()== Commands.TOPIC_LB_COMMAND){
+						logger.debug("Topic:{} received LB control message",topicName);
 						ContainerCommand containerCommand= command.containerCommand();
 						lbSocket.sendMore(topicName.getBytes());
 						lbSocket.send(ContainerCommandHelper.serialize(containerCommand));
-						logger.debug("Topic:{} send LB control message to all connected endpoints",topicName);
+					}else{
+						logger.error("Topic:{} received invalid control command:{}",topicName,command.type());
 					}
 				}
 			}catch(Exception e){

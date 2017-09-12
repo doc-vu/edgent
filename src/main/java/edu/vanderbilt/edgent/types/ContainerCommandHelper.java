@@ -12,8 +12,11 @@ public class ContainerCommandHelper {
 	}
 
 	public static int offset(FlatBufferBuilder builder, int type){
+		//start ContainerCommand builder
 		ContainerCommand.startContainerCommand(builder);
+		//add type
 		ContainerCommand.addType(builder, type);
+		//return ContainerCommand offset
 		return ContainerCommand.endContainerCommand(builder);
 	}
 	
@@ -26,9 +29,13 @@ public class ContainerCommandHelper {
 	
 	public static int offset(FlatBufferBuilder builder,int type,String containerId){
 		int containerIdOffset= builder.createString(containerId);
+		//start ContainerCommand builder
 		ContainerCommand.startContainerCommand(builder);
+		//add Type
 		ContainerCommand.addType(builder, type);
+		//add containerId 
 		ContainerCommand.addContainerId(builder, containerIdOffset);
+		//close ContainerCommand builder and return offset
 		return ContainerCommand.endContainerCommand(builder);
 	}
 
@@ -41,22 +48,32 @@ public class ContainerCommandHelper {
 	
 	public static int offset(FlatBufferBuilder builder,int type,
 			String containerId,String ebId, String topicConnector){
-		int containerIdOffset= builder.createString(containerId);
-		int ebIdOffset= builder.createString(ebId);
-
+		/* Prase parts from topicConnector string: ebAddress, sendPort,
+		receivePort and controlPort*/
 		String[] connectorParts= topicConnector.split(",");
 		String ebAddress= connectorParts[0];
 		int receivePort= Integer.parseInt(connectorParts[1]);
 		int sendPort= Integer.parseInt(connectorParts[2]);
 		int controlPort= Integer.parseInt(connectorParts[3]);
+
+		//get string offsets
+		int containerIdOffset= builder.createString(containerId);
+		int ebIdOffset= builder.createString(ebId);
 		int ebAddressOffset= builder.createString(ebAddress);
-		
+	
+		//get topic connector's offset
 		int topicConnectorOffset= TopicConnector.createTopicConnector(builder, ebIdOffset,
 				ebAddressOffset, receivePort, sendPort, controlPort);
+
+		//start ContainerCommand builder
 		ContainerCommand.startContainerCommand(builder);
+		//add type
 		ContainerCommand.addType(builder, type);
+		//add containerId
 		ContainerCommand.addContainerId(builder, containerIdOffset);
+		//add topicConnector
 		ContainerCommand.addTopicConnector(builder, topicConnectorOffset);
+		//close ContainerCommand builder and return offset
 		return ContainerCommand.endContainerCommand(builder);
 	}
 	

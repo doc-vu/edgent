@@ -1,13 +1,13 @@
 package edu.vanderbilt.edgent.util;
 
 public class Commands {
-	// FE Request Commands
+	//commands processed by FEWorker threads
 	public static final int FE_CONNECT_REQUEST = 0;
 	public static final int FE_CONNECT_TO_EB_REQUEST = 1;
 	public static final int FE_DISCONNECT_REQUEST = 2;
 	
 	
-	//Type of commands processed by Container
+	//commands processed by Containers
 	public static final int CONTAINER_EXIT_COMMAND=3;
 	public static final int CONTAINER_CREATE_WORKER_COMMAND=4;
 	public static final int CONTAINER_DELETE_WORKER_COMMAND=5;
@@ -15,8 +15,20 @@ public class Commands {
 	public static final int CONTAINER_WORKER_DISCONNECTED_COMMAND=7;
 	public static final int CONTAINER_WORKER_EXITED_COMMAND=8;
 	
-	// Worker thread commands
+	//commands processed by Worker threads 
 	public static final int WORKER_EXIT_COMMAND=9;
+
+	//commands processed by Topic threads
+	public static final int TOPIC_DELETE_COMMAND=10;
+	public static final int TOPIC_LB_COMMAND=11;
 	
+	//Type of commands processed by EB
+	public static final String EB_TOPIC_DELETE_COMMAND="DELETE_TOPIC";
+	public static final String EB_TOPIC_CREATE_COMMAND="CREATE_TOPIC";
+	public static final String EB_TOPIC_LB_COMMAND="LB_TOPIC";
+	public static final String EB_EXIT_COMMAND="EXIT_EB";
+	
+	//Type of commands processed by LBListener
+	public static final String LB_LISTENER_EXIT_COMMAND="exit";
 
 }

@@ -6,15 +6,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
-
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public abstract class Worker implements Runnable{
 	//connection states
-  	public static final int STATE_CONNECTED=1;
-  	public static final int STATE_DISCONNECTED=0;
+  	public static final int WORKER_STATE_CONNECTED=1;
+  	public static final int WORKER_STATE_DISCONNECTED=0;
 
   	//types of endpoints
   	public static final String ENDPOINT_TYPE_SUB="sub";
@@ -46,10 +45,10 @@ public abstract class Worker implements Runnable{
 	//LbListener thread to receive topic level Lb commands 
 	private LbListener lbListener;
 	private Thread lbListenerThread;
-	//Monitor thread to monitor Receiver's connection status to EB
+	//Monitor thread to monitor Worker's connection status to EB
 	private Thread monitoringThread;
 
-	//Latch to signal connection/disconnection with EB
+	//Latch to signal connection/dischponnection with EB
 	private CountDownLatch connected;
 	//Current state of connection with the EB
 	protected AtomicInteger connectionState;
@@ -58,22 +57,26 @@ public abstract class Worker implements Runnable{
   	//Flag to indicate whether Receiver's polling loop is engaged
   	protected AtomicBoolean exited;
 
+  	//Parent container's id
   	private String containerId;
   	//Type of endpoint 
   	private String endpointType;
 	protected String topicName;
-	//Receiver's znode location
-	private String znodePath;
 
-	//Address of EB to connect to
+	//ID of EB to connect to
 	private String ebId;
-	private String topicConnector;
+	//Address of EB to connect to
 	private String ebAddress;
 	//Hosting EB's exposed Topic ports 
 	private String topicListenerPort;
 	private String topicSendPort;
 	private String topicLbPort;
-	
+	//String representation of topic connector
+	private String topicConnector;
+	//Worker's znode location
+	private String znodePath;
+
+	//Connector at which Monitoring thread receives socket's connection state information
 	private String monitoringLocator;
 
 	protected String workerId;
@@ -84,6 +87,7 @@ public abstract class Worker implements Runnable{
 			String ebId,String topicConnector,
 			String controlConnector, String queueConnector){
         logger= LogManager.getLogger(this.getClass().getSimpleName());
+        //stash constructor params
         this.containerId=containerId;
 		this.topicName=topicName;
 		this.endpointType=endpointType;
@@ -93,17 +97,18 @@ public abstract class Worker implements Runnable{
 		this.controlConnector=controlConnector;
 		this.queueConnector=queueConnector;
 
+		//parse out topic connector's parts
 		String[] topicConnectorParts= topicConnector.split(",");
 		ebAddress= topicConnectorParts[0];
 		topicListenerPort= topicConnectorParts[1];
 		topicSendPort= topicConnectorParts[2];
 		topicLbPort= topicConnectorParts[3]; 
 		
-		monitoringLocator="inproc://"+ebAddress;
-
 		workerId=String.format("%s_%s_%s_%s_%s_%d",endpointType,topicName,
 				UtilMethods.hostName(),UtilMethods.pid(),ebAddress,uuid);
-		connectionState= new AtomicInteger(STATE_DISCONNECTED);
+		monitoringLocator=String.format("inproc://monitoring_%s",workerId);
+
+		connectionState= new AtomicInteger(WORKER_STATE_DISCONNECTED);
 		retryCount= new AtomicInteger(0);
 		exited= new AtomicBoolean(false);
 		logger.debug("Wroker:{} initialized",workerId);
@@ -114,11 +119,11 @@ public abstract class Worker implements Runnable{
 		try {
 			logger.info("Worker:{} started", workerId);
 			connected = new CountDownLatch(1);
+
 			logger.info("Worker:{} will initialize ZMQ, monitoring and lb listener thread", workerId);
 
 			// initialize ZMQ sockets
 			initializeZMQ();
-		
 		
 			//Attempt connection to EB
 			if(endpointType.equals(ENDPOINT_TYPE_PUB)){
@@ -132,24 +137,26 @@ public abstract class Worker implements Runnable{
 			connected.await();
 
 		    //Perform processing once connected 
-			if (connectionState.get() == STATE_CONNECTED) {
+			if (connectionState.get() == WORKER_STATE_CONNECTED) {
+				//send CONTAINER_WORKER_CONNECTED_COMMAND to parent container
 				queueSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_WORKER_CONNECTED_COMMAND,
 						containerId,ebId,topicConnector));
-				logger.info("Worker:{} connected to EB. Will start listening", workerId);
+				logger.info("Worker:{} connected to EB. Will start processing", workerId);
 				process();
 			}
 		
-			if(connectionState.get() == STATE_DISCONNECTED){
-				//Send disconnected signal to parent container
+			if(connectionState.get() == WORKER_STATE_DISCONNECTED){
+				//Send CONTAINER_WORKER_DISCONNECTED_COMMAND signal to parent container
 				queueSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_WORKER_DISCONNECTED_COMMAND,
 						containerId, ebId, topicConnector));
 			}
 			if(exited.get()==true){
-				//Send exited signal to parent container
+				//Send CONTAINER_WORKER_EXITED_COMMAND to parent container
 				queueSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_WORKER_EXITED_COMMAND,
 						containerId, ebId, topicConnector));
 			}
 
+			//perform clean-up before exiting
 			cleanup();
 		} catch (InterruptedException e) {
 			logger.error("Worker:{} caught exception:{}",workerId,e.getMessage());
@@ -162,6 +169,7 @@ public abstract class Worker implements Runnable{
 	private void initializeZMQ(){
 		//create ZMQ context
 		context=ZMQ.context(1);
+
 		//create ZMQ sockets
 		lbSocket=context.socket(ZMQ.PUSH);
 		queueSocket=context.socket(ZMQ.PUSH);
@@ -178,7 +186,7 @@ public abstract class Worker implements Runnable{
 		ctrlSocket.connect(controlConnector);
 		ctrlSocket.subscribe(topicName.getBytes());
 		
-		String lbListenerConnector=String.format("inproc://%s", workerId);
+		String lbListenerConnector=String.format("inproc://lb_%s", workerId);
 		lbSocket.bind(lbListenerConnector);
 		
 		queueSocket.connect(queueConnector);
@@ -186,7 +194,7 @@ public abstract class Worker implements Runnable{
 		logger.debug("Worker:{} initialized ZMQ context and sockets",workerId);
 
 		//start LB listener thread
-		lbListener=new LbListener(topicName,context,String.format("tcp://%s:%s",ebAddress,topicLbPort),
+		lbListener=new LbListener(containerId,topicName,context,String.format("tcp://%s:%s",ebAddress,topicLbPort),
 				lbListenerConnector,queueConnector,connected);
 		lbListenerThread= new Thread(lbListener);
 		lbListenerThread.start();
@@ -201,6 +209,7 @@ public abstract class Worker implements Runnable{
 		monitoringThread.start();
 		logger.debug("Worker:{} started connection monitoring thread",workerId);
 
+		//implementation specific ZMQ initialization
 		initialize();
 	}
 
@@ -213,7 +222,7 @@ public abstract class Worker implements Runnable{
 		//wait for lb listener and monitor thread to exit
 		try{
 			// send exit signal to LB listener thread
-			lbSocket.send(String.format("%s", LbListener.LB_EXIT_COMMAND));
+			lbSocket.send(String.format("%s", Commands.LB_LISTENER_EXIT_COMMAND));
 
 			//if lb listener thread is waiting for connection to get established, interrupt its wait
 			if(connected.getCount()>0){
@@ -230,14 +239,17 @@ public abstract class Worker implements Runnable{
 			logger.error("Worker:{} caught exception:{}",workerId,e.getMessage());
 		}
 
-
+		//set linger to 0
 		lbSocket.setLinger(0);
-		lbSocket.close();
 		ctrlSocket.setLinger(0);
-		ctrlSocket.close();
 		queueSocket.setLinger(0);
-		queueSocket.close();
 		
+		//close sockets
+		lbSocket.close();
+		ctrlSocket.close();
+		queueSocket.close();
+	
+		//perform implementation specific ZMQ cleanup
 		close();
 
 		//terminate ZMQ context
@@ -249,6 +261,10 @@ public abstract class Worker implements Runnable{
 	private void onExit(){
 		logger.info("Worker:{} has exited",workerId);
 	}
+
+	public abstract void initialize();
+	public abstract void  process();
+	public abstract void close();
 
 	public int connected(){
 		return connectionState.get();
@@ -266,10 +282,6 @@ public abstract class Worker implements Runnable{
 		return ebId;
 	}
 
-	public abstract void initialize();
-	public abstract void  process();
-	public abstract void close();
-
 	private class Monitor implements Runnable{
 		private CountDownLatch connected;
 		private ZMQ.Context context;
@@ -284,7 +296,7 @@ public abstract class Worker implements Runnable{
 
 		@Override
 		public void run() {
-			logger.info("Monitor:{} started",Thread.currentThread().getName());
+			logger.info("Monitor:{} started",workerId);
 			ZMQ.Socket pair = context.socket(ZMQ.PAIR);
 			pair.connect(monitoringLocator);
 
@@ -292,22 +304,20 @@ public abstract class Worker implements Runnable{
 				ZMQ.Event event = ZMQ.Event.recv(pair);
 
 				if (event.getEvent() == ZMQ.EVENT_CONNECTED) {//Connected to EB
-					logger.info("Monitor:{} connection state: connected",
-							Thread.currentThread().getName());
+					logger.info("Monitor:{} connection state: connected",workerId);
 					//set retry count to 0
 					retryCount.set(0);
 					//set connection state to CONNECTED
-					connectionState.set(STATE_CONNECTED);
+					connectionState.set(WORKER_STATE_CONNECTED);
 					//open waitset to allow Worker to start processing
 					connected.countDown();
 				}
 				if (event.getEvent() == ZMQ.EVENT_CONNECT_RETRIED) {//retrying connection to EB
-					logger.info("Monitor:{} connection state: retrying",
-							Thread.currentThread().getName());
+					logger.info("Monitor:{} connection state: retrying",workerId);
 					//increment retry count
 					int val=retryCount.getAndIncrement();
 					//set connection state to DISCONNECTED 
-					connectionState.set(STATE_DISCONNECTED);
+					connectionState.set(WORKER_STATE_DISCONNECTED);
 					if(val>MAX_RETRY_COUNT){
 						//set retry count to 0
 						retryCount.set(0);
@@ -317,25 +327,22 @@ public abstract class Worker implements Runnable{
 					}
 				}
 				if (event.getEvent() == ZMQ.EVENT_DISCONNECTED) {//disconnected from EB
-					logger.info("Monitor:{} connection state: disconnected",
-							Thread.currentThread().getName());
+					logger.info("Monitor:{} connection state: disconnected",workerId);
 					//set retry count to 0
 					retryCount.set(0);
 					//set connection state to DISCONNECTED
-					connectionState.set(STATE_DISCONNECTED);
+					connectionState.set(WORKER_STATE_DISCONNECTED);
 					break;
 				}
 				if(event.getEvent()== ZMQ.EVENT_MONITOR_STOPPED){//socket being monitored was closed
-					logger.info("Monitor:{} connection state: socket closed",
-							Thread.currentThread().getName());
+					logger.info("Monitor:{} connection state: socket closed",workerId);
 					break;
 				}
 			}
 			pair.disconnect(monitoringLocator);
 			pair.setLinger(0);
 			pair.close();
-			logger.info("Monitor:{} exited",
-					Thread.currentThread().getName());
+			logger.info("Monitor:{} exited",workerId);
 		}
 	}
 }

@@ -1,21 +1,26 @@
 package edu.vanderbilt.edgent.util;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.LinkedList;
 
 public class PortList {
-	public static final int FE_LISTENER_PORT=4000;
-	public static final int LB_LISTENER_PORT=5000;
-	/* LinkedBlockingQueue offers a synchronized implementation of 
-	 * the queue interface. Topic may be created by one thread, thereby
-	 * acquiring ports from the PortList on that thread,
-	 * while another thread deletes and releases the ports
-	 * to the PortList on this thread. 
-	 */
-	private static LinkedBlockingQueue<Integer> pool; 
+	//port at which FE listens for incoming connection/disconnection requests
+	public static final int FE_LISTENER_PORT=2000;
+	//port at which LB listens for topic creation requests
+	public static final int LB_LISTENER_PORT=3000;
+	//Base command and queue port numbers for Subscriber container 
+	public static final int SUBSCRIBER_COMMAND_BASE_PORT_NUM=4000;
+	public static final int SUBSCRIBER_QUEUE_BASE_PORT_NUM=5000;
+	public static final int SUBSCRIBER_COLLECTOR_BASE_PORT_NUM=6000;
+
+	//Base command and queue port numbers for Publisher container 
+	public static final int PUBLISHER_COMMAND_BASE_PORT_NUM=7000;
+	public static final int PUBLISHER_QUEUE_BASE_PORT_NUM=8000;
+	public static final int PUBLISHER_PRODUCER_BASE_PORT_NUM=9000;
+
+	private static LinkedList<Integer> pool; 
 	private static PortList instance=null;
 	/*User port range is: 1024-49151*/
-	private static int START_RANGE= 20000;
-	//private static int END_RANGE= 20000; 
+	private static int START_RANGE= 10000;
 
 	/**
 	 * Singleton instance 
@@ -30,7 +35,7 @@ public class PortList {
 	public static PortList getInstance(int id){
 		if(instance==null){
 			instance= new PortList();
-			pool= new LinkedBlockingQueue<Integer>();
+			pool= new LinkedList<Integer>();
 			for(int i=START_RANGE+id*1000;i<(START_RANGE+id*1000 + 1000);i++){
 				pool.offer(i);
 			}

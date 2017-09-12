@@ -7,10 +7,12 @@ public class FeRequestHelper {
 	public static byte[] serialize(int type,String topicName,String endpointType,
 			String containerId,String ebId){
 		FlatBufferBuilder builder= new FlatBufferBuilder(1024);
+		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
 		int endpointTypeOffset= builder.createString(endpointType);
 		int containerIdOffset= builder.createString(containerId);
 		int ebIdOffset= builder.createString(ebId);
+		//get FeRequest offset
 		int feRequestOffset= FeRequest.createFeRequest(builder, type, topicNameOffset, endpointTypeOffset, containerIdOffset, ebIdOffset);
 		builder.finish(feRequestOffset);
 		return builder.sizedByteArray();
@@ -19,6 +21,7 @@ public class FeRequestHelper {
 	public static byte[] serialize(int type, String topicName, String endpointType,
 			String containerId){
 		FlatBufferBuilder builder= new FlatBufferBuilder(1024);
+		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
 		int endpointTypeOffset= builder.createString(endpointType);
 		int containerIdOffset= builder.createString(containerId);

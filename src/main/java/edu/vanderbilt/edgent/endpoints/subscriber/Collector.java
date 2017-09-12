@@ -1,10 +1,9 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.endpoints.subscriber;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
-
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.DataSample;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
@@ -20,7 +19,7 @@ public class Collector implements Runnable{
 	private ZMQ.Socket collectorSocket;
 	//ZMQ socket at which Collector thread will receive control commands
 	private ZMQ.Socket controlSocket;
-	//ZMQ socket at which Collector thread will send commands to Subscriber container
+	//ZMQ socket at which Collector thread will send commands to Subscriber's container
 	private ZMQ.Socket commandSocket;
 
 	private String topicName;
@@ -40,6 +39,7 @@ public class Collector implements Runnable{
 			String controlConnector,String subQueueConnector,String collectorConnector,
 			int sampleCount){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		//stash constructor arguments
 		this.context=context;
 		this.topicName=topicName;
 		this.controlConnector=controlConnector;
@@ -78,10 +78,10 @@ public class Collector implements Runnable{
 			if(poller.pollin(0)){
 				DataSample sample = DataSampleHelper.deserialize(collectorSocket.recv());
 				currCount++;
-				//if(currCount%1000==0){
+				if(currCount%1000==0){
 					logger.debug("Collector thread:{} received sample:{}, currCount:{}",
 							Thread.currentThread().getName(),sample.sampleId(),currCount);
-				//}
+				}
 				if(currCount==sampleCount){
 					logger.info("Collector thread:{} received all {} messages",
 							Thread.currentThread().getName(),sampleCount);

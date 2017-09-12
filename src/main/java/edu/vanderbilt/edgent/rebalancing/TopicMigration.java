@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.brokers;
+package edu.vanderbilt.edgent.rebalancing;
 
 import java.util.HashSet;
 import org.apache.curator.framework.CuratorFramework;
@@ -53,7 +53,7 @@ public class TopicMigration {
 			setupZk();
 			//send control message for subscribers to also connect to new topic connector
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Topic.TOPIC_LB_COMMAND, 
+			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
 					Commands.CONTAINER_CREATE_WORKER_COMMAND,Container.FOR_ALL_CONTAINERS,
 					destEb,newTopicConnector));
 
@@ -71,7 +71,7 @@ public class TopicMigration {
 		
 			//send control message to disconnect all endpoints from old EB
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Topic.TOPIC_LB_COMMAND, Commands.CONTAINER_DELETE_WORKER_COMMAND,
+			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, Commands.CONTAINER_DELETE_WORKER_COMMAND,
 					Container.FOR_ALL_CONTAINERS,sourceEb,currTopicConnector));
 			
 			//wait until old subscriber connections are removed

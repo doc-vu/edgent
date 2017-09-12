@@ -25,8 +25,8 @@ public class Frontend {
 	}
 	
 	//FE Response codes
-	public static final int RESPONSE_OK=0;
-	public static final int RESPONSE_ERROR=1;
+	public static final int FE_RESPONSE_CODE_OK=0;
+	public static final int FE_RESPONSE_CODE_ERROR=1;
 
 	//ZMQ Context
 	private ZContext context;

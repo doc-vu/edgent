@@ -1,13 +1,13 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.endpoints.subscriber;
 
 import org.zeromq.ZMQ;
+import edu.vanderbilt.edgent.endpoints.Container;
+import edu.vanderbilt.edgent.endpoints.Worker;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
-
+import edu.vanderbilt.edgent.util.PortList;
 
 public class Subscriber extends Container{
-	//Base port number at which the collector thread of Subscriber container listens for data
-	public static final int SUBSCRIBER_COLLECTOR_BASE_PORT_NUM=7000;
 	//Collector Thread
 	private Thread collectorThread;
 	//Connector for the collector thread
@@ -19,7 +19,7 @@ public class Subscriber extends Container{
 		super( topicName,Container.ENDPOINT_TYPE_SUB,id);
 		this.sampleCount=sampleCount;
 		collectorConnector=String.format("tcp://*:%d",
-				(SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
+				(PortList.SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
 	}
 
 	@Override
@@ -46,6 +46,14 @@ public class Subscriber extends Container{
 		}
 	}
 
+	@Override
+	public Worker instantiateWorker(int uuid, String ebId, String topicConnector) {
+		return new Receiver(containerId, uuid,
+				topicName, Worker.ENDPOINT_TYPE_SUB,ebId,
+				topicConnector,
+				commandConnector, queueConnector, collectorConnector);
+	}
+
 	public static void main(String args[]){
 		if(args.length < 3){
 			System.out.println("Subscriber topicName id sampleCount");
@@ -69,8 +77,11 @@ public class Subscriber extends Container{
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
 						pushSocket.connect(sub.queueConnector());
+						//send CONTAINER_EXIT_COMMAND
 						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+						//wait for subscriber to exit
 						subThread.join();
+						//cleanup ZMQ
 						pushSocket.setLinger(0);
 						pushSocket.close();
 						context.term();
@@ -86,11 +97,4 @@ public class Subscriber extends Container{
 		}
 	}
 
-	@Override
-	public Worker createWorker(int uuid, String ebId, String topicConnector) {
-		return new Receiver(containerId, uuid,
-				topicName, Worker.ENDPOINT_TYPE_SUB,ebId,
-				topicConnector,
-				commandConnector, queueConnector, collectorConnector);
-	}
 }

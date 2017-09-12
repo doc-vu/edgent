@@ -7,17 +7,20 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 import edu.vanderbilt.edgent.types.ContainerCommand;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
+import edu.vanderbilt.edgent.util.Commands;
 
 public class LbListener implements Runnable{
-	public static final String LB_EXIT_COMMAND="exit";
 	//ZMQ context
 	private ZMQ.Context context;
 	//ZMQ SUB socket at which topic level lb commands are received from EB
 	private ZMQ.Socket subSocket;
 	//ZMQ PULL socket at which control commands are received from Worker thread 
 	private ZMQ.Socket controlSocket;
-	//ZMQ PUSH socket to send lb commands to this worker's parent container
-	private ZMQ.Socket commandSocket;
+	//ZMQ PUSH socket to send lb commands to this worker's parent container's queue
+	private ZMQ.Socket queueSocket;
+
+	//Id of container to which this LB Listener thread belongs
+	private String containerId;
 
 	//EB's topic control socket connector at which LB commands are issued
 	private String ebConnector;
@@ -31,18 +34,20 @@ public class LbListener implements Runnable{
 	private String topicName;
 	private Logger logger;
 	
-	public LbListener(String topicName,ZMQ.Context context,String ebConnector,
+	public LbListener(String containerId,String topicName,ZMQ.Context context,String ebConnector,
 			String controlConnector,String queueConnector,
 			CountDownLatch connected){
         logger= LogManager.getLogger(this.getClass().getSimpleName());
+        //stash constructor arguments
+        this.containerId=containerId;
 		this.topicName=topicName;
 		this.context=context;
+		this.ebConnector=ebConnector;
 		this.controlConnector=controlConnector;
 		this.queueConnector=queueConnector;
 		this.connected=connected;
-		this.ebConnector=ebConnector;
 
-		logger.debug("LB Listener initialized");
+		logger.debug("LB Listener:{} initialized",containerId);
 	}
 
 	@Override
@@ -51,18 +56,17 @@ public class LbListener implements Runnable{
 		//initialize ZMQ sockets
 		subSocket=context.socket(ZMQ.SUB);
 		controlSocket=context.socket(ZMQ.PULL);
-		commandSocket=context.socket(ZMQ.PUSH);
+		queueSocket=context.socket(ZMQ.PUSH);
 
 		controlSocket.connect(controlConnector);
-		commandSocket.connect(queueConnector);
+		queueSocket.connect(queueConnector);
 		
 		//wait until connected to EB
 		try {
-			logger.info("LB Listener:{} will wait until connected to EB",Thread.currentThread().getName());
+			logger.info("LB Listener:{} will wait until connected to EB",containerId);
 			connected.await();
 		}catch(InterruptedException e){
-			logger.error("LB Listener:{} caught exception:{}",
-					Thread.currentThread().getName(),e.getMessage());
+			logger.error("LB Listener:{} caught exception:{}",containerId,e.getMessage());
 			cleanup();
 			return;
 		}
@@ -75,8 +79,7 @@ public class LbListener implements Runnable{
 			poller.register(subSocket, ZMQ.Poller.POLLIN);
 			poller.register(controlSocket, ZMQ.Poller.POLLIN);
 
-			logger.info("LB Listener:{} will start listening",
-					Thread.currentThread().getName());
+			logger.info("LB Listener:{} will start listening",containerId);
 			while (true) {
 				try {
 					poller.poll(-1);
@@ -85,40 +88,39 @@ public class LbListener implements Runnable{
 						byte[] data=msg.getLast().getData();
 						ContainerCommand containerCommand= ContainerCommandHelper.deserialize(data);
 						logger.debug("LB Listener:{} received reconf command:{}",
-								Thread.currentThread().getName(),containerCommand.type());
-						//forward LB commands from EB to sub queue
-						commandSocket.send(data);
+								containerId,containerCommand.type());
+						//forward LB commands from EB to container's queue for processing
+						queueSocket.send(data);
 					}
 					if (poller.pollin(1)) {//process control command
 						String command = controlSocket.recvStr();
-						if(command.equals(LB_EXIT_COMMAND)){
+						if(command.equals(Commands.LB_LISTENER_EXIT_COMMAND)){
 							logger.info("LB Listener:{} got control msg:{}",
-									Thread.currentThread().getName(),LB_EXIT_COMMAND);
+									containerId,Commands.LB_LISTENER_EXIT_COMMAND);
 							break;
 						}
 					}
 				} catch (Exception e) {
 					logger.error("LB Listener:{} caught exception:{}",
-							Thread.currentThread().getName(),e.getMessage());
+							containerId,e.getMessage());
 					break;
 				}
 			}
 		}
 		cleanup();
-		logger.info("LB Listener:{} has exited",Thread.currentThread().getName());
+		logger.info("LB Listener:{} has exited",containerId);
 	}
 	
 	private void cleanup(){
 		//set linger to 0
 		subSocket.setLinger(0);
 		controlSocket.setLinger(0);
-		commandSocket.setLinger(0);
+		queueSocket.setLinger(0);
 		//close sockets
 		subSocket.close();
 		controlSocket.close();
-		commandSocket.close();
-		logger.info("LB Listener:{} closed  sockets",
-				Thread.currentThread().getName());
+		queueSocket.close();
+		logger.info("LB Listener:{} closed  sockets",containerId);
 	}
 
 }

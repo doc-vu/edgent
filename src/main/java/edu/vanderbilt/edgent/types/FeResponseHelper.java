@@ -54,6 +54,7 @@ public class FeResponseHelper {
 					ebAddressOffset, receivePort, sendPort, controlPort);
 			topicConnectorOffsets[i++]=topicConnectorOffset;
 		}
+		//create TopicConnectors vector
 		int connectorsOffset= FeResponse.createConnectorsVector(builder, topicConnectorOffsets);
 
 		//start FeResponse builder

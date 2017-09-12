@@ -1,4 +1,4 @@
-package edu.vanderbilt.edgent.loadbalancing;
+package edu.vanderbilt.edgent.loadbalancer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,6 @@ import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
-
 import edu.vanderbilt.edgent.util.PortList;
 import edu.vanderbilt.edgent.util.UtilMethods;
 /**
@@ -35,7 +34,7 @@ public class LoadBalancer implements Runnable{
 	//ZMQ PUB socket to issue control messages to worker threads 
 	private ZMQ.Socket controlSocket;
 
-	//Internal inproc connector to which pool threads connect to receive requests
+	//Internal inproc connector to which worker threads connect to receive requests
 	public static final String INPROC_CONNECTOR="inproc://lbWorkers";
 	//Internal inproc connector at which control messages are sent to worker threads
 	public static final String IPROC_CONTROL_CONNECTOR="inproc://lbControl";
@@ -172,7 +171,9 @@ public class LoadBalancer implements Runnable{
 				socket.send(String.format("%s", SHUTDOWN_CONTROL_MSG));
 				try{
 					lbThread.join();
-				}catch(Exception e){}
+				}catch(Exception e){
+					e.printStackTrace();
+				}
 				socket.setLinger(0);
 				socket.close();
 				context.term();

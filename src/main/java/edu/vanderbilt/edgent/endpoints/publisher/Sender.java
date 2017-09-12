@@ -1,8 +1,8 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.endpoints.publisher;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
-
+import edu.vanderbilt.edgent.endpoints.Worker;
 import edu.vanderbilt.edgent.types.WorkerCommand;
 import edu.vanderbilt.edgent.types.WorkerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
@@ -38,7 +38,7 @@ public class Sender extends Worker{
 
 		//poll for data and control messages
 		while (!Thread.currentThread().isInterrupted() &&
-				connectionState.get() == STATE_CONNECTED){
+				connectionState.get() == WORKER_STATE_CONNECTED){
 			poller.poll(POLL_INTERVAL_MILISEC);
 			if (poller.pollin(0)) {//process data 
 				ZMsg receivedMsg = ZMsg.recvMsg(receiverSocket);

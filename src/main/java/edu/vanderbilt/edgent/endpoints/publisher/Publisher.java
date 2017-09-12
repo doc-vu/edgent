@@ -1,14 +1,13 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.endpoints.publisher;
 
 import org.zeromq.ZMQ;
-
+import edu.vanderbilt.edgent.endpoints.Container;
+import edu.vanderbilt.edgent.endpoints.Worker;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
-
+import edu.vanderbilt.edgent.util.PortList;
 
 public class Publisher extends Container{
-	//Base port number for the producer thread at which data is sent out
-	public static final int PUBLISHER_PRODUCER_BASE_PORT_NUM=10000;
 	//Producer instance
 	private Producer producer;
 	//Thread running the data producer
@@ -27,7 +26,7 @@ public class Publisher extends Container{
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
 		producerConnector=String.format("tcp://*:%d",
-				(PUBLISHER_PRODUCER_BASE_PORT_NUM+id));
+				(PortList.PUBLISHER_PRODUCER_BASE_PORT_NUM+id));
 	}
 
 	@Override
@@ -37,9 +36,9 @@ public class Publisher extends Container{
 
 	@Override
 	public void onConnected(){
-		System.out.println("ON CONNECTED CALLED!!!!");
 		// start the producer thread
-		producer = new Producer(context, topicName, queueConnector, producerConnector, sampleCount, sendInterval);
+		producer = new Producer(containerId,context, topicName,
+				queueConnector, producerConnector, sampleCount, sendInterval);
 		producerThread = new Thread(producer);
 		producerThread.start();
 		logger.info("Container:{} started its data producer thread", containerId);
@@ -56,6 +55,14 @@ public class Publisher extends Container{
 						containerId, e.getMessage());
 			}
 		}
+	}
+
+	@Override
+	public Worker instantiateWorker(int uuid,String ebId, String topicConnector) {
+		return new Sender(containerId, uuid, 
+				topicName, Worker.ENDPOINT_TYPE_PUB,ebId, 
+				topicConnector,
+				commandConnector, queueConnector,producerConnector);
 	}
 	
 	public static void main(String args[]){
@@ -81,9 +88,12 @@ public class Publisher extends Container{
 					try {
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
+						//send CONTAINER_EXIT_COMMAND
 						pushSocket.connect(pub.queueConnector());
 						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+						//wait for publisher thread to exit
 						pubThread.join();
+						//cleanup ZMQ
 						pushSocket.setLinger(0);
 						pushSocket.close();
 						context.term();
@@ -99,12 +109,5 @@ public class Publisher extends Container{
 		}
 	}
 
-	@Override
-	public Worker createWorker(int uuid,String ebId, String topicConnector) {
-		return new Sender(containerId, uuid, 
-				topicName, Worker.ENDPOINT_TYPE_PUB,ebId, 
-				topicConnector,
-				commandConnector, queueConnector,producerConnector);
-	}
 
 }

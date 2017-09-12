@@ -1,29 +1,40 @@
-package edu.vanderbilt.edgent.endpoints;
+package edu.vanderbilt.edgent.endpoints.publisher;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
-
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
 import edu.vanderbilt.edgent.util.Commands;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Producer implements Runnable {
+	//ZMQ context
 	private ZMQ.Context context;
+	//ZMQ.PUB socket at which produced data is published 
 	private ZMQ.Socket pubSocket;
+	//ZMQ.PUSH socket at which commands are sent to parent container's queue
 	private ZMQ.Socket commandSocket;
 	
-	private String topicName;
+	//parent container's queue connector 
 	private String queueConnector;
+	//connector at which produced data is published
 	private String producerConnector;
 
-	private AtomicBoolean stopped;
+	//Parent container's id
+	private String containerId;
+
+	private String topicName;
+	//current count of samples produced/sent
 	private int currCount;
+	//total number of samples to be produced/sent
 	private int sampleCount;
+	//sending rate
 	private int sendInterval;
+	//flag to indicate whether to stop producing data
+	private AtomicBoolean stopped;
 	
 	private int regionId;
 	//Fields to experiment with in the future. Currently, no-op.
@@ -33,9 +44,11 @@ public class Producer implements Runnable {
 	
 	private Logger logger;
 
-	public Producer(Context context, String topicName, String queueConnector,
+	public Producer(String containerId,Context context, String topicName, String queueConnector,
 			String producerConnector, int sampleCount, int sendInterval) {
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		//stash constructor arguments
+		this.containerId=containerId;
 		this.context=context;
 		this.topicName=topicName;
 		this.queueConnector=queueConnector;
@@ -44,9 +57,9 @@ public class Producer implements Runnable {
 		this.sendInterval=sendInterval;
 		
 		currCount=0;
-		stopped=new AtomicBoolean(false);
 		regionId=UtilMethods.regionId();
-		logger.debug("Producer initialized");
+		stopped=new AtomicBoolean(false);
+		logger.debug("Producer:{} initialized",containerId);
 	}
 
 	@Override
@@ -61,8 +74,8 @@ public class Producer implements Runnable {
 		try{
 			Thread.sleep(5000);
 		}catch(InterruptedException e){
-			logger.error("Producer thread:{} for topic:{} caught exception:{}",
-					Thread.currentThread().getName(),topicName,e.getMessage());
+			logger.error("Producer:{} for topic:{} caught exception:{}",
+					containerId,topicName,e.getMessage());
 		}
 	
 		while (!Thread.currentThread().isInterrupted() && 
@@ -72,9 +85,9 @@ public class Producer implements Runnable {
 				pubSocket.sendMore(topicName.getBytes());
 				pubSocket.send(DataSampleHelper.serialize(currCount, // sample id
 						regionId, runId, priority, System.currentTimeMillis(), payloadSize));
-				//if (currCount % 1000 == 0) {
-					logger.debug("Producer for topic:{} sent:{} samples", topicName, currCount);
-				//}
+				if (currCount % 1000 == 0) {
+					logger.debug("Producer:{} for topic:{} sent:{} samples",containerId, topicName, currCount);
+				}
 
 				currCount++;
 
@@ -84,11 +97,11 @@ public class Producer implements Runnable {
 					Thread.sleep(sleep_interval);
 				}
 			} catch (InterruptedException e) {
-				logger.error("Producer for topic:{} caught exception:{}", topicName, e.getMessage());
+				logger.error("Producer:{} for topic:{} caught exception:{}",containerId, topicName, e.getMessage());
 				break;
 			}
 		}
-		//send exit signal to parent Publisher container if all messages have been sent
+		//send exit signal to parent container if all messages have been sent
 		if(currCount==sampleCount){
 			commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 		}
