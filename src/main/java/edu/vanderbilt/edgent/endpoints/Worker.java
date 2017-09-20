@@ -66,10 +66,10 @@ public abstract class Worker implements Runnable{
 	//ID of EB to connect to
 	private String ebId;
 	//Address of EB to connect to
-	private String ebAddress;
+	protected String ebAddress;
 	//Hosting EB's exposed Topic ports 
 	private String topicListenerPort;
-	private String topicSendPort;
+	protected String topicSendPort;
 	private String topicLbPort;
 	//String representation of topic connector
 	private String topicConnector;
@@ -216,7 +216,7 @@ public abstract class Worker implements Runnable{
 	private void cleanup(){
 		logger.info("Worker:{} will cleanup ZMQ and close monitoring, LB threads",workerId);
 		//close pub/sub socket
-		socket.setLinger(0);
+		socket.setLinger(-1);
 		socket.close();
 
 		//wait for lb listener and monitor thread to exit

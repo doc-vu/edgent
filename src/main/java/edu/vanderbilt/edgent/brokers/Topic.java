@@ -169,8 +169,8 @@ public class Topic implements Runnable {
 	private void cleanup(){
 		//set linger to 0
 		controlSocket.setLinger(0);
-		receiveSocket.setLinger(0);
-		sendSocket.setLinger(0);
+		receiveSocket.setLinger(-1);
+		sendSocket.setLinger(-1);
 		lbSocket.setLinger(0);
 		//close sockets
 		controlSocket.close();

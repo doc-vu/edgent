@@ -16,12 +16,10 @@ public class WorkerCommandHelper {
 		return builder.sizedByteArray();
 	}
 
-	public static byte[] serialize(int type,String ebId){
-		FlatBufferBuilder builder= new FlatBufferBuilder(64);
-		//build ebId string
-		int ebIdOffset=builder.createString(ebId);
-		//build WorkerCommand and return byte array
-		int workerCommandOffset=WorkerCommand.createWorkerCommand(builder, type, ebIdOffset);
+	public static byte[] serialize(int type,TopicConnector connector){
+		FlatBufferBuilder builder= new FlatBufferBuilder(128);
+		int topicConnectorOffset= TopicConnectorHelper.offset(builder, connector);
+		int workerCommandOffset= WorkerCommand.createWorkerCommand(builder, type, topicConnectorOffset);
 		builder.finish(workerCommandOffset);
 		return builder.sizedByteArray();
 	}

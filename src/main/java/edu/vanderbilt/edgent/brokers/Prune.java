@@ -6,7 +6,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
-
 import edu.vanderbilt.edgent.util.Commands;
 
 public class Prune implements Runnable {

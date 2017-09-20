@@ -91,6 +91,9 @@ public class LbWorkerThread implements Runnable {
 			client.create()
 				.forPath(String.format("/topics/%s",topic),LoadBalancer.REPLICATION_NONE.getBytes());
 			logger.info("WorkerThread:{} created topic znode:/topics/{}",workerId,topic);
+			//create topic znode under: /lb/topics/topicName
+			client.create().forPath(String.format("/lb/topics/%s",topic));
+			logger.info("WorkerThread:{} created topic znode:/lb/topics/{}",workerId,topic);
 
 			//get a list of EBs in the system
 			List<String> ebs= client.getChildren().forPath("/eb");
@@ -100,10 +103,6 @@ public class LbWorkerThread implements Runnable {
 			if(selectedEb!=null){
 				logger.debug("WorkerThread:{} selected EB:{} for hosting topic:{}", 
 						workerId, selectedEb, topic);
-
-				//create eb znode under: /lb/topics/topicName/selectedEb 
-				client.create().creatingParentsIfNeeded().
-					forPath(String.format("/lb/topics/%s/%s",topic,selectedEb));
 				
 				// create topic znode under selected EB's znode: /eb/selectedEb/topic
 				client.create().forPath(String.format("/eb/%s/%s", selectedEb, topic));
@@ -111,12 +110,13 @@ public class LbWorkerThread implements Runnable {
 				logger.info("WorkerThread:{} assigned topic:{} to EB:{}", workerId, topic, selectedEb);
 			}else{
 				client.delete().forPath(String.format("/topics/%s", topic));
+				client.delete().forPath(String.format("/lb/topics/%s", topic));
 				logger.error("WorkerThread:{} topic:{} cannot be hosted. Deleted topic:{}",
 						workerId,topic,topic);
 			}
 		}catch(KeeperException e){
 			if(e.code().equals(Code.NODEEXISTS)){
-				logger.info("WorkerThread:{} already topic:{} exists",workerId,topic);
+				logger.info("WorkerThread:{}  topic:{} exists",workerId,topic);
 			}
 			logger.error("WorkerThread:{} caught exception:{}",workerId,e.getMessage());
 

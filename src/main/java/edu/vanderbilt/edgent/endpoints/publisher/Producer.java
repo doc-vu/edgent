@@ -84,7 +84,7 @@ public class Producer implements Runnable {
 				//send data 
 				pubSocket.sendMore(topicName.getBytes());
 				pubSocket.send(DataSampleHelper.serialize(currCount, // sample id
-						regionId, runId, priority, System.currentTimeMillis(), payloadSize));
+						regionId, runId, priority, System.currentTimeMillis(),containerId, payloadSize));
 				if (currCount % 1000 == 0) {
 					logger.debug("Producer:{} for topic:{} sent:{} samples",containerId, topicName, currCount);
 				}

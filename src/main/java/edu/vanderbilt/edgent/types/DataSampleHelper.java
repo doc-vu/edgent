@@ -14,10 +14,13 @@ public class DataSampleHelper {
 	 * @param payloadSize size of payload to create in addition to the header(24 Bytes)
 	 * @return
 	 */
-	public static byte[] serialize(int sampleId, int regionId, int runId,int priority, long ts,int payloadSize){
+	public static byte[] serialize(int sampleId, int regionId, 
+			int runId,int priority, long ts,String containerId, int payloadSize){
 		FlatBufferBuilder builder= new FlatBufferBuilder(64);
+		int containerIdOffset= builder.createString(containerId);
 		int payloadOffset= DataSample.createPayloadVector(builder, new int[payloadSize]);
-		int sample=DataSample.createDataSample(builder, sampleId, regionId, runId, priority, ts, payloadOffset);
+		int sample=DataSample.createDataSample(builder, sampleId, regionId, runId, priority, ts,
+				containerIdOffset, payloadOffset);
 		builder.finish(sample);
 		return builder.sizedByteArray();
 	}

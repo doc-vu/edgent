@@ -19,9 +19,11 @@ public final class DataSample extends Table {
   public int runId() { int o = __offset(8); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public int priority() { int o = __offset(10); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public long tsMilisec() { int o = __offset(12); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public int payload(int j) { int o = __offset(14); return o != 0 ? bb.getInt(__vector(o) + j * 4) : 0; }
-  public int payloadLength() { int o = __offset(14); return o != 0 ? __vector_len(o) : 0; }
-  public ByteBuffer payloadAsByteBuffer() { return __vector_as_bytebuffer(14, 4); }
+  public String containerId() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer containerIdAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
+  public int payload(int j) { int o = __offset(16); return o != 0 ? bb.getInt(__vector(o) + j * 4) : 0; }
+  public int payloadLength() { int o = __offset(16); return o != 0 ? __vector_len(o) : 0; }
+  public ByteBuffer payloadAsByteBuffer() { return __vector_as_bytebuffer(16, 4); }
 
   public static int createDataSample(FlatBufferBuilder builder,
       int sampleId,
@@ -29,10 +31,12 @@ public final class DataSample extends Table {
       int runId,
       int priority,
       long tsMilisec,
+      int containerIdOffset,
       int payloadOffset) {
-    builder.startObject(6);
+    builder.startObject(7);
     DataSample.addTsMilisec(builder, tsMilisec);
     DataSample.addPayload(builder, payloadOffset);
+    DataSample.addContainerId(builder, containerIdOffset);
     DataSample.addPriority(builder, priority);
     DataSample.addRunId(builder, runId);
     DataSample.addRegionId(builder, regionId);
@@ -40,13 +44,14 @@ public final class DataSample extends Table {
     return DataSample.endDataSample(builder);
   }
 
-  public static void startDataSample(FlatBufferBuilder builder) { builder.startObject(6); }
+  public static void startDataSample(FlatBufferBuilder builder) { builder.startObject(7); }
   public static void addSampleId(FlatBufferBuilder builder, int sampleId) { builder.addInt(0, sampleId, 0); }
   public static void addRegionId(FlatBufferBuilder builder, int regionId) { builder.addInt(1, regionId, 0); }
   public static void addRunId(FlatBufferBuilder builder, int runId) { builder.addInt(2, runId, 0); }
   public static void addPriority(FlatBufferBuilder builder, int priority) { builder.addInt(3, priority, 0); }
   public static void addTsMilisec(FlatBufferBuilder builder, long tsMilisec) { builder.addLong(4, tsMilisec, 0L); }
-  public static void addPayload(FlatBufferBuilder builder, int payloadOffset) { builder.addOffset(5, payloadOffset, 0); }
+  public static void addContainerId(FlatBufferBuilder builder, int containerIdOffset) { builder.addOffset(5, containerIdOffset, 0); }
+  public static void addPayload(FlatBufferBuilder builder, int payloadOffset) { builder.addOffset(6, payloadOffset, 0); }
   public static int createPayloadVector(FlatBufferBuilder builder, int[] data) { builder.startVector(4, data.length, 4); for (int i = data.length - 1; i >= 0; i--) builder.addInt(data[i]); return builder.endVector(); }
   public static void startPayloadVector(FlatBufferBuilder builder, int numElems) { builder.startVector(4, numElems, 4); }
   public static int endDataSample(FlatBufferBuilder builder) {

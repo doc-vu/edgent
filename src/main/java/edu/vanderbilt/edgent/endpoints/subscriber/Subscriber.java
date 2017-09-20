@@ -14,10 +14,16 @@ public class Subscriber extends Container{
 	private String collectorConnector;
 	//expected number of samples
 	private int sampleCount;
+	//experiment runId
+	private int runId;
+	//log directory 
+	private String logDir;
 
-	public Subscriber(String topicName,int id,int sampleCount){
+	public Subscriber(String topicName,int id,int sampleCount,int runId, String logDir){
 		super( topicName,Container.ENDPOINT_TYPE_SUB,id);
 		this.sampleCount=sampleCount;
+		this.runId=runId;
+		this.logDir=logDir;
 		collectorConnector=String.format("tcp://*:%d",
 				(PortList.SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
 	}
@@ -25,8 +31,8 @@ public class Subscriber extends Container{
 	@Override
 	public void initialize() {
 		//start the collector thread
-		collectorThread = new Thread(new Collector(context, topicName, commandConnector, queueConnector,
-				collectorConnector, sampleCount));
+		collectorThread = new Thread(new Collector(containerId,context, topicName, commandConnector, queueConnector,
+				collectorConnector, sampleCount,runId, logDir));
 		collectorThread.start();
 		logger.info("Container:{} started its data collector thread", containerId);
 	}
@@ -55,8 +61,8 @@ public class Subscriber extends Container{
 	}
 
 	public static void main(String args[]){
-		if(args.length < 3){
-			System.out.println("Subscriber topicName id sampleCount");
+		if(args.length < 5){
+			System.out.println("Subscriber topicName id sampleCount runId logDir");
 			return;
 		}
 		try{
@@ -64,9 +70,11 @@ public class Subscriber extends Container{
 			String topicName = args[0];
 			int id = Integer.parseInt(args[1]);
 			int sampleCount=Integer.parseInt(args[2]);
+			int runId=Integer.parseInt(args[3]);
+			String logDir= args[4];
 			
 			//initialize subscriber
-			Subscriber sub=new Subscriber(topicName,id,sampleCount);
+			Subscriber sub=new Subscriber(topicName,id,sampleCount,runId,logDir);
 			Thread subThread = new Thread(sub);
 
 			//install hook to handle SIGTERM and SIGINT

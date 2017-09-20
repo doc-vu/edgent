@@ -11,16 +11,20 @@ public class Commands {
 	public static final int CONTAINER_EXIT_COMMAND=3;
 	public static final int CONTAINER_CREATE_WORKER_COMMAND=4;
 	public static final int CONTAINER_DELETE_WORKER_COMMAND=5;
-	public static final int CONTAINER_WORKER_CONNECTED_COMMAND=6;
-	public static final int CONTAINER_WORKER_DISCONNECTED_COMMAND=7;
-	public static final int CONTAINER_WORKER_EXITED_COMMAND=8;
+	public static final int CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND=6;
+	public static final int CONTAINER_WORKER_CONNECTED_COMMAND=7;
+	public static final int CONTAINER_WORKER_DISCONNECTED_COMMAND=8;
+	public static final int CONTAINER_WORKER_EXITED_COMMAND=9;
+
 	
 	//commands processed by Worker threads 
-	public static final int WORKER_EXIT_COMMAND=9;
+	public static final int WORKER_EXIT_COMMAND=10;
+	public static final int WORKER_EXIT_IMMEDIATELY_COMMAND=11;
+	public static final int WORKER_EXITED_COMMAND=12;
 
 	//commands processed by Topic threads
-	public static final int TOPIC_DELETE_COMMAND=10;
-	public static final int TOPIC_LB_COMMAND=11;
+	public static final int TOPIC_DELETE_COMMAND=13;
+	public static final int TOPIC_LB_COMMAND=14;
 	
 	//Type of commands processed by EB
 	public static final String EB_TOPIC_DELETE_COMMAND="DELETE_TOPIC";

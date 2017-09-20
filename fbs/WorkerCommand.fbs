@@ -1,8 +1,9 @@
+include "FeResponse.fbs"
 namespace edu.vanderbilt.edgent.types;
 
 table WorkerCommand {
   type: int;
-  ebId: string;
+  topicConnector: TopicConnector;
 }
 
 root_type WorkerCommand;

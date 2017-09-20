@@ -6,6 +6,7 @@ table DataSample {
   runId:int;
   priority:int;
   tsMilisec:ulong;
+  containerId: string;
   payload:[int];
 }
 

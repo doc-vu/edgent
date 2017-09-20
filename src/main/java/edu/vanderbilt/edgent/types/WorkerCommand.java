@@ -15,21 +15,21 @@ public final class WorkerCommand extends Table {
   public WorkerCommand __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int type() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
-  public String ebId() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer ebIdAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public edu.vanderbilt.edgent.types.TopicConnector topicConnector() { return topicConnector(new edu.vanderbilt.edgent.types.TopicConnector()); }
+  public edu.vanderbilt.edgent.types.TopicConnector topicConnector(edu.vanderbilt.edgent.types.TopicConnector obj) { int o = __offset(6); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 
   public static int createWorkerCommand(FlatBufferBuilder builder,
       int type,
-      int ebIdOffset) {
+      int topicConnectorOffset) {
     builder.startObject(2);
-    WorkerCommand.addEbId(builder, ebIdOffset);
+    WorkerCommand.addTopicConnector(builder, topicConnectorOffset);
     WorkerCommand.addType(builder, type);
     return WorkerCommand.endWorkerCommand(builder);
   }
 
   public static void startWorkerCommand(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addType(FlatBufferBuilder builder, int type) { builder.addInt(0, type, 0); }
-  public static void addEbId(FlatBufferBuilder builder, int ebIdOffset) { builder.addOffset(1, ebIdOffset, 0); }
+  public static void addTopicConnector(FlatBufferBuilder builder, int topicConnectorOffset) { builder.addOffset(1, topicConnectorOffset, 0); }
   public static int endWorkerCommand(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

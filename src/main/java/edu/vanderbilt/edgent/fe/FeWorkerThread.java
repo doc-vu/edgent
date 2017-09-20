@@ -280,9 +280,9 @@ public class FeWorkerThread implements Runnable {
 			//Get topic connector data at: /topics/topicName/ebId
 			String ebData = new String(client.getData().forPath(String.format("/topics/%s/%s", topicName, ebId)));
 			//create this connecting endpoint's znode: /eb/ebId/topicName/endpointType/containerId
-			client.create()
-					.forPath(String.format("/eb/%s/%s/%s/%s",
-							ebId, topicName, endpointType,containerId));
+			//client.create()
+			//		.forPath(String.format("/eb/%s/%s/%s/%s",
+			//				ebId, topicName, endpointType,containerId));
 			response.put(ebId, ebData);
 			return response;
 		}catch(Exception e){
@@ -301,8 +301,8 @@ public class FeWorkerThread implements Runnable {
 				//Get topic connector data at: /topics/topicName/ebId
 				String ebData = new String(client.getData().forPath(String.format("/topics/%s/%s", topic, ebId)));
 				//create this connecting endpoint's znode at: /eb/ebId/topicName/endpointType/containerId
-				client.create().forPath(String.format("/eb/%s/%s/%s/%s",
-						ebId, topic, endpointType,containerId));
+				//client.create().forPath(String.format("/eb/%s/%s/%s/%s",
+				//		ebId, topic, endpointType,containerId));
 				response.put(ebId,ebData);
 			}
 			return response;

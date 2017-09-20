@@ -21,7 +21,9 @@ import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
-
+import edu.vanderbilt.edgent.rebalancing.AllPublisherReplication;
+import edu.vanderbilt.edgent.rebalancing.AllSubscriberReplication;
+import edu.vanderbilt.edgent.rebalancing.Rebalance;
 import edu.vanderbilt.edgent.rebalancing.TopicMigration;
 import edu.vanderbilt.edgent.types.TopicCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
@@ -34,7 +36,7 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  */
 public class EdgeBroker implements Runnable{
 	//Periodic interval after which pruning thread is scheduled
-	public static final int PERIODIC_PRUNING_INTERVAL_SEC=120;
+	public static final int PERIODIC_PRUNING_INTERVAL_SEC=60;
 
 	//List of avaiable ports
 	private PortList ports;
@@ -197,11 +199,44 @@ public class EdgeBroker implements Runnable{
 					String lbPolicy=args[2];
 					logger.info("EdgeBroker:{} will process command:{} for topic:{} with LB policy:{}",
 							ebId,Commands.EB_TOPIC_LB_COMMAND,topicName,lbPolicy);
-					if(lbPolicy.equals(TopicMigration.LB_POLICY)){
-						String topicConnector= hostedTopics.get(topicName).topicConnector();
-						new TopicMigration(topicName,ebId,topicConnector,
-								client,topicControl).execute();
-						deleteTopic(topicName);
+
+					if(lbPolicy.equals(Rebalance.LB_POLICY_ALL_PUB)){
+						try{
+							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
+							String topicConnector = hostedTopics.get(topicName).topicConnector();
+							Rebalance strategy = new AllPublisherReplication(topicName, ebId, topicConnector, false,
+									client, topicControl);
+							strategy.execute();
+							client.create().forPath(String.format("/topics/%s/%s", topicName, ebId),topicConnector.getBytes());
+						}catch(Exception e){
+							logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
+						}
+					}
+					else if(lbPolicy.equals(Rebalance.LB_POLICY_ALL_SUB)){
+						try{
+							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
+							String topicConnector = hostedTopics.get(topicName).topicConnector();
+							Rebalance strategy = new AllSubscriberReplication(topicName, ebId, topicConnector, false,
+									client, topicControl);
+							strategy.execute();
+							client.create().forPath(String.format("/topics/%s/%s", topicName, ebId),topicConnector.getBytes());
+						}catch(Exception e){
+							logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
+						}
+					}else if(lbPolicy.equals(Rebalance.LB_POLICY_MIGRATION)){
+						try{
+							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
+							String topicConnector = hostedTopics.get(topicName).topicConnector();
+							Rebalance strategy = new TopicMigration(topicName, ebId, topicConnector, true,
+									client, topicControl);
+							strategy.execute();
+							deleteTopic(topicName);
+						}catch(Exception e){
+							logger.error("EdgeBroker:{} caught exception:{}",ebId,e.getMessage());
+						}
+						
+					}else{
+						logger.error("EdgeBroker:{} LB Policy:{} not recognized",ebId,lbPolicy);
 					}
 				}
 				//EB exit
@@ -268,6 +303,18 @@ public class EdgeBroker implements Runnable{
 
 
 			try {
+				//create: /eb/ebId/topicName/pub
+				client.create().forPath(String.format("/eb/%s/%s/pub", ebId, topicName));
+				//create: /eb/ebId/topicName/sub
+				client.create().forPath(String.format("/eb/%s/%s/sub", ebId, topicName));
+				//create: /topics/topicName/ebId
+				client.create().forPath(String.format("/topics/%s/%s", topicName, ebId),
+						String.format("%s,%d,%d,%d", ipAddress, receivePort, sendPort, lbPort).getBytes());
+				logger.debug("EdgeBroker:{} created its znode under /topics/{}/{}", ebId, topicName,ebId);
+				//create: /lb/topics/topicName/ebId
+				client.create().forPath(String.format("/lb/topics/%s/%s", topicName, ebId));
+				logger.debug("EdgeBroker:{} created its znode under /lb/topics/{}/{}", ebId, topicName,ebId);
+
 				// register listener for receiving topic level LB directives for this EB under: /lb/topics/topicName/ebId
 				PathChildrenCache cache = new PathChildrenCache(client, 
 						String.format("/lb/topics/%s/%s",topicName,ebId),true);
@@ -290,15 +337,6 @@ public class EdgeBroker implements Runnable{
 				logger.debug("EdgeBroker:{} installed listener for /lb/topics/{}/{} to receive rebalancing commands for topic:{}",
 						ebId,topicName,ebId,topicName);
 
-				//create: /eb/ebId/topicName/pub
-				client.create().forPath(String.format("/eb/%s/%s/pub", ebId, topicName));
-				//create: /eb/ebId/topicName/sub
-				client.create().forPath(String.format("/eb/%s/%s/sub", ebId, topicName));
-				//create: /topics/topicName/ebId
-				client.create().creatingParentsIfNeeded()
-					.forPath(String.format("/topics/%s/%s", topicName, ebId),
-						String.format("%s,%d,%d,%d", ipAddress, receivePort, sendPort, lbPort).getBytes());
-				logger.debug("EdgeBroker:{} created its znode under /topics/{}/{}", ebId, topicName,ebId);
 				logger.info("EdgeBroker:{} created topic:{}", ebId, topicName);
 			} catch (Exception e) {
 				logger.error("EdgeBroker:{} caught exception:{}", ebId, e.getMessage());
@@ -466,8 +504,10 @@ public class EdgeBroker implements Runnable{
 			}
 
 			// delete this EB's znode under: /lb/topics/topicName/ebId
-			client.delete().deletingChildrenIfNeeded().forPath(String.format("/lb/topics/%s/%s", topicName, ebId));
-			logger.info("EdgeBroker:{} deleted its znode /lb/topics/{}/{}", ebId, topicName, ebId);
+			if(client.checkExists().forPath(String.format("/lb/topics/%s/%s",topicName,ebId))!=null){
+				client.delete().deletingChildrenIfNeeded().forPath(String.format("/lb/topics/%s/%s", topicName, ebId));
+				logger.info("EdgeBroker:{} deleted its znode /lb/topics/{}/{}", ebId, topicName, ebId);
+			}
 
 			/* check if there are other brokers hosting the topic, if not,
 			 delete topic znode under: /topics/topicName 

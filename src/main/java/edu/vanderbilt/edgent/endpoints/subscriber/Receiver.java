@@ -25,7 +25,7 @@ public class Receiver extends Worker{
 	@Override
 	public void initialize() {
 		//initialize sender socket
-		senderSocket=context.socket(ZMQ.PUSH);
+		senderSocket=context.socket(ZMQ.PUB);
 		senderSocket.connect(collectorConnector);
 	}
 
@@ -36,6 +36,8 @@ public class Receiver extends Worker{
 		poller.register(socket, ZMQ.Poller.POLLIN);
 		poller.register(ctrlSocket, ZMQ.Poller.POLLIN);
 
+		boolean disconnected=false;
+		int pollAttempt=0;
 		//poll for data and control messages
 		while (!Thread.currentThread().isInterrupted() &&
 				connectionState.get() == WORKER_STATE_CONNECTED){
@@ -43,7 +45,18 @@ public class Receiver extends Worker{
 			if (poller.pollin(0)) {//process data 
 				ZMsg receivedMsg = ZMsg.recvMsg(socket);
 				//forward received message to collector thread
+				senderSocket.sendMore(ebId().getBytes());
 				senderSocket.send(receivedMsg.getLast().getData());
+				if(disconnected){
+					pollAttempt=0;
+				}
+			}
+			if(!poller.pollin(0) && disconnected){
+				pollAttempt++;
+				if(pollAttempt==10){
+					exited.set(true);
+					break;
+				}
 			}
 			if(poller.pollin(1)){//process control message
 				ZMsg msg= ZMsg.recvMsg(ctrlSocket);
@@ -52,9 +65,10 @@ public class Receiver extends Worker{
 					exited.set(true);
 					break;
 				}
-				if(command.type()==Commands.WORKER_EXIT_COMMAND){
-					String ebId=command.ebId();
+				if(command.type()==Commands.WORKER_EXIT_IMMEDIATELY_COMMAND){
+					String ebId=command.topicConnector().ebId();
 					if(ebId.equals(ebId())){
+						disconnected=true;
 						exited.set(true);
 						break;
 					}

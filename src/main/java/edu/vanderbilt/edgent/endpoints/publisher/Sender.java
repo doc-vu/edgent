@@ -54,7 +54,7 @@ public class Sender extends Worker{
 					break;
 				}
 				if(command.type()==Commands.WORKER_EXIT_COMMAND){
-					String ebId=command.ebId();
+					String ebId=command.topicConnector().ebId();
 					if(ebId.equals(ebId())){
 						exited.set(true);
 						break;
