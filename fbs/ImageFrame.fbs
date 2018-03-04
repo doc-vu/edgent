@@ -1,0 +1,7 @@
+namespace edu.vanderbilt.edgent.types;
+
+table ImageFrame{
+  sampleId: int;
+  frame: [byte];
+}
+root_type ImageFrame;

@@ -1,13 +1,16 @@
 package edu.vanderbilt.edgent.endpoints.publisher;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
-import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.types.DataSampleHelper;
-import edu.vanderbilt.edgent.util.Commands;
 import edu.vanderbilt.edgent.util.UtilMethods;
 
 public class Producer implements Runnable {
@@ -39,13 +42,19 @@ public class Producer implements Runnable {
 	private int regionId;
 	//Fields to experiment with in the future. Currently, no-op.
 	private int priority=1;
-	private int payloadSize=10;//for 64-bytes data sample 
+	private int payloadSize;
 	private int runId=0;
+
+	private DataSampleHelper fb;
+	private CuratorFramework client;
+	private String experimentType;
 	
+	private boolean send;
 	private Logger logger;
 
 	public Producer(String containerId,Context context, String topicName, String queueConnector,
-			String producerConnector, int sampleCount, int sendInterval) {
+			String producerConnector, int sampleCount, int sendInterval,int payloadSize,
+			String zkConnector,String experimentType,boolean send) {
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
 		this.containerId=containerId;
@@ -55,64 +64,96 @@ public class Producer implements Runnable {
 		this.producerConnector=producerConnector;
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
+		this.payloadSize=payloadSize;
+		this.experimentType=experimentType;
+		this.fb=new DataSampleHelper();
+		this.send=send;
 		
 		currCount=0;
 		regionId=UtilMethods.regionId();
 		stopped=new AtomicBoolean(false);
+		
+		//initialize curator client for ZK connection
+		client=CuratorFrameworkFactory.newClient(zkConnector,300000,300000,
+				new ExponentialBackoffRetry(1000, 100));
+		client.start();
+		
 		logger.debug("Producer:{} initialized",containerId);
 	}
 
 	@Override
 	public void run() {
-		pubSocket= context.socket(ZMQ.PUB);
-		pubSocket.bind(producerConnector);
-		
-		commandSocket=context.socket(ZMQ.PUSH);
-		commandSocket.connect(queueConnector);
-	
-		//TODO: Adhoc sleep to prevent loss of initially sent data samples
 		try{
-			Thread.sleep(5000);
-		}catch(InterruptedException e){
-			logger.error("Producer:{} for topic:{} caught exception:{}",
-					containerId,topicName,e.getMessage());
-		}
-	
-		while (!Thread.currentThread().isInterrupted() && 
-				!stopped.get() && (currCount < sampleCount || sampleCount==-1)) {
-			try {
-				//send data 
-				pubSocket.sendMore(topicName.getBytes());
-				pubSocket.send(DataSampleHelper.serialize(currCount, // sample id
-						regionId, runId, priority, System.currentTimeMillis(),containerId, payloadSize));
-				if (currCount % 1000 == 0) {
-					logger.debug("Producer:{} for topic:{} sent:{} samples",containerId, topicName, currCount);
-				}
+			pubSocket = context.socket(ZMQ.PUB);
+			pubSocket.setHWM(0);
+			pubSocket.bind(producerConnector);
 
-				currCount++;
+			commandSocket = context.socket(ZMQ.PUSH);
+			commandSocket.connect(queueConnector);
 
-				// sleep for average inter-arrival time
-				long sleep_interval = exponentialInterarrival(sendInterval);
-				if (sleep_interval > 0) {
-					Thread.sleep(sleep_interval);
+			logger.info("Producer:{} for topic:{} sent:{} samples", containerId, topicName, currCount);
+			DistributedBarrier barrier = new DistributedBarrier(client,
+					String.format("/experiment/%s/barriers/pub",experimentType));
+			barrier.waitOnBarrier();
+
+			// TODO: Adhoc sleep to prevent loss of initially sent data samples
+			Thread.sleep(1000);
+
+			while (!Thread.currentThread().isInterrupted() && !stopped.get()
+					&& (currCount < sampleCount || sampleCount == -1)) {
+				try {
+					// send data
+					if(this.send){
+						pubSocket.sendMore(topicName.getBytes());
+						pubSocket.send(fb.serialize(currCount, // sample
+																			// id
+							regionId, runId, priority, System.currentTimeMillis(), // pubSendTs
+							-1, // ebReceiveTs
+							containerId, payloadSize));
+						if (currCount % 10 == 0) {
+							logger.info("Producer:{} for topic:{} sent:{} samples", containerId, topicName, currCount);
+						}
+
+						currCount++;
+					}
+
+					// sleep for average inter-arrival time
+					long sleep_interval = exponentialInterarrival(sendInterval);
+					if (sleep_interval > 0) {
+						Thread.sleep(sleep_interval);
+					}
+				} catch (InterruptedException e) {
+					logger.error("Producer:{} for topic:{} caught exception:{}", containerId, topicName,
+							e.getMessage());
+					break;
 				}
-			} catch (InterruptedException e) {
-				logger.error("Producer:{} for topic:{} caught exception:{}",containerId, topicName, e.getMessage());
-				break;
 			}
+			// send exit signal to parent container if all messages have been sent
+			if (currCount == sampleCount) {
+				logger.info("Producer:{} for topic:{} sent all {} messages", containerId, topicName, sampleCount);
+				// commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+				client.create().forPath(String.format("/experiment/%s/sent/%s",experimentType, containerId));
+			}
+			clean();
+
+			logger.info("Producer:{} for topic:{} has exited", containerId, topicName);
+		} catch (Exception e) {
+			logger.error("Producer:{} for topic:{} caught exception:{}", containerId, topicName,
+					e.getMessage());
+			clean();
 		}
-		//send exit signal to parent container if all messages have been sent
-		if(currCount==sampleCount){
-			commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
-		}
+	}
 	
-		//set linger to 0
+	private void clean(){
+		// set linger to 0
 		pubSocket.setLinger(0);
 		commandSocket.setLinger(0);
-	
-		//close sockets
+
+		// close sockets
 		pubSocket.close();
 		commandSocket.close();
+
+		CloseableUtils.closeQuietly(client);
 	}
 	
 	public void stop(){

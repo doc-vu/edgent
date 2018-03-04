@@ -12,13 +12,14 @@ public class Receiver extends Worker{
 	private ZMQ.Socket senderSocket;  
 	//Connector at which collector thread listens for incoming data
 	private String collectorConnector;
+	
 
-	public Receiver(String containerId, int uuid,
+	public Receiver(ZMQ.Context context,String containerId, int uuid,
 			String topicName, String endpointType,
 			String ebId, String topicConnector,
 			String controlConnector, String queueConnector,String collectorConnector) {
-		super(containerId, uuid, topicName, endpointType, ebId,topicConnector,
-				controlConnector, queueConnector);
+		super(context,containerId, uuid, topicName, endpointType, ebId,topicConnector,
+				controlConnector, queueConnector,0);
 		this.collectorConnector=collectorConnector;
 	}
 
@@ -26,11 +27,16 @@ public class Receiver extends Worker{
 	public void initialize() {
 		//initialize sender socket
 		senderSocket=context.socket(ZMQ.PUB);
+		senderSocket.setHWM(0);
 		senderSocket.connect(collectorConnector);
 	}
-
+	
 	@Override
-	public void process() {
+	public void process(){
+		receiveData();
+	}
+	
+	public void receiveData(){
 		socket.subscribe(topicName.getBytes());
 		ZMQ.Poller poller = context.poller(2);
 		poller.register(socket, ZMQ.Poller.POLLIN);
@@ -42,6 +48,7 @@ public class Receiver extends Worker{
 		while (!Thread.currentThread().isInterrupted() &&
 				connectionState.get() == WORKER_STATE_CONNECTED){
 			poller.poll(POLL_INTERVAL_MILISEC);
+			
 			if (poller.pollin(0)) {//process data 
 				ZMsg receivedMsg = ZMsg.recvMsg(socket);
 				//forward received message to collector thread
@@ -75,6 +82,7 @@ public class Receiver extends Worker{
 				}
 			}
 		}
+		poller.close();
 	}
 
 	@Override

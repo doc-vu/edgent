@@ -6,6 +6,7 @@ table FeRequest {
   endpointType:string;
   containerId:string;
   ebId:string;
+  experimentType:string;
 }
 
 root_type FeRequest;

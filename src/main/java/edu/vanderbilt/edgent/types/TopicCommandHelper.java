@@ -3,9 +3,14 @@ package edu.vanderbilt.edgent.types;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 public class TopicCommandHelper {
+	private FlatBufferBuilder builder;
 
-	public static byte[] serialize(int type){
-		FlatBufferBuilder builder = new FlatBufferBuilder(64);
+	public TopicCommandHelper(){
+		builder= new FlatBufferBuilder(64);
+	}
+
+	public byte[] serialize(int type){
+		builder.clear();
 		//start TopicCommand builder
 		TopicCommand.startTopicCommand(builder);
 		//add type
@@ -16,8 +21,8 @@ public class TopicCommandHelper {
 		return builder.sizedByteArray();
 	}
 
-	public static byte[] serialize(int type, int containerCommand){
-		FlatBufferBuilder builder = new FlatBufferBuilder(128);
+	public byte[] serialize(int type, int containerCommand){
+		builder.clear();
 		//get ContainerCommand offset
 		int containerCommandOffset= ContainerCommandHelper.offset(builder, containerCommand);
 		//build TopicCommand and return byte array
@@ -26,9 +31,9 @@ public class TopicCommandHelper {
 		return builder.sizedByteArray();
 	}
 
-	public static byte[] serialize(int type,int containerCommand,
+	public byte[] serialize(int type,int containerCommand,
 			String containerId){
-		FlatBufferBuilder builder = new FlatBufferBuilder(128);
+		builder.clear();
 		//get ContainerCommand offset
 		int containerCommandOffset= ContainerCommandHelper.offset(builder, 
 				containerCommand, containerId);
@@ -38,9 +43,9 @@ public class TopicCommandHelper {
 		return builder.sizedByteArray();
 	}
 	
-	public static byte[] serialize(int type, int containerCommand,
+	public byte[] serialize(int type, int containerCommand,
 			String containerId,String ebId, String topicConnector){
-		FlatBufferBuilder builder = new FlatBufferBuilder(128);
+		builder.clear();
 		//get ContainerCommand offset
 		int containerCommandOffset= ContainerCommandHelper.offset(builder, 
 				containerCommand, containerId, ebId, topicConnector);

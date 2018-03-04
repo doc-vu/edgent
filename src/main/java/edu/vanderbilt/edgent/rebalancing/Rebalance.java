@@ -14,6 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZMQ;
 
+import edu.vanderbilt.edgent.types.TopicCommandHelper;
+
 public abstract class Rebalance {
 	public static final String LB_POLICY_MIGRATION="migration";
 	public static final String LB_POLICY_ALL_SUB="allSub";
@@ -53,6 +55,7 @@ public abstract class Rebalance {
 	PathChildrenCache subscribersDisconnectedListener;
 	PathChildrenCache publishersDisconnectedListener;
 
+	protected TopicCommandHelper topicCommandHelper;
 	protected DistributedBarrier subMigratedBarrier;
 	protected DistributedBarrier pubMigratedBarrier; 
 	private DistributedBarrier subDisconnectedBarrier;
@@ -61,7 +64,7 @@ public abstract class Rebalance {
 
 	public Rebalance(String lbPolicy,String topicName,
 			String currEbId,String currTopicConnector,boolean waitForDisconnection,
-			CuratorFramework client, ZMQ.Socket topicControl){
+			CuratorFramework client, ZMQ.Socket topicControl,TopicCommandHelper topicCommandHelper){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		this.lbPolicy=lbPolicy;
 		this.topicName=topicName;
@@ -70,6 +73,7 @@ public abstract class Rebalance {
 		this.waitForDisconnection=waitForDisconnection;
 		this.client=client;
 		this.topicControl=topicControl;
+		this.topicCommandHelper=topicCommandHelper;
 		
 		destEbTopicConnectors= new HashMap<String,String>();
 		

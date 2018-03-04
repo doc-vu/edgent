@@ -1,13 +1,14 @@
-namespace edu.vanderbilt.kharesp.types;
+namespace edu.vanderbilt.edgent.types;
 
 table DataSample {
   sampleId:int;
   regionId:int;
   runId:int;
   priority:int;
-  tsMilisec:ulong;
+  pubSendTs:ulong;
+  ebReceiveTs:ulong;
   containerId: string;
-  payload:[int];
+  payload:[byte];
 }
 
 root_type DataSample;

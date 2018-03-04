@@ -1,0 +1,14 @@
+run_id:500
+rbs:
+ebs:node2
+felbs:node1
+clients:node27,node3
+topics:t1
+no_subs:1
+no_pubs:500
+sub_distribution:node3:t1:1
+pub_distribution:node27:t1:500
+pub_sample_count:120
+sub_sample_count:60000
+sleep_interval_milisec:1000
+payload:1000

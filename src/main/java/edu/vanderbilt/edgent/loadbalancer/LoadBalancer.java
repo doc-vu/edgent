@@ -21,8 +21,8 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  */
 public class LoadBalancer implements Runnable{
 	//topic replication modes
-	public static final String REPLICATION_ALL_SUB="all_sub";
-	public static final String REPLICATION_ALL_PUB="all_pub";
+	public static final String REPLICATION_ALL_SUB="allSub";
+	public static final String REPLICATION_ALL_PUB="allPub";
 	public static final String REPLICATION_NONE="none";
 
 	//ZMQ.Context
@@ -44,7 +44,7 @@ public class LoadBalancer implements Runnable{
 	public static final String SHUTDOWN_CONTROL_MSG="shutdown";
 
 	//Worker pool size
-	public static final int WORKER_POOL_SIZE=5;
+	public static final int WORKER_POOL_SIZE=10;
 	//Worker threads
 	private List<Thread> workers;
 
@@ -176,6 +176,7 @@ public class LoadBalancer implements Runnable{
 				}
 				socket.setLinger(0);
 				socket.close();
+				context.close();
 				context.term();
 			}
 		});

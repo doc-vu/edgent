@@ -17,14 +17,21 @@ public class Publisher extends Container{
 
 	//number of samples to send
 	private int sampleCount;
+	private int payloadSize;
 	//sending rate of publisher
 	private int sendInterval;
 
+	private boolean send;
+	private String zkConnector;
+
 	public Publisher(String topicName,int id,
-			int sampleCount,int sendInterval) {
-		super(topicName, Container.ENDPOINT_TYPE_PUB, id);
+			int sampleCount,int sendInterval,int payloadSize,String zkConnector,String experimentType,int send) {
+		super(topicName, Container.ENDPOINT_TYPE_PUB, id,experimentType);
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
+		this.payloadSize=payloadSize;
+		this.zkConnector=zkConnector;
+		this.send=send>0?true:false;
 		producerConnector=String.format("tcp://*:%d",
 				(PortList.PUBLISHER_PRODUCER_BASE_PORT_NUM+id));
 	}
@@ -38,7 +45,7 @@ public class Publisher extends Container{
 	public void onConnected(){
 		// start the producer thread
 		producer = new Producer(containerId,context, topicName,
-				queueConnector, producerConnector, sampleCount, sendInterval);
+				queueConnector, producerConnector, sampleCount, sendInterval,payloadSize,zkConnector,experimentType,this.send);
 		producerThread = new Thread(producer);
 		producerThread.start();
 		logger.info("Container:{} started its data producer thread", containerId);
@@ -58,16 +65,16 @@ public class Publisher extends Container{
 	}
 
 	@Override
-	public Worker instantiateWorker(int uuid,String ebId, String topicConnector) {
-		return new Sender(containerId, uuid, 
+	public Worker instantiateWorker(ZMQ.Context context,int uuid,String ebId, String topicConnector) {
+		return new Sender(context,containerId, uuid, 
 				topicName, Worker.ENDPOINT_TYPE_PUB,ebId, 
 				topicConnector,
 				commandConnector, queueConnector,producerConnector);
 	}
 	
 	public static void main(String args[]){
-		if(args.length < 4){
-			System.out.println("Publisher topicName id sampleCount sendInterval");
+		if(args.length < 8){
+			System.out.println("Publisher topicName id sampleCount sendInterval payloadSize zkConnector experimentType send");
 			return;
 		}
 		try{
@@ -76,9 +83,14 @@ public class Publisher extends Container{
 			int id = Integer.parseInt(args[1]);
 			int sampleCount=Integer.parseInt(args[2]);
 			int sendInterval=Integer.parseInt(args[3]);
+			int payloadSize=Integer.parseInt(args[4]);
+			String zkConnector=args[5];
+			String experimentType=args[6];
+			int send=Integer.parseInt(args[7]);
 			
 			//initialize publisher 
-			Publisher pub=new Publisher(topicName,id,sampleCount,sendInterval);
+			Publisher pub=new Publisher(topicName,id,sampleCount,
+					sendInterval,payloadSize,zkConnector,experimentType,send);
 			Thread pubThread = new Thread(pub);
 
 			//install hook to handle SIGTERM and SIGINT
@@ -86,16 +98,18 @@ public class Publisher extends Container{
 				@Override
 				public void run() {
 					try {
+						ContainerCommandHelper containerCommandHelper=new ContainerCommandHelper();
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
 						//send CONTAINER_EXIT_COMMAND
 						pushSocket.connect(pub.queueConnector());
-						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+						pushSocket.send(containerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 						//wait for publisher thread to exit
 						pubThread.join();
 						//cleanup ZMQ
 						pushSocket.setLinger(0);
 						pushSocket.close();
+						context.close();
 						context.term();
 					} catch (InterruptedException e) {
 						e.printStackTrace();

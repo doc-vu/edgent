@@ -8,6 +8,6 @@
   tasks: 
     - name: start publisher process
       shell: cd "{{ src_home }}" && ./scripts/start_publishers.sh "{{ item.value }}"
-         "{{ item.key }}" "{{ run_id }}" "{{ sample_count }}"
-         "{{ send_interval }}" "{{ zk_connector }}" 
+         "{{ item.key }}" "{{ sample_count }}"
+         "{{ send_interval }}" "{{ payload_size }}" "{{ zk_connector }}" "{{ experiment_type }}" "{{ send }}"
       with_dict: "{{ topic_count_map }}"

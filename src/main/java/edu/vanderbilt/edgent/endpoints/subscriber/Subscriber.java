@@ -9,7 +9,7 @@ import edu.vanderbilt.edgent.util.PortList;
 
 public class Subscriber extends Container{
 	//Collector Thread
-	private Thread collectorThread;
+	private Thread collectorThread=null;
 	//Connector for the collector thread
 	private String collectorConnector;
 	//expected number of samples
@@ -18,13 +18,17 @@ public class Subscriber extends Container{
 	private int runId;
 	//log directory 
 	private String logDir;
+	
+	private boolean logLatency;
 
-	public Subscriber(String topicName,int id,int sampleCount,int runId, String logDir){
-		super( topicName,Container.ENDPOINT_TYPE_SUB,id);
+	public Subscriber(String topicName, int id, int sampleCount,
+			int runId, String logDir,boolean logLatency,String experimentType){
+		super( topicName,Container.ENDPOINT_TYPE_SUB,id,experimentType);
 		this.sampleCount=sampleCount;
 		this.runId=runId;
 		this.logDir=logDir;
-		collectorConnector=String.format("tcp://*:%d",
+		this.logLatency=logLatency;
+		collectorConnector=String.format("tcp://localhost:%d",
 				(PortList.SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
 	}
 
@@ -32,7 +36,7 @@ public class Subscriber extends Container{
 	public void initialize() {
 		//start the collector thread
 		collectorThread = new Thread(new Collector(containerId,context, topicName, commandConnector, queueConnector,
-				collectorConnector, sampleCount,runId, logDir));
+				collectorConnector, sampleCount,runId, logDir,logLatency));
 		collectorThread.start();
 		logger.info("Container:{} started its data collector thread", containerId);
 	}
@@ -45,7 +49,9 @@ public class Subscriber extends Container{
 	@Override
 	public void cleanup() {
 		try{
-			collectorThread.join();
+			if(collectorThread!=null){
+				collectorThread.join();
+			}
 		}catch(InterruptedException e){
 			logger.error("Container:{} caught exception:{}",
 					containerId,e.getMessage());
@@ -53,16 +59,16 @@ public class Subscriber extends Container{
 	}
 
 	@Override
-	public Worker instantiateWorker(int uuid, String ebId, String topicConnector) {
-		return new Receiver(containerId, uuid,
+	public Worker instantiateWorker(ZMQ.Context context,int uuid, String ebId, String topicConnector) {
+		return new Receiver(context,containerId, uuid,
 				topicName, Worker.ENDPOINT_TYPE_SUB,ebId,
 				topicConnector,
 				commandConnector, queueConnector, collectorConnector);
 	}
 
 	public static void main(String args[]){
-		if(args.length < 5){
-			System.out.println("Subscriber topicName id sampleCount runId logDir");
+		if(args.length < 7){
+			System.out.println("Subscriber topicName id sampleCount runId logDir logLatency experimentType");
 			return;
 		}
 		try{
@@ -72,9 +78,11 @@ public class Subscriber extends Container{
 			int sampleCount=Integer.parseInt(args[2]);
 			int runId=Integer.parseInt(args[3]);
 			String logDir= args[4];
+			boolean logLatency= Integer.parseInt(args[5])>0?true:false;
+			String experimentType=args[6];
 			
 			//initialize subscriber
-			Subscriber sub=new Subscriber(topicName,id,sampleCount,runId,logDir);
+			Subscriber sub=new Subscriber(topicName,id,sampleCount,runId,logDir,logLatency,experimentType);
 			Thread subThread = new Thread(sub);
 
 			//install hook to handle SIGTERM and SIGINT
@@ -82,16 +90,18 @@ public class Subscriber extends Container{
 				@Override
 				public void run() {
 					try {
+						ContainerCommandHelper containerCommandHelper=new ContainerCommandHelper();
 						ZMQ.Context context= ZMQ.context(1);
 						ZMQ.Socket pushSocket= context.socket(ZMQ.PUSH);
 						pushSocket.connect(sub.queueConnector());
 						//send CONTAINER_EXIT_COMMAND
-						pushSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+						pushSocket.send(containerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 						//wait for subscriber to exit
 						subThread.join();
 						//cleanup ZMQ
 						pushSocket.setLinger(0);
 						pushSocket.close();
+						context.close();
 						context.term();
 					} catch (InterruptedException e) {
 						e.printStackTrace();

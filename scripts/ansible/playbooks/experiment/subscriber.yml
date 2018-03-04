@@ -10,5 +10,5 @@
     - name: start subscriber process
       shell: cd "{{ src_home }}" && ./scripts/start_subscribers.sh "{{ item.value }}"
         "{{ item.key }}" "{{ run_id }}" "{{ sample_count }}"
-        "{{ log_dir }}" "{{ zk_connector }}"
+        "{{ log_dir }}" "{{ experiment_type }}"
       with_dict: "{{ topic_count_map }}"

@@ -19,9 +19,10 @@ public class Frontend {
 	public static final HashMap<Integer,String> FE_LOCATIONS;
 	static{
 		FE_LOCATIONS= new HashMap<Integer,String>();
-		FE_LOCATIONS.put(30,"10.20.30.2");
-		FE_LOCATIONS.put(0,"127.0.0.1");
-		FE_LOCATIONS.put(1,"127.0.1.1");
+		FE_LOCATIONS.put(30,"10.20.30.1");
+		FE_LOCATIONS.put(234, "10.20.30.1");
+		FE_LOCATIONS.put(0,"10.20.30.1");
+		FE_LOCATIONS.put(1,"10.20.30.1");
 	}
 	
 	//FE Response codes
@@ -37,7 +38,7 @@ public class Frontend {
 	public static final String INPROC_CONNECTOR="inproc://feWorkers";
 	
 	//Number of concurrent threads servicing incoming requests 
-	public static final int WORKER_POOL_SIZE=5;
+	public static final int WORKER_POOL_SIZE=10;
 	//List of FeWorker threads
 	private List<Thread> workers;
 	
@@ -141,6 +142,7 @@ public class Frontend {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				context.close();
 				context.destroy();
 			}
 		});

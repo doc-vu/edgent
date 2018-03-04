@@ -36,7 +36,7 @@ import edu.vanderbilt.edgent.util.UtilMethods;
  */
 public class EdgeBroker implements Runnable{
 	//Periodic interval after which pruning thread is scheduled
-	public static final int PERIODIC_PRUNING_INTERVAL_SEC=60;
+	public static final int PERIODIC_PRUNING_INTERVAL_SEC=86400;
 
 	//List of avaiable ports
 	private PortList ports;
@@ -72,6 +72,8 @@ public class EdgeBroker implements Runnable{
 	 */
 	private LinkedBlockingQueue<String> queue;
 	
+	private TopicCommandHelper topicCommandHelper;
+	
 	//This broker's ipAddress,regionId and id
 	private String ipAddress;
 	private int regionId;
@@ -79,18 +81,22 @@ public class EdgeBroker implements Runnable{
 	
 	private Logger logger;
 
-	public EdgeBroker(int id,String zkConnector,int ioThreads){
+	public EdgeBroker(String zkConnector,int ioThreads,int id){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		ipAddress= UtilMethods.ipAddress();
 		regionId= UtilMethods.regionId(); 
 		ebId=String.format("EB-%d-%s-%d",regionId,ipAddress,id);
-		topicControlConnector=String.format("inproc://%s", ebId);
+		//topicControlConnector=String.format("inproc://%s", ebId);
+		topicControlConnector=String.format("tcp://localhost:%d",PortList.EB_TOPIC_CONTROL_PORT);
 
 		this.context = ZMQ.context(ioThreads);
+		this.context.setMaxSockets(50000);
 		//initialize state information
 		hostedTopics= new HashMap<String,Topic>();
 		topicThreads= new HashMap<String,Thread>();
 		topicLbListeners=new HashMap<String,PathChildrenCache>();
+		
+		topicCommandHelper= new TopicCommandHelper();
 		
 		//singleton list of available port numbers
 		ports= PortList.getInstance(id);
@@ -142,6 +148,13 @@ public class EdgeBroker implements Runnable{
 						//place EB_TOPIC_CREATE COMMAND in EB's queue
 						queue.add(String.format("%s,%s",Commands.EB_TOPIC_CREATE_COMMAND,topicName));
 					}
+					if(event.getType()==Type.CHILD_REMOVED){
+						//topic path: /eb/ebId/topicName
+						String path=event.getData().getPath();
+						String topicName=path.split("/")[3];
+						logger.info("EB:{} topic:{} was removed", ebId,topicName);
+						queue.add(String.format("%s,%s",Commands.EB_TOPIC_DELETE_COMMAND,topicName));
+					}
 				}
 			});
 			//start listening for topic assignment to this EB
@@ -162,7 +175,7 @@ public class EdgeBroker implements Runnable{
 
 		}catch(Exception e){
 			logger.error("EB:{} caught exception:{}",
-					ebId,e.getMessage());
+					ebId,e.toString());
 			cleanup();
 		}
 		logger.info("EdgeBroker:{} exited",ebId);
@@ -205,7 +218,7 @@ public class EdgeBroker implements Runnable{
 							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
 							String topicConnector = hostedTopics.get(topicName).topicConnector();
 							Rebalance strategy = new AllPublisherReplication(topicName, ebId, topicConnector, false,
-									client, topicControl);
+									client, topicControl,topicCommandHelper);
 							strategy.execute();
 							client.create().forPath(String.format("/topics/%s/%s", topicName, ebId),topicConnector.getBytes());
 						}catch(Exception e){
@@ -217,7 +230,7 @@ public class EdgeBroker implements Runnable{
 							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
 							String topicConnector = hostedTopics.get(topicName).topicConnector();
 							Rebalance strategy = new AllSubscriberReplication(topicName, ebId, topicConnector, false,
-									client, topicControl);
+									client, topicControl,topicCommandHelper);
 							strategy.execute();
 							client.create().forPath(String.format("/topics/%s/%s", topicName, ebId),topicConnector.getBytes());
 						}catch(Exception e){
@@ -228,7 +241,7 @@ public class EdgeBroker implements Runnable{
 							client.delete().forPath(String.format("/topics/%s/%s", topicName, ebId));
 							String topicConnector = hostedTopics.get(topicName).topicConnector();
 							Rebalance strategy = new TopicMigration(topicName, ebId, topicConnector, true,
-									client, topicControl);
+									client, topicControl,topicCommandHelper);
 							strategy.execute();
 							deleteTopic(topicName);
 						}catch(Exception e){
@@ -272,6 +285,8 @@ public class EdgeBroker implements Runnable{
 			int receivePort = ports.acquire();
 			int sendPort = ports.acquire();
 			int lbPort = ports.acquire();
+			logger.debug("EdgeBroker:{} acquired receivePort:{}, sendPort:{} and lbPort:{} for topic:{}",
+					ebId,receivePort,sendPort,lbPort,topicName);
 
 			CountDownLatch topicInitialized=new CountDownLatch(1);
 			//Instantiate topic
@@ -432,7 +447,7 @@ public class EdgeBroker implements Runnable{
 			logger.debug("EdgeBroker:{} will send TOPIC_DELETE_COMMNAD control message to topic:{} thread",
 					ebId,topicName);
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_DELETE_COMMAND));
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_DELETE_COMMAND));
 
 			// wait until topic thread exits
 			tThread.join();
@@ -531,19 +546,22 @@ public class EdgeBroker implements Runnable{
 	
 	
 	public static void main(String args[]){
-		if(args.length<3){
-			System.out.println("Usage: EdgeBroker id zkConnector ioThreads");
+		if(args.length<2){
+			System.out.println("Usage: EdgeBroker zkConnector ioThreads id");
 			return;
 		}
 		try{
 			//parse commandline arguments
-			int id= Integer.parseInt(args[0]);
-			String zkConnector=args[1];
-			int ioThreads=Integer.parseInt(args[2]);
+			String zkConnector=args[0];
+			int ioThreads=Integer.parseInt(args[1]);
+			int id=0;
+			if(args.length==3){
+				id= Integer.parseInt(args[2]);
+			}
 
 			//initialize EB 
-			EdgeBroker eb= new EdgeBroker(id,zkConnector,
-					ioThreads);
+			EdgeBroker eb= new EdgeBroker(zkConnector,
+					ioThreads,id);
 			Thread ebThread= new Thread(eb);
 
 			//callback to handle SIGINT and SIGTERM

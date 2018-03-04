@@ -36,6 +36,8 @@ public class FeWorkerThread implements Runnable {
 	private ZMQ.Socket feSocket;  
 	//ZMQ PUSH socket to send topic creation requests to LB 
 	private ZMQ.Socket lbSocket; 
+	
+	private FeResponseHelper feResponseHelper;
 
 	//load balancer address
 	private String lbAddress;
@@ -53,12 +55,13 @@ public class FeWorkerThread implements Runnable {
 		this.context=context;
 		this.client=client;
 		this.lbAddress=lbAddress;
+		feResponseHelper=new FeResponseHelper();
 	}
 
 	@Override
 	public void run() {
 		workerId=Thread.currentThread().getName();
-		logger.info("FeWorkerThread:{} started",workerId);
+		logger.debug("FeWorkerThread:{} started",workerId);
 
 		//connect to FE to receive incoming requests
 		feSocket= context.createSocket(ZMQ.REP);
@@ -90,10 +93,11 @@ public class FeWorkerThread implements Runnable {
 					String endpointType=request.endpointType();
 					String containerId=request.containerId();
 					String ebId=request.ebId();
+					String experimentType=request.experimentType();
 					logger.info("WorkerThread:{} received  FE_CONNECT_TO_EB_REQUEST "
-							+ "for topic:{}, endpointType:{}, containerId:{} and ebId:{} ",
-							workerId, topicName, endpointType, containerId, ebId);
-					connectToEb(topicName,endpointType,containerId,ebId);
+							+ "for topic:{}, endpointType:{}, containerId:{}, ebId:{} and experimentType:{}",
+							workerId, topicName, endpointType, containerId, ebId, experimentType);
+					connectToEb(topicName,endpointType,containerId,ebId,experimentType);
 				}
 				//process Disconnection request
 				else if(type==Commands.FE_DISCONNECT_REQUEST){
@@ -101,16 +105,17 @@ public class FeWorkerThread implements Runnable {
 					String endpointType=request.endpointType();
 					String containerId=request.containerId();
 					String ebId=request.ebId();
+					String experimentType=request.experimentType();
 					logger.info("WorkerThread:{} received FE_DISCONNECT_REQUEST"
-							+ "for topic:{}, endpointType:{}, containerId:{} and ebId:{}",
-							workerId,topicName,endpointType,containerId,ebId);
-					disconnect(topicName,endpointType,containerId,ebId);
+							+ "for topic:{}, endpointType:{}, containerId:{},ebId:{} and experimentType:{}",
+							workerId,topicName,endpointType,containerId,ebId,experimentType);
+					disconnect(topicName,endpointType,containerId,ebId,experimentType);
 				}
 				//invalid request
 				else{
 					logger.error("WorkerThread:{} received invalid request type:{}",
 							workerId,request.type());
-					feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
+					feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
 							String.format("Invalid Request:%d",type)));
 				}
 
@@ -150,7 +155,7 @@ public class FeWorkerThread implements Runnable {
 
 			if(ebs==null || ebs.isEmpty()){//topic creation failed
 				logger.error("WorkerThread:{} failed to locate EB for topic:{}",workerId,topic);
-				feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
+				feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
 						String.format("Failed to locate topic:%s",topic)));
 				return;
 			}
@@ -164,9 +169,9 @@ public class FeWorkerThread implements Runnable {
 						containerId,replicationMode);
 				//send response
 				if(feResponse!=null){
-					feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK,feResponse));
+					feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK,feResponse));
 				}else{
-					feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
+					feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
 							"FeResponse creation error"));
 				}
 			}
@@ -174,7 +179,7 @@ public class FeWorkerThread implements Runnable {
 		}catch(Exception e){
 			logger.error("WorkerThread:{} caught exception:{}",
 					workerId,e.getMessage());
-			feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,e.getMessage()));
+			feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,e.toString()));
 		}
 	}
 
@@ -257,13 +262,12 @@ public class FeWorkerThread implements Runnable {
 					 */
 					return allEbs(ebs,topicName,endpointType,containerId);
 				}
-			} else {
-				/*
-				 * In all other cases, the endpoint can connect to any randomly chosen 
-				 * EB hosting the topic of interest. 
-				 */
-				return singleEb(ebs,topicName,endpointType,containerId);
 			}
+			/*
+			 * In all other cases, the endpoint can connect to any randomly chosen 
+			 * EB hosting the topic of interest. 
+			 */
+			return singleEb(ebs,topicName,endpointType,containerId);
 		}
 		return null;
 	}
@@ -279,10 +283,6 @@ public class FeWorkerThread implements Runnable {
 			HashMap<String,String> response= new HashMap<String,String>();
 			//Get topic connector data at: /topics/topicName/ebId
 			String ebData = new String(client.getData().forPath(String.format("/topics/%s/%s", topicName, ebId)));
-			//create this connecting endpoint's znode: /eb/ebId/topicName/endpointType/containerId
-			//client.create()
-			//		.forPath(String.format("/eb/%s/%s/%s/%s",
-			//				ebId, topicName, endpointType,containerId));
 			response.put(ebId, ebData);
 			return response;
 		}catch(Exception e){
@@ -300,9 +300,6 @@ public class FeWorkerThread implements Runnable {
 			for (String ebId : ebs) {
 				//Get topic connector data at: /topics/topicName/ebId
 				String ebData = new String(client.getData().forPath(String.format("/topics/%s/%s", topic, ebId)));
-				//create this connecting endpoint's znode at: /eb/ebId/topicName/endpointType/containerId
-				//client.create().forPath(String.format("/eb/%s/%s/%s/%s",
-				//		ebId, topic, endpointType,containerId));
 				response.put(ebId,ebData);
 			}
 			return response;
@@ -314,43 +311,60 @@ public class FeWorkerThread implements Runnable {
 
 	//Processes connect to EB request 
 	private void connectToEb(String topicName,String endpointType,
-			String containerId,String ebId){
+			String containerId,String ebId,String experimentType){
 		try{
+			//NOTE: only for coordinated experiment execution 
+			client.create().forPath(String.format("/experiment/%s/%s/%s-%s",experimentType,endpointType,containerId,ebId));
 			//create this connecting endpoint's znode under: /eb/ebId/topicName/endpointType/containerId
 			client.create()
 					.forPath(String.format("/eb/%s/%s/%s/%s", ebId, topicName, endpointType,containerId));
-			feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK));
+			feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK));
 		}catch(Exception e){
 			logger.error("WorkerThread:{} caught exception:{}",workerId,e.getMessage());
-			feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,e.getMessage()));
+			feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,e.toString()));
 		}
 	}
 
 	//processes disconnection request 
-	private void disconnect(String topicName,String endpointType,String containerId,String ebId){
+	private void disconnect(String topicName,String endpointType,String containerId,String ebId,String experimentType){
 		String znodePath=String.format("/eb/%s/%s/%s/%s",ebId,topicName,endpointType,containerId);
 		//delete the znode of the endpoint leaving the system at: /eb/ebId/topicName/enpointType/containerId
-		deleteZnode(znodePath);
+		deleteZnode(znodePath,experimentType);
 	}
 	
-	private void deleteZnode(String znode){
+	private void deleteZnode(String znode,String experimentType){
+		// NOTE: This is only for the purpose of coordinating experiment runs
+		String[] parts = znode.split("/");
+		String ebId = parts[2];
+		String endpointType = parts[4];
+		String containerId = parts[5];
+		String experiment_path = String.format("/experiment/%s/%s/%s-%s", experimentType, endpointType, containerId,
+				ebId);
+		try {
+			client.delete().forPath(experiment_path);
+		} catch (KeeperException e) {
+			if (e.code() == KeeperException.Code.NONODE) {
+				logger.error("WorkerThread:{} znode:{} does not exist", workerId, experiment_path);
+			}
+		} catch (Exception e) {
+			logger.error("WorkerThread:{} caught exception:{}", workerId, e.getMessage());
+		}
+
 		try {
 			client.delete().forPath(znode);
-			logger.debug("WorkerThread:{} deleted client znode:{}",workerId,
-					znode);
-			feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK));
-		}catch(KeeperException e){
-			if(e.code()==KeeperException.Code.NONODE){
-				logger.info("WorkerThread:{} znode:{} does not exist",workerId,znode);
-				feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
-						String.format("Znode:%s does not exist",znode)));
+			logger.debug("WorkerThread:{} deleted client znode:{}", workerId, znode);
+			feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_OK));
+		} catch (KeeperException e) {
+			if (e.code() == KeeperException.Code.NONODE) {
+				logger.error("WorkerThread:{} znode:{} does not exist", workerId, znode);
+				feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
+						String.format("Znode:%s does not exist", znode)));
 			}
-		}catch (Exception e) {
-			logger.error("WorkerThread:{} caught exception:{}",
-					workerId,e.getMessage());
-			feSocket.send(FeResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR,
-						e.getMessage()));
+		} catch (Exception e) {
+			logger.error("WorkerThread:{} caught exception:{}", workerId, e.getMessage());
+			feSocket.send(feResponseHelper.serialize(Frontend.FE_RESPONSE_CODE_ERROR, e.getMessage()));
 		}
+				
 	}
 
 }

@@ -3,10 +3,12 @@ package edu.vanderbilt.edgent.util;
 import java.util.LinkedList;
 
 public class PortList {
+	//port at which EB sends control messages
+	public static final int EB_TOPIC_CONTROL_PORT=2000;
 	//port at which FE listens for incoming connection/disconnection requests
 	public static final int FE_LISTENER_PORT=2000;
 	//port at which LB listens for topic creation requests
-	public static final int LB_LISTENER_PORT=3003;
+	public static final int LB_LISTENER_PORT=3000;
 	//Base command and queue port numbers for Subscriber container 
 	public static final int SUBSCRIBER_COMMAND_BASE_PORT_NUM=4000;
 	public static final int SUBSCRIBER_QUEUE_BASE_PORT_NUM=5000;

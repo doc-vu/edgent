@@ -3,24 +3,31 @@ package edu.vanderbilt.edgent.types;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 public class FeRequestHelper {
+
+	private FlatBufferBuilder builder;
+	public FeRequestHelper(){
+		builder=new FlatBufferBuilder(128);
+	}
 	
-	public static byte[] serialize(int type,String topicName,String endpointType,
-			String containerId,String ebId){
-		FlatBufferBuilder builder= new FlatBufferBuilder(1024);
+	public byte[] serialize(int type,String topicName,String endpointType,
+			String containerId,String ebId,String experimentType){
+		builder.clear();
 		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
 		int endpointTypeOffset= builder.createString(endpointType);
 		int containerIdOffset= builder.createString(containerId);
 		int ebIdOffset= builder.createString(ebId);
+		int experimentTypeOffset=builder.createString(experimentType);
 		//get FeRequest offset
-		int feRequestOffset= FeRequest.createFeRequest(builder, type, topicNameOffset, endpointTypeOffset, containerIdOffset, ebIdOffset);
+		int feRequestOffset= FeRequest.createFeRequest(builder, type, topicNameOffset,
+				endpointTypeOffset, containerIdOffset, ebIdOffset,experimentTypeOffset);
 		builder.finish(feRequestOffset);
 		return builder.sizedByteArray();
 	}
 	
-	public static byte[] serialize(int type, String topicName, String endpointType,
+	public byte[] serialize(int type, String topicName, String endpointType,
 			String containerId){
-		FlatBufferBuilder builder= new FlatBufferBuilder(1024);
+		builder.clear();
 		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
 		int endpointTypeOffset= builder.createString(endpointType);

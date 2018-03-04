@@ -1,0 +1,12 @@
+---
+- include: set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  become: True
+  vars:
+    - owner: root 
+    - group: root
+  tasks:
+    - name: copy file from local to remote machine 
+      copy: src={{src}} dest={{dest}} owner={{owner}} group={{group}} mode={{ mode }}

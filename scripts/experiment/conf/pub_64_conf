@@ -1,0 +1,14 @@
+run_id:64
+rbs:
+ebs:node2
+felbs:node1
+clients:node5,node6,node4
+topics:t1
+no_subs:1
+no_pubs:64
+sub_distribution:node4:t1:1
+pub_distribution:node5:t1:40,node6:t1:24
+pub_sample_count:4800
+sub_sample_count:307200
+sleep_interval_milisec:25
+payload:4000

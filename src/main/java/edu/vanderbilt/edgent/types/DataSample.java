@@ -18,23 +18,26 @@ public final class DataSample extends Table {
   public int regionId() { int o = __offset(6); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public int runId() { int o = __offset(8); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public int priority() { int o = __offset(10); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
-  public long tsMilisec() { int o = __offset(12); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public String containerId() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer containerIdAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
-  public int payload(int j) { int o = __offset(16); return o != 0 ? bb.getInt(__vector(o) + j * 4) : 0; }
-  public int payloadLength() { int o = __offset(16); return o != 0 ? __vector_len(o) : 0; }
-  public ByteBuffer payloadAsByteBuffer() { return __vector_as_bytebuffer(16, 4); }
+  public long pubSendTs() { int o = __offset(12); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long ebReceiveTs() { int o = __offset(14); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public String containerId() { int o = __offset(16); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer containerIdAsByteBuffer() { return __vector_as_bytebuffer(16, 1); }
+  public byte payload(int j) { int o = __offset(18); return o != 0 ? bb.get(__vector(o) + j * 1) : 0; }
+  public int payloadLength() { int o = __offset(18); return o != 0 ? __vector_len(o) : 0; }
+  public ByteBuffer payloadAsByteBuffer() { return __vector_as_bytebuffer(18, 1); }
 
   public static int createDataSample(FlatBufferBuilder builder,
       int sampleId,
       int regionId,
       int runId,
       int priority,
-      long tsMilisec,
+      long pubSendTs,
+      long ebReceiveTs,
       int containerIdOffset,
       int payloadOffset) {
-    builder.startObject(7);
-    DataSample.addTsMilisec(builder, tsMilisec);
+    builder.startObject(8);
+    DataSample.addEbReceiveTs(builder, ebReceiveTs);
+    DataSample.addPubSendTs(builder, pubSendTs);
     DataSample.addPayload(builder, payloadOffset);
     DataSample.addContainerId(builder, containerIdOffset);
     DataSample.addPriority(builder, priority);
@@ -44,16 +47,17 @@ public final class DataSample extends Table {
     return DataSample.endDataSample(builder);
   }
 
-  public static void startDataSample(FlatBufferBuilder builder) { builder.startObject(7); }
+  public static void startDataSample(FlatBufferBuilder builder) { builder.startObject(8); }
   public static void addSampleId(FlatBufferBuilder builder, int sampleId) { builder.addInt(0, sampleId, 0); }
   public static void addRegionId(FlatBufferBuilder builder, int regionId) { builder.addInt(1, regionId, 0); }
   public static void addRunId(FlatBufferBuilder builder, int runId) { builder.addInt(2, runId, 0); }
   public static void addPriority(FlatBufferBuilder builder, int priority) { builder.addInt(3, priority, 0); }
-  public static void addTsMilisec(FlatBufferBuilder builder, long tsMilisec) { builder.addLong(4, tsMilisec, 0L); }
-  public static void addContainerId(FlatBufferBuilder builder, int containerIdOffset) { builder.addOffset(5, containerIdOffset, 0); }
-  public static void addPayload(FlatBufferBuilder builder, int payloadOffset) { builder.addOffset(6, payloadOffset, 0); }
-  public static int createPayloadVector(FlatBufferBuilder builder, int[] data) { builder.startVector(4, data.length, 4); for (int i = data.length - 1; i >= 0; i--) builder.addInt(data[i]); return builder.endVector(); }
-  public static void startPayloadVector(FlatBufferBuilder builder, int numElems) { builder.startVector(4, numElems, 4); }
+  public static void addPubSendTs(FlatBufferBuilder builder, long pubSendTs) { builder.addLong(4, pubSendTs, 0L); }
+  public static void addEbReceiveTs(FlatBufferBuilder builder, long ebReceiveTs) { builder.addLong(5, ebReceiveTs, 0L); }
+  public static void addContainerId(FlatBufferBuilder builder, int containerIdOffset) { builder.addOffset(6, containerIdOffset, 0); }
+  public static void addPayload(FlatBufferBuilder builder, int payloadOffset) { builder.addOffset(7, payloadOffset, 0); }
+  public static int createPayloadVector(FlatBufferBuilder builder, byte[] data) { builder.startVector(1, data.length, 1); for (int i = data.length - 1; i >= 0; i--) builder.addByte(data[i]); return builder.endVector(); }
+  public static void startPayloadVector(FlatBufferBuilder builder, int numElems) { builder.startVector(1, numElems, 1); }
   public static int endDataSample(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

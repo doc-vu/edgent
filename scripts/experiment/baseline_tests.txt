@@ -1,0 +1,4 @@
+subscriber scalability test: 
+python src/tests/subscriber_scalability_test.py --setup min_sub step_size max_sub num_pub sleep_interval payload_size num_samples
+python src/plots/summarize/summarize.py -log_dir <log_dir> -sub_dirs <sub_dirs>
+python src/plots/summarize/collate.py  -log_dir <log_dir> -sub_dirs <sub_dirs> -xlabel <xlabel>

@@ -13,12 +13,12 @@ public class Sender extends Worker{
 	//Connector at which the producer thread publishes data
 	private String producerConnector;
 
-	public Sender(String containerId, int uuid,
+	public Sender(ZMQ.Context context,String containerId, int uuid,
 			String topicName, String endpointType,
 			String ebId,String topicConnector,
 			String controlConnector, String queueConnector,String producerConnector) {
-		super(containerId, uuid,topicName, endpointType,ebId,topicConnector,
-				controlConnector, queueConnector);
+		super(context,containerId, uuid,topicName, endpointType,ebId,topicConnector,
+				controlConnector, queueConnector,0);
 		this.producerConnector=producerConnector;
 	}
 
@@ -62,6 +62,7 @@ public class Sender extends Worker{
 				}
 			}
 		}
+		poller.close();
 	}
 
 	@Override

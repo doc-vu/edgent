@@ -1,0 +1,17 @@
+---
+- include: set_ansible_ssh_host.yml
+
+- hosts: all
+  serial: 1
+  vars:
+    - log: /home/kharesp/workspace/java/edgent/scripts/ansible/offsets.csv
+  tasks:
+    - name: get time offset 
+      shell: ntpq -p | awk 'NR==3{print $9,$10}' 
+      register: result
+    - name: log time offset
+      lineinfile:
+        line: "{{ inventory_hostname }}, {{ result.stdout }} miliseconds"
+        insertafter: EOF
+        dest: "{{ log }}" 
+      delegate_to: 127.0.0.1

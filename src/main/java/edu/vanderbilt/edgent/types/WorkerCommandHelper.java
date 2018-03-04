@@ -3,9 +3,14 @@ package edu.vanderbilt.edgent.types;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 public class WorkerCommandHelper {
+	private FlatBufferBuilder builder;
 
-	public static byte[] serialize(int type){
-		FlatBufferBuilder builder= new FlatBufferBuilder(64);
+	public WorkerCommandHelper(){
+		builder= new FlatBufferBuilder(128);
+	}
+
+	public byte[] serialize(int type){
+		builder.clear();
 		//start WorkerCommand builder
 		WorkerCommand.startWorkerCommand(builder);
 		//add Type
@@ -16,8 +21,8 @@ public class WorkerCommandHelper {
 		return builder.sizedByteArray();
 	}
 
-	public static byte[] serialize(int type,TopicConnector connector){
-		FlatBufferBuilder builder= new FlatBufferBuilder(128);
+	public byte[] serialize(int type,TopicConnector connector){
+		builder.clear();
 		int topicConnectorOffset= TopicConnectorHelper.offset(builder, connector);
 		int workerCommandOffset= WorkerCommand.createWorkerCommand(builder, type, topicConnectorOffset);
 		builder.finish(workerCommandOffset);

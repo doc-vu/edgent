@@ -9,5 +9,5 @@ zkConnector=$1
 
 mkdir -p ~/infrastructure_log/lb
 
-( ( nohup java -cp .:edgent.jar edu.vanderbilt.edgent.loadbalancing.LoadBalancer $zkConnector 1>~/infrastructure_log/lb/lb.log 2>&1 ) & ) 
+( ( nohup java -cp .:edgent.jar edu.vanderbilt.edgent.loadbalancer.LoadBalancer $zkConnector 1>~/infrastructure_log/lb/lb.log 2>&1 ) & ) 
 sleep 2

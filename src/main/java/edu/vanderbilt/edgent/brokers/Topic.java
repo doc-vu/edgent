@@ -8,6 +8,8 @@ import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
 import edu.vanderbilt.edgent.types.ContainerCommand;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
+import edu.vanderbilt.edgent.types.DataSample;
+import edu.vanderbilt.edgent.types.DataSampleHelper;
 import edu.vanderbilt.edgent.types.TopicCommand;
 import edu.vanderbilt.edgent.types.TopicCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
@@ -48,9 +50,15 @@ public class Topic implements Runnable {
 	//state variables to track if topic is properly initialized and listening for incoming data
 	private boolean listening;
 	private CountDownLatch initialized;
+	
+	
+	private DataSampleHelper dataSampleHelper;
+	private ContainerCommandHelper containerCommandHelper;
+	private int count;
+	private long startTs;
 	private Logger logger;
 	
-	public Topic(String topicName, ZMQ.Context context,String ebControlConnector,
+	public Topic(String topicName,ZMQ.Context context, String ebControlConnector,
 			int receivePort,int sendPort,int lbPort,CountDownLatch initialized){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
@@ -61,10 +69,13 @@ public class Topic implements Runnable {
 		this.sendPort=sendPort;
 		this.lbPort=lbPort;
 		this.initialized=initialized;
+		this.dataSampleHelper=new DataSampleHelper();
+		this.containerCommandHelper=new ContainerCommandHelper();
 		
 		topicConnector=String.format("%s,%d,%d,%d",UtilMethods.ipAddress(),
 				receivePort,sendPort,lbPort);
 		listening=false;
+		count=0;
 
 		logger.info("Topic:{} initialized for receive port:{} send port:{} and lb port:{} ",
 				topicName,receivePort,sendPort,lbPort);
@@ -80,7 +91,9 @@ public class Topic implements Runnable {
 		//instantiate ZMQ Sockets and poller
 		controlSocket=context.socket(ZMQ.SUB);
 		receiveSocket= context.socket(ZMQ.SUB);
+		receiveSocket.setHWM(0);
 		sendSocket= context.socket(ZMQ.PUB);
+		sendSocket.setHWM(0);
 		lbSocket= context.socket(ZMQ.PUB);
 		poller=context.poller(2);
 
@@ -130,11 +143,27 @@ public class Topic implements Runnable {
 				// in case receiveSocket has data
 				if (poller.pollin(0)) {
 					ZMsg receivedMsg = ZMsg.recvMsg(receiveSocket);
+					//Ts of reception of data at the EB
+					long ebReceiveTs=System.currentTimeMillis();
+					//De-serialize the received data
 					String msgTopic = new String(receivedMsg.getFirst().getData());
 					byte[] msgContent = receivedMsg.getLast().getData();
+					
+					//Send new DataSample with ebReceiveTs set 
+					DataSample sample= DataSampleHelper.deserialize(msgContent);
 					sendSocket.sendMore(msgTopic);
-					sendSocket.send(msgContent);
-					logger.debug("Topic:{} received data", topicName);
+					sendSocket.send(dataSampleHelper.serialize(sample.sampleId(), 
+							sample.regionId(), sample.runId(), sample.priority(), sample.pubSendTs(),
+							ebReceiveTs, sample.containerId(), sample.payloadLength()));
+					
+					count++;
+					if(count==1){
+						startTs=System.currentTimeMillis();
+					}
+					if(count%1000==0){
+						double throughput=(count*1.0)/(System.currentTimeMillis()-startTs);
+						logger.info("Topic:{} received {} messages.Throughput:{}",topicName,count,throughput);
+					}
 				}
 				// in case controlSocket has data
 				if (poller.pollin(1)) {
@@ -151,7 +180,7 @@ public class Topic implements Runnable {
 						logger.debug("Topic:{} received LB control message",topicName);
 						ContainerCommand containerCommand= command.containerCommand();
 						lbSocket.sendMore(topicName.getBytes());
-						lbSocket.send(ContainerCommandHelper.serialize(containerCommand));
+						lbSocket.send(containerCommandHelper.serialize(containerCommand));
 					}else{
 						logger.error("Topic:{} received invalid control command:{}",topicName,command.type());
 					}
@@ -167,10 +196,11 @@ public class Topic implements Runnable {
 	}
 	
 	private void cleanup(){
+		poller.close();
 		//set linger to 0
 		controlSocket.setLinger(0);
-		receiveSocket.setLinger(-1);
-		sendSocket.setLinger(-1);
+		receiveSocket.setLinger(0);
+		sendSocket.setLinger(0);
 		lbSocket.setLinger(0);
 		//close sockets
 		controlSocket.close();

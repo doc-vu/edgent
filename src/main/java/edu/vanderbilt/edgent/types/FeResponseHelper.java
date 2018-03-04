@@ -5,11 +5,16 @@ import java.util.Map.Entry;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 public class FeResponseHelper {
-	
-	public static byte[] serialize(int code,String msg){
-		FlatBufferBuilder builder= new FlatBufferBuilder(64);
-		int msgOffset= builder.createString(msg);
+	private FlatBufferBuilder builder;
 
+	public FeResponseHelper(){
+		builder=new FlatBufferBuilder(128);
+	}
+	
+	public  byte[] serialize(int code,String msg){
+		builder.clear();
+
+		int msgOffset= builder.createString(msg);
 		//start FeResponse builder
 		FeResponse.startFeResponse(builder);
 		//add code
@@ -22,8 +27,8 @@ public class FeResponseHelper {
 		return builder.sizedByteArray();
 	}
 	
-	public static byte[] serialize(int code){
-		FlatBufferBuilder builder= new FlatBufferBuilder(64);
+	public  byte[] serialize(int code){
+		builder.clear();
 		//start FeResponse builder
 		FeResponse.startFeResponse(builder);
 		//add code
@@ -34,9 +39,8 @@ public class FeResponseHelper {
 		return builder.sizedByteArray();
 	}
 
-	public static byte[] serialize(int code,HashMap<String,String> ebConnectors){
-		FlatBufferBuilder builder= new FlatBufferBuilder(1024);
-	
+	public  byte[] serialize(int code,HashMap<String,String> ebConnectors){
+		builder.clear();
 		//create TopicConnectors
 		int i=0;
 		int[] topicConnectorOffsets= new int[ebConnectors.size()];

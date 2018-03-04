@@ -1,9 +1,8 @@
-package edu.vanderbilt.edgent.rebalancing;
+package edu.vanderbilt.edgent.rebalancing.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -13,6 +12,8 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
+
+import edu.vanderbilt.edgent.rebalancing.Rebalance;
 
 public class Test implements Runnable {
 	private AtomicBoolean listening;
@@ -76,7 +77,7 @@ public class Test implements Runnable {
 			/*Create topic on all destination Ebs. A new list is created and passed, 
 			 * as it is modified by createTopic function
 			 */
-			createTopic(new ArrayList<String>(ebs));
+			Util.createTopic(client,topicName,new ArrayList<String>(ebs));
 		
 			//Get string representation of all destination topic connectors 
 			String topicConnectorString=getTopicConnectorString(ebs);
@@ -90,42 +91,6 @@ public class Test implements Runnable {
 		}
 	}
 	
-	private void createTopic(List<String> ebs) throws Exception{
-		// create topic topicName on all destination Ebs
-		for (String eb : ebs) {
-			client.create().forPath(String.format("/eb/%s/%s", eb,topicName));
-			System.out.println(String.format("created topic:%s for destination eb:%s", topicName, eb));
-		}
-		// latch to wait on until topic topicName is allocated on all
-		// destination Ebs
-		CountDownLatch latch = new CountDownLatch(1);
-
-		// install listener to monitor topic allocation on destination ebs
-		PathChildrenCache cache = new PathChildrenCache(client, String.format("/topics/%s", topicName), false);
-		cache.getListenable().addListener(new PathChildrenCacheListener() {
-			@Override
-			public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-				if (event.getType().equals(Type.CHILD_ADDED)) {
-					// znodePath: /topics/topicName/ebId
-					String znodePath = event.getData().getPath();
-					String[] parts = znodePath.split("/");
-					String eb = parts[parts.length - 1];
-					ebs.remove(eb);
-					if (ebs.isEmpty()) {
-						latch.countDown();
-					}
-				}
-			}
-		});
-		cache.start();
-
-		System.out.println(String.format("Will wait until topic:%s is allocted on all dest ebs:%s",
-				topicName, ebs.toString()));
-		latch.await();
-		cache.close();
-		System.out.println(String.format("Topic:%s was allocated on all dest ebs",
-				topicName));
-	}
 	
 	private String getTopicConnectorString(List<String> destEbs) throws Exception{
 		StringBuilder builder = new StringBuilder();

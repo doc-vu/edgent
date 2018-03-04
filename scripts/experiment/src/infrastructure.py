@@ -26,6 +26,13 @@ class Infrastructure(object):
     self._zk.stop()
 
   def clean(self):
+    #kill all end-points on all host machines
+    print("\n\n\nKilling all endpoints on host machines")
+    command_string='cd %s && ansible-playbook playbooks/util/kill.yml\
+      --extra-vars="pattern=edgent.endpoints"'%\
+      (metadata.ansible)
+    subprocess.check_call(['bash','-c', command_string])
+
     #kill existing edge-broker processes
     print("\n\n\nKilling all existing FE, LB, Broker processes on infrastructure nodes")
     self.kill_existing_processes()
@@ -48,21 +55,18 @@ class Infrastructure(object):
     subprocess.check_call(['bash','-c',command_string])
 
   def setup_zk(self):
-    #delete pre-existing sub-trees under /eb and /topics
+    #delete pre-existing sub-trees under /eb,/topics and /lb/topics
     if self._zk.exists(metadata.topics_path):
       self._zk.delete(metadata.topics_path,recursive=True)
     if self._zk.exists(metadata.eb_path):
       self._zk.delete(metadata.eb_path,recursive=True)
     if self._zk.exists(metadata.topic_level_lb_path):
       self._zk.delete(metadata.topic_level_lb_path,recursive=True)
-    if self._zk.exists(metadata.eb_level_lb_path):
-      self._zk.delete(metadata.eb_level_lb_path,recursive=True)
 
-    #create /eb and /topics path
+    #create /eb,/topics and /lb/topics path
     self._zk.ensure_path(metadata.topics_path) 
     self._zk.ensure_path(metadata.eb_path) 
     self._zk.ensure_path(metadata.topic_level_lb_path)
-    self._zk.ensure_path(metadata.eb_level_lb_path)
 
   def setup_infrastructure(self):
     #ensure netem rules are set on RBs
@@ -71,21 +75,21 @@ class Infrastructure(object):
     print("\n\n\nStarting broker processes on edge-brokers")
     command_string='cd %s && ansible-playbook playbooks/experiment/eb.yml  --limit %s\
       --extra-vars="zk_connector=%s io_threads=%d"'%\
-      (metadata.ansible,','.join(self.conf.ebs),metadata.zk,metadata.io_threads)
+      (metadata.ansible,','.join(self.conf.ebs),metadata.public_zk,metadata.io_threads)
     subprocess.check_call(['bash','-c',command_string])
 
     #start LB on felb nodes
     print("\n\n\nStarting LoadBalancer processes on felb nodes")
     command_string='cd %s && ansible-playbook playbooks/experiment/lb.yml  --limit %s\
       --extra-vars="zk_connector=%s"'%\
-      (metadata.ansible,','.join(self.conf.felbs),metadata.zk)
+      (metadata.ansible,','.join(self.conf.felbs),metadata.public_zk)
     subprocess.check_call(['bash','-c',command_string])
 
     #start FE on felb nodes
     print("\n\n\nStarting Frontend processes on felb nodes")
     command_string='cd %s && ansible-playbook playbooks/experiment/fe.yml  --limit %s\
       --extra-vars="zk_connector=%s"'%\
-      (metadata.ansible,','.join(self.conf.felbs),metadata.zk)
+      (metadata.ansible,','.join(self.conf.felbs),metadata.public_zk)
     subprocess.check_call(['bash','-c',command_string])
     
     #start RoutingBroker on rbs

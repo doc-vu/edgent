@@ -13,8 +13,8 @@ public class AllSubscriberReplication extends Rebalance {
 
 	public AllSubscriberReplication( String topicName, 
 			String ebId, String topicConnector, boolean waitForDisconnection,
-			CuratorFramework client, Socket topicControl) {
-		super(Rebalance.LB_POLICY_ALL_SUB, topicName, ebId, topicConnector, waitForDisconnection,client, topicControl);
+			CuratorFramework client, Socket topicControl,TopicCommandHelper topicCommandHelper) {
+		super(Rebalance.LB_POLICY_ALL_SUB, topicName, ebId, topicConnector, waitForDisconnection,client, topicControl,topicCommandHelper);
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class AllSubscriberReplication extends Rebalance {
 		 */
 		for(Entry<String, String> pair: destEbTopicConnectors.entrySet()){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 					Commands.CONTAINER_CREATE_WORKER_COMMAND,
 					Container.ENDPOINT_TYPE_SUB, pair.getKey(), pair.getValue()));
 		}
@@ -75,7 +75,7 @@ public class AllSubscriberReplication extends Rebalance {
 			String destTopicConnector= destEbTopicConnectors.get(destEb);
 			for(String publisherContainer: pair.getValue()){
 				topicControl.sendMore(topicName.getBytes());
-				topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+				topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 						Commands.CONTAINER_CREATE_WORKER_COMMAND, publisherContainer, destEb,
 						destTopicConnector));
 			}
@@ -96,7 +96,7 @@ public class AllSubscriberReplication extends Rebalance {
 		 */
 		for(String container: disconnectingPublishers){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
 					Commands.CONTAINER_DELETE_WORKER_COMMAND,
 					container,currEbId,currTopicConnector));
 		}

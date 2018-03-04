@@ -2,6 +2,7 @@ package edu.vanderbilt.edgent.endpoints.subscriber;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -28,7 +29,7 @@ import edu.vanderbilt.edgent.util.UtilMethods;
 public class Collector implements Runnable{
 	//Time period after which the clean-up thread checks for and removes expired publishers state information
 	private static final int STATE_CLEANUP_INTERVAL_SEC=120;
-	private static final int POLL_INTERVAL_MILISEC=5000;
+	//private static final int POLL_INTERVAL_MILISEC=5000;
 	//ZMQ context
 	private ZMQ.Context context;
 	//ZMQ socket at which Collector thread will receive data
@@ -61,15 +62,19 @@ public class Collector implements Runnable{
 	private int currCount;
 	//total number of samples to be received
 	private int sampleCount;
+	private long firstSampleReceiveTs;
 	
 	//Writer for logging latency metrics
+	private ArrayList<String> readings;
 	private PrintWriter writer;
 
+	private ContainerCommandHelper containerCommandHelper;
 	private Logger logger;
+	private boolean logLatency;
 
 	public Collector(String containerId, ZMQ.Context context,String topicName,
 			String controlConnector,String subQueueConnector,String collectorConnector,
-			int sampleCount, int runId, String logDir){
+			int sampleCount, int runId, String logDir,boolean logLatency){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
 		this.containerId= containerId;
@@ -79,6 +84,8 @@ public class Collector implements Runnable{
 		this.subQueueConnector=subQueueConnector;
 		this.collectorConnector=collectorConnector;
 		this.sampleCount=sampleCount;
+		this.logLatency=logLatency;
+		this.containerCommandHelper=new ContainerCommandHelper();
 
 		currCount=0;
 		ebIdToPublishersMap= new Hashtable<String,Set<String>>();
@@ -86,7 +93,10 @@ public class Collector implements Runnable{
 		disconnectingReceivers= new HashMap<String,String>();
 		scheduler= Executors.newScheduledThreadPool(1);
 
-		openLatencyLogFile(runId,logDir);
+		if(logLatency){
+			readings=new ArrayList<String>();
+			openLatencyLogFile(runId,logDir);
+		}
 		logger.debug("Collector:{} initialized",containerId);
 	}
 
@@ -94,6 +104,7 @@ public class Collector implements Runnable{
 	public void run() {
 		//create and bind socket endpoint at which Collector thread will receive data
 		collectorSocket= context.socket(ZMQ.SUB);
+		collectorSocket.setHWM(0);
 		collectorSocket.bind(collectorConnector);
 		collectorSocket.subscribe("".getBytes());
 		
@@ -117,25 +128,30 @@ public class Collector implements Runnable{
 
 		logger.info("Collector:{} will start polling for data",containerId);
 		while(!Thread.currentThread().isInterrupted()){
-			poller.poll(POLL_INTERVAL_MILISEC);
+			poller.poll(-1);
 			//process Data received
 			if(poller.pollin(0)){
-				long receptionTs=System.currentTimeMillis();
-				ZMsg msg= ZMsg.recvMsg(collectorSocket);
-				//Topic Name is the source EB ID from which data was received
-				String ebId= new String(msg.getFirst().getData());
-				//De-serialize received data 
-				DataSample sample = DataSampleHelper.deserialize(msg.getLast().getData());
-				processData(receptionTs,ebId,sample);
+				ZMsg msg = ZMsg.recvMsg(collectorSocket);
+				if(logLatency){
+					long receptionTs = System.currentTimeMillis();
+					// Topic Name is the source EB ID from which data was
+					// received
+					String ebId = new String(msg.getFirst().getData());
+					// De-serialize received data
+					DataSample sample = DataSampleHelper.deserialize(msg.getLast().getData());
+					processData(receptionTs, ebId, sample);
+				}
+				currCount++;
 
-				if(currCount%1000==0){
-					logger.debug("Collector:{} current sample count:{}",
-							containerId,currCount);
+				if(currCount%10==0){
+					double throughput=(currCount*1000.0)/(System.currentTimeMillis()-firstSampleReceiveTs);
+					logger.info("Collector:{} current sample count:{}, throughput:{}",
+							containerId,currCount,throughput);
 				}
 				if(currCount==sampleCount){
 					logger.info("Collector:{} received all {} messages",
 							containerId,sampleCount);
-					commandSocket.send(ContainerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+					commandSocket.send(containerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 					break;
 				}
 			}
@@ -166,9 +182,11 @@ public class Collector implements Runnable{
 					//once receiver thread for ebId has exited, remove its entry from ebIdToPublishers map
 					Set<String> publishers= ebIdToPublishersMap.remove(ebId);
 					//Reset the receivingDuplicates flag for pubIds associated with this ebId
-					for(String publisher: publishers){
-						if(pubIdToDeduplicationMap.contains(publisher)){
-							pubIdToDeduplicationMap.get(publisher).resetReceivingDuplicates();
+					if(publishers!=null){
+						for (String publisher : publishers) {
+							if (pubIdToDeduplicationMap.contains(publisher)) {
+								pubIdToDeduplicationMap.get(publisher).resetReceivingDuplicates();
+							}
 						}
 					}
 				}
@@ -177,10 +195,16 @@ public class Collector implements Runnable{
 		logger.info("Collector:{} received:{} samples", containerId,currCount);
 
 		//close latency log file writer
-		writer.close();
+		if(logLatency){
+			for (String s: readings){
+				writer.write(s);
+			}
+			writer.close();
+		}
 		//shutdown periodic state cleanup scheduler
 		scheduler.shutdown();
 
+		poller.close();
 		//set linger to 0
 		collectorSocket.setLinger(0);
 		controlSocket.setLinger(0);
@@ -245,7 +269,7 @@ public class Collector implements Runnable{
 			}
 			//if receiver thread is safe to disconnect, send CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND to remove receiver thread 
 			if (disconnect) {
-				commandSocket.send(ContainerCommandHelper.serialize(
+				commandSocket.send(containerCommandHelper.serialize(
 						Commands.CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND, containerId, eb, connector.getValue()));
 				logger.debug("Collector:{} sent CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY:{} command for receiver connected to EB:{}",
 						containerId,Commands.CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND,eb);
@@ -256,12 +280,20 @@ public class Collector implements Runnable{
 
 	private void log(long receptionTs,DataSample sample)
 	{
-		//record latency of reception of this sample
-		long latency= receptionTs - sample.tsMilisec();
-		writer.write(String.format("%d,%s,%d,%d,%d\n",receptionTs,
-				sample.containerId(),sample.sampleId(),sample.tsMilisec(),latency));
-		//increment count of total number of samples received
-		currCount++;
+		if(logLatency){
+			// record latency of reception of this sample
+			long latency = Math.abs(receptionTs - sample.pubSendTs());
+			long latency_to_eb = Math.abs(sample.ebReceiveTs() - sample.pubSendTs());
+			long latency_from_eb = Math.abs(receptionTs - sample.ebReceiveTs());
+			//writer.write(
+			readings.add(String.format("%d,%s,%d,%d,%d,%d,%d,%d\n", receptionTs, sample.containerId(), sample.sampleId(),
+							sample.pubSendTs(), latency, sample.ebReceiveTs(), latency_to_eb, latency_from_eb));
+		}
+		// increment count of total number of samples received
+		//currCount++;
+		if(currCount==1){
+			firstSampleReceiveTs=System.currentTimeMillis();
+		}
 	}
 
 	private void openLatencyLogFile(int runId,String logDir){
@@ -276,7 +308,7 @@ public class Collector implements Runnable{
 		String latencyFile = String.format("%s/%d/%s",logDir,runId,fileName);
 		try{
 			writer = new PrintWriter(latencyFile, "UTF-8");
-			writer.write("reception_ts,container_id,sample_id,sender_ts,latency(ms)\n");
+			writer.write("reception_ts,container_id,sample_id,sender_ts,latency(ms),eb_receive_ts,latency_to_eb(ms),latency_from_eb(ms)\n");
 		}catch(Exception e){
 			logger.error("Collector:{} caught exception:{}",containerId,e.getMessage());
 		}

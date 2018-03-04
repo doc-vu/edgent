@@ -12,6 +12,8 @@ class Conf(object):
         #run_id
         if line.startswith('run_id'):
           self.run_id=line.rstrip().partition(':')[2]
+        elif line.startswith('payload'):
+          self.payload=int(line.rstrip().partition(':')[2])
         #rbs
         elif line.startswith('rbs'):
           rbs=line.rstrip().partition(':')[2]
@@ -54,6 +56,7 @@ class Conf(object):
               self.subscribers[host].update({topic: num_sub})
             else:
               self.subscribers[host]={topic: num_sub}
+          self.subscriber_client_machines=self.subscribers.keys()
         #publisher distribution
         elif line.startswith('pub_distribution'):
           self.publishers={}  
@@ -63,6 +66,7 @@ class Conf(object):
               self.publishers[host].update({topic: num_pub})
             else:
               self.publishers[host]={topic: num_pub}
+          self.publisher_client_machines=self.publishers.keys() 
         #publisher sample count
         elif line.startswith('pub_sample_count'):
           self.pub_sample_count=int(line.rstrip().partition(':')[2])
@@ -81,6 +85,8 @@ class Conf(object):
     self.infrastructure= ','.join(self.ebs+self.rbs+self.felbs)
     #all host machines
     self.hosts= ','.join(self.ebs + self.rbs + self.felbs + self.clients)
+    #all host machines except for felb
+    self.brokers_and_clients= ','.join(self.ebs + self.rbs + self.clients)
 
     #client machine to number of hosted subscribers map  
     self.client_numSubscribers={ client: sum([int(num_sub) for num_sub in topics.values()]) for client,topics in self.subscribers.items() }

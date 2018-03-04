@@ -1,0 +1,11 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+  tasks: 
+    - name: start publisher process
+      shell: cd "{{ src_home }}" && ./scripts/start_publishers2.sh "{{ topic_descriptions }}"
+          "{{ zk_connector }}" "{{ experiment_type }}"

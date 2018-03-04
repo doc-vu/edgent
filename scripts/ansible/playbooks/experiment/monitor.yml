@@ -9,4 +9,4 @@
   tasks: 
     - name: start monitor process
       shell: cd "{{ src_home }}" && ./scripts/start_monitor.sh "{{ log_dir }}"
-         "{{ run_id }}" "{{ zk_connector }}" 
+         "{{ run_id }}" "{{ zk_connector }}" "{{ pub_node }}" "{{ experiment_type }}" "{{ core_count }}"

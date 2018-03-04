@@ -11,7 +11,6 @@ repositories {
 }
 
 dependencies {
-        compile 'org.zeromq:jeromq:0.4.2'
         compile 'org.apache.curator:apache-curator:3.1.0'
 	compile 'org.apache.curator:curator-framework:3.1.0'
 	compile 'org.apache.curator:curator-client:3.1.0'
@@ -19,6 +18,7 @@ dependencies {
     	compile 'org.apache.zookeeper:zookeeper:3.5.0-alpha'
         compile 'org.apache.logging.log4j:log4j-api:2.8.2'
         compile 'org.apache.logging.log4j:log4j-core:2.8.2'
+        compile fileTree(dir: './jars/', include: ['jeromq-0.4.4-SNAPSHOT.jar','jeromq-0.4.4-SNAPSHOT-sources.jar'])
 }
 
 jar {

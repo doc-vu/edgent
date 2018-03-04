@@ -71,6 +71,7 @@ public class LbWorkerThread implements Runnable {
 				}
 			}
 		}
+		poller.close();
 		//set linger to 0 
 		listenerSocket.setLinger(0);
 		controlSocket.setLinger(0);

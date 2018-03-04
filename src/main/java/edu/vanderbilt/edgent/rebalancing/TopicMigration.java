@@ -11,8 +11,8 @@ import edu.vanderbilt.edgent.util.Commands;
 public class TopicMigration extends Rebalance{
 
 	public TopicMigration(String topicName, String currEbId, String currTopicConnector,
-			boolean waitForDisconnection, CuratorFramework client, Socket topicControl) {
-		super(Rebalance.LB_POLICY_MIGRATION, topicName, currEbId, currTopicConnector, waitForDisconnection, client, topicControl);
+			boolean waitForDisconnection, CuratorFramework client, Socket topicControl,TopicCommandHelper topicCommandHelper) {
+		super(Rebalance.LB_POLICY_MIGRATION, topicName, currEbId, currTopicConnector, waitForDisconnection, client, topicControl,topicCommandHelper);
 	}
 
 	@Override
@@ -41,7 +41,7 @@ public class TopicMigration extends Rebalance{
 		//All connected subscribers must connect to the new EB
 		for(Entry<String, String> pair: destEbTopicConnectors.entrySet()){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 					Commands.CONTAINER_CREATE_WORKER_COMMAND,
 					Container.ENDPOINT_TYPE_SUB, pair.getKey(), pair.getValue()));
 		}
@@ -52,7 +52,7 @@ public class TopicMigration extends Rebalance{
 		//All connected publishers must connect to the new EB
 		for(Entry<String, String> pair: destEbTopicConnectors.entrySet()){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 					Commands.CONTAINER_CREATE_WORKER_COMMAND,
 					Container.ENDPOINT_TYPE_PUB, pair.getKey(), pair.getValue()));
 		}
@@ -62,7 +62,7 @@ public class TopicMigration extends Rebalance{
 	public void sendSubDisconnectionControlMsg() {
 		//All endpoints(both publishers and subscribers) must disconnect from the current EB
 		topicControl.sendMore(topicName.getBytes());
-		topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
+		topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
 				Commands.CONTAINER_DELETE_WORKER_COMMAND,
 				Container.ENDPOINT_TYPE_SUB,currEbId,currTopicConnector));
 	}
@@ -71,7 +71,7 @@ public class TopicMigration extends Rebalance{
 	public void sendPubDisconnectionControlMsg() {
 		//All endpoints(both publishers and subscribers) must disconnect from the current EB
 		topicControl.sendMore(topicName.getBytes());
-		topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
+		topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
 				Commands.CONTAINER_DELETE_WORKER_COMMAND,
 				Container.ENDPOINT_TYPE_PUB,currEbId,currTopicConnector));
 	}

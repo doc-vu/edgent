@@ -18,6 +18,7 @@ public class LbListener implements Runnable{
 	private ZMQ.Socket controlSocket;
 	//ZMQ PUSH socket to send lb commands to this worker's parent container's queue
 	private ZMQ.Socket queueSocket;
+	private ZMQ.Poller poller;
 
 	//Id of container to which this LB Listener thread belongs
 	private String containerId;
@@ -75,7 +76,7 @@ public class LbListener implements Runnable{
 			subSocket.connect(ebConnector);
 			subSocket.subscribe(topicName.getBytes());
 
-			ZMQ.Poller poller = context.poller(2);
+			poller = context.poller(2);
 			poller.register(subSocket, ZMQ.Poller.POLLIN);
 			poller.register(controlSocket, ZMQ.Poller.POLLIN);
 
@@ -112,6 +113,7 @@ public class LbListener implements Runnable{
 	}
 	
 	private void cleanup(){
+		poller.close();
 		//set linger to 0
 		subSocket.setLinger(0);
 		controlSocket.setLinger(0);

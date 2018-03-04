@@ -10,7 +10,7 @@ import edu.vanderbilt.edgent.util.Commands;
 
 public class Prune implements Runnable {
 	//Time interval after which an unused topic is removed
-	private static final int TOPIC_EXPIRY_PERIOD_SEC=60;
+	private static final int TOPIC_EXPIRY_PERIOD_SEC=300;
 	//EB's id 
 	private String ebId;
 	//Curator client for connection to ZK

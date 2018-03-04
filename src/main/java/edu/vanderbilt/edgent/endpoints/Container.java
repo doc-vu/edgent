@@ -32,6 +32,9 @@ public abstract class Container implements Runnable{
 	private ZMQ.Socket commandSocket;
 	//ZMQ.PULL socket to receive commands for the container 
 	private ZMQ.Socket queueSocket;
+	
+	private FeRequestHelper feRequestHelper;
+	private WorkerCommandHelper workerCommandHelper;
 
 	//Connector for container's commandSocket
 	protected String commandConnector;
@@ -57,15 +60,17 @@ public abstract class Container implements Runnable{
 	protected String endpointType;
 	//topic name
 	protected String topicName;
-
 	protected String containerId;
+    protected String experimentType;	
+	
 	protected Logger logger;
 
-	public Container( String topicName,String endpointType,int id){
+	public Container( String topicName,String endpointType,int id,String experimentType){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
 		this.topicName=topicName;
 		this.endpointType=endpointType;
+		this.experimentType=experimentType;
 
 		containerId=String.format("%s-%s-%s-%d",endpointType,topicName,
 				UtilMethods.hostName(),id);
@@ -73,16 +78,19 @@ public abstract class Container implements Runnable{
 		workers=new HashMap<String,Worker>();
 		workerThreads=new HashMap<String,Thread>();
 		onConnectedCalled=false;
+		
+		feRequestHelper= new FeRequestHelper();
+		workerCommandHelper=new WorkerCommandHelper();
 
 		context=ZMQ.context(1);
 
 		if(endpointType.equals(ENDPOINT_TYPE_SUB)){
-			commandConnector = String.format("tcp://*:%d", (PortList.SUBSCRIBER_COMMAND_BASE_PORT_NUM + id));
-			queueConnector = String.format("tcp://*:%d", (PortList.SUBSCRIBER_QUEUE_BASE_PORT_NUM + id));
+			commandConnector = String.format("tcp://localhost:%d", (PortList.SUBSCRIBER_COMMAND_BASE_PORT_NUM + id));
+			queueConnector = String.format("tcp://localhost:%d", (PortList.SUBSCRIBER_QUEUE_BASE_PORT_NUM + id));
 		}
 		if(endpointType.equals(ENDPOINT_TYPE_PUB)){
-			commandConnector = String.format("tcp://*:%d", (PortList.PUBLISHER_COMMAND_BASE_PORT_NUM + id));
-			queueConnector = String.format("tcp://*:%d", (PortList.PUBLISHER_QUEUE_BASE_PORT_NUM + id));
+			commandConnector = String.format("tcp://localhost:%d", (PortList.PUBLISHER_COMMAND_BASE_PORT_NUM + id));
+			queueConnector = String.format("tcp://localhost:%d", (PortList.PUBLISHER_QUEUE_BASE_PORT_NUM + id));
 		}
 		logger.debug("Container:{} initialized",containerId);
 	}
@@ -112,6 +120,7 @@ public abstract class Container implements Runnable{
 		commandSocket= context.socket(ZMQ.PUB);
 		commandSocket.bind(commandConnector);
 		
+		logger.debug("Container:{} queueConnector:{}",containerId,queueConnector);
 		logger.debug("Container:{} initialized ZMQ sockets",containerId);
 
 		//container implementation specific intialization
@@ -125,6 +134,15 @@ public abstract class Container implements Runnable{
 		//If hosting EB could not be found, cleanup ZMQ sockets and exit
 		if(feResp.code()==Frontend.FE_RESPONSE_CODE_ERROR){
 			logger.error("Container:{} received error:{} from FE",containerId,feResp.msg());
+			commandSocket.sendMore(topicName.getBytes());
+			commandSocket.send(workerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+			// publish CONTAINER_EXIT_COMMAND on commandSocket to signal all
+			// threads to exit
+			commandSocket.sendMore(topicName.getBytes());
+			commandSocket.send(workerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+			logger.info("Container:{} sent CONTAINER_EXIT_COMMAND:{} to signal all threads to exit", containerId,
+					Commands.CONTAINER_EXIT_COMMAND);
+			cleanup();
 			cleanupZMQ();
 			return;
 		}
@@ -180,7 +198,7 @@ public abstract class Container implements Runnable{
 					logger.info("Container:{} received CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND:{} for eb:{}", containerId,
 							Commands.CONTAINER_SIGNAL_WORKER_EXIT_IMMEDIATELY_COMMAND, targetEbId);					
 					commandSocket.sendMore(topicName.getBytes());
-					commandSocket.send(WorkerCommandHelper.serialize(Commands.WORKER_EXIT_IMMEDIATELY_COMMAND, command.topicConnector()));
+					commandSocket.send(workerCommandHelper.serialize(Commands.WORKER_EXIT_IMMEDIATELY_COMMAND, command.topicConnector()));
 					logger.info("Container:{} sent WORKER_EXIT_IMMEDIATELY_COMMAND:{} for ebId:{}", containerId,
 							Commands.WORKER_EXIT_IMMEDIATELY_COMMAND, targetEbId);					
 				}
@@ -189,8 +207,8 @@ public abstract class Container implements Runnable{
 					logger.info("Container:{} received CONTAINER_WORKER_CONNECTED_COMMAND:{}", containerId,
 							Commands.CONTAINER_WORKER_CONNECTED_COMMAND);
 
-					feSocket.send(FeRequestHelper.serialize(Commands.FE_CONNECT_TO_EB_REQUEST, topicName, endpointType,
-							containerId, command.topicConnector().ebId()));
+					feSocket.send(feRequestHelper.serialize(Commands.FE_CONNECT_TO_EB_REQUEST, topicName, endpointType,
+							containerId, command.topicConnector().ebId(),experimentType));
 					FeResponse resp = FeResponseHelper.deserialize(feSocket.recv());
 					if (resp.code() == Frontend.FE_RESPONSE_CODE_OK) {
 						logger.info("Container:{} created its znode under ebId:{}",containerId,command.topicConnector().ebId());
@@ -221,7 +239,7 @@ public abstract class Container implements Runnable{
 					String targetEbId=command.topicConnector().ebId(); 
 					onWorkerExited(targetEbId);
 					commandSocket.sendMore(topicName.getBytes());
-					commandSocket.send(WorkerCommandHelper.serialize(Commands.WORKER_EXITED_COMMAND, command.topicConnector()));
+					commandSocket.send(workerCommandHelper.serialize(Commands.WORKER_EXITED_COMMAND, command.topicConnector()));
 					logger.info("Container:{} sent WORKER_EXITED_COMMAND:{} for ebId:{}", containerId,
 							Commands.WORKER_EXITED_COMMAND, targetEbId);					
 					
@@ -237,7 +255,7 @@ public abstract class Container implements Runnable{
 
 		//publish CONTAINER_EXIT_COMMAND on commandSocket to signal all threads to exit
 		commandSocket.sendMore(topicName.getBytes());
-		commandSocket.send(WorkerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
+		commandSocket.send(workerCommandHelper.serialize(Commands.CONTAINER_EXIT_COMMAND));
 		logger.info("Container:{} sent CONTAINER_EXIT_COMMAND:{} to signal all threads to exit",
 				containerId,Commands.CONTAINER_EXIT_COMMAND);
 	
@@ -251,15 +269,15 @@ public abstract class Container implements Runnable{
 				Thread workerThread= workerThreads.get(ebId);
 
 				//only interrupt worker thread if is not connected to broker
-				if(worker.connected()==Worker.WORKER_STATE_DISCONNECTED){
+				if(worker.connected()==Worker.WORKER_STATE_DISCONNECTED_SAFE_TO_INTERRUPT){
 					workerThread.interrupt();
 				}
 				//wait for worker thread to exit
 				workerThread.join();
 		
 				//remove znode for this worker thread 
-				feSocket.send(FeRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
-						topicName,endpointType,containerId,ebId));
+				feSocket.send(feRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
+						topicName,endpointType,containerId,ebId,experimentType));
 				feResp=FeResponseHelper.deserialize(feSocket.recv());
 				if(feResp.code()==Frontend.FE_RESPONSE_CODE_ERROR){
 					logger.error("Container:{} got error:{} from Frontend",
@@ -276,7 +294,7 @@ public abstract class Container implements Runnable{
 
 	private FeResponse queryFe() {
 		// query FE for hosting EB's location
-		feSocket.send(FeRequestHelper.serialize(Commands.FE_CONNECT_REQUEST, 
+		feSocket.send(feRequestHelper.serialize(Commands.FE_CONNECT_REQUEST, 
 				topicName, endpointType, containerId));
 		return FeResponseHelper.deserialize(feSocket.recv());
 	}	
@@ -298,7 +316,7 @@ public abstract class Container implements Runnable{
 	private void processDeleteWorkerCommand(TopicConnector connector){
 		//send WORKER_EXIT_COMMAND for the worker connected to targetEbId
 		commandSocket.sendMore(topicName.getBytes());
-		commandSocket.send(WorkerCommandHelper.serialize(Commands.WORKER_EXIT_COMMAND,connector));
+		commandSocket.send(workerCommandHelper.serialize(Commands.WORKER_EXIT_COMMAND,connector));
 		logger.info("Container:{} sent WORKER_EXIT_COMMAND:{} for ebId:{}",containerId,
 				Commands.WORKER_EXIT_COMMAND,connector.ebId());
 	}
@@ -308,6 +326,7 @@ public abstract class Container implements Runnable{
 		removeWorker(ebId);
 		
 		//query FE to get locators for topic of interest
+		/*
 		FeResponse resp= queryFe();
 		if(resp.code()==Frontend.FE_RESPONSE_CODE_ERROR){
 			logger.error("Container:{} got error:{} from Frontend",
@@ -320,12 +339,14 @@ public abstract class Container implements Runnable{
 				TopicConnector connector= resp.connectors(i);
 				String currEbId= connector.ebId();
 				String topicConnector= TopicConnectorHelper.toString(connector);
-				//only start a worker for ebId for which worker does not exist
-				if (!workers.containsKey(currEbId)) {
+				//only start a worker for ebId for which worker does not exist and 
+				//the new ebId is not the same as the ebId for which we got disconnected
+				if (!workers.containsKey(currEbId) && !currEbId.equals(ebId)) {
 					createWorker(currEbId,topicConnector);
 				}
 			}
 		}
+		*/
 	}
 
 	private void onWorkerExited(String ebId) throws InterruptedException{
@@ -336,7 +357,7 @@ public abstract class Container implements Runnable{
 	private void createWorker(String ebId, String topicConnector){
 		workerUuid++;
 		//create worker
-		Worker worker=instantiateWorker(workerUuid,ebId,topicConnector);
+		Worker worker=instantiateWorker(context,workerUuid,ebId,topicConnector);
 		workers.put(ebId, worker);
 		//start worker thread
 		workerThreads.put(ebId, new Thread(worker));
@@ -354,8 +375,8 @@ public abstract class Container implements Runnable{
 		logger.info("Container:{} worker for ebId:{} has exited", containerId, ebId);
 
 		//request fe to remove znode for this worker
-		feSocket.send(FeRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
-				topicName,endpointType,containerId,ebId));
+		feSocket.send(feRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
+				topicName,endpointType,containerId,ebId,experimentType));
 		FeResponse resp= FeResponseHelper.deserialize(feSocket.recv());
 		if(resp.code()==Frontend.FE_RESPONSE_CODE_OK){
 			logger.info("Container:{} removed znode for worker connected to eb:{}",containerId,ebId);
@@ -393,5 +414,5 @@ public abstract class Container implements Runnable{
 	public abstract void initialize();
 	public abstract void cleanup();
 	public abstract void onConnected();
-	public abstract Worker instantiateWorker(int workerUuid, String ebId, String topicConnector);
+	public abstract Worker instantiateWorker(ZMQ.Context context, int workerUuid, String ebId, String topicConnector);
 }

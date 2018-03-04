@@ -12,8 +12,8 @@ import edu.vanderbilt.edgent.util.Commands;
 public class AllPublisherReplication extends Rebalance {
 
 	public AllPublisherReplication(String topicName, String currEbId, String currTopicConnector,
-			boolean waitForDisconnection, CuratorFramework client, Socket topicControl) {
-		super(Rebalance.LB_POLICY_ALL_PUB, topicName, currEbId, currTopicConnector, waitForDisconnection, client, topicControl);
+			boolean waitForDisconnection, CuratorFramework client, Socket topicControl,TopicCommandHelper topicCommandHelper) {
+		super(Rebalance.LB_POLICY_ALL_PUB, topicName, currEbId, currTopicConnector, waitForDisconnection, client, topicControl,topicCommandHelper);
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class AllPublisherReplication extends Rebalance {
 			String destTopicConnector= destEbTopicConnectors.get(destEb);
 			for(String subscriberContainer: pair.getValue()){
 				topicControl.sendMore(topicName.getBytes());
-				topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+				topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 						Commands.CONTAINER_CREATE_WORKER_COMMAND, subscriberContainer, destEb,
 						destTopicConnector));
 			}
@@ -77,7 +77,7 @@ public class AllPublisherReplication extends Rebalance {
 		 */
 		for(Entry<String, String> pair: destEbTopicConnectors.entrySet()){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND,
 					Commands.CONTAINER_CREATE_WORKER_COMMAND,
 					Container.ENDPOINT_TYPE_PUB, pair.getKey(), pair.getValue()));
 		}
@@ -92,7 +92,7 @@ public class AllPublisherReplication extends Rebalance {
 		 */
 		for(String container: disconnectingSubscribers){
 			topicControl.sendMore(topicName.getBytes());
-			topicControl.send(TopicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
+			topicControl.send(topicCommandHelper.serialize(Commands.TOPIC_LB_COMMAND, 
 					Commands.CONTAINER_DELETE_WORKER_COMMAND,
 					container,currEbId,currTopicConnector));
 		}

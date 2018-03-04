@@ -1,0 +1,11 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+  tasks: 
+  - name: clean cached memory 
+    become: yes
+    shell: cd "{{ src_home }}" && ./scripts/clean_memory.sh 
