@@ -1,19 +1,32 @@
 import os
-log_dir='/home/kharesp/log/distribution3_run2'
-publishers=[10,9,8,7,6,5,4,3,2,1]
+import numpy as np
+log_dir='/home/kharesp/log/wo_curl_pub'
+sub_dirs=[1,10,20,40,80,160]
 
-with open('output.csv','w') as f:
-  f.write('#pub,#sub,90th_percentile_latency(ms),average_latency(ms)\n')
-  for publisher in publishers:
-    print('processing publisher:%d'%publisher)
-    sub_dirs=os.listdir('%s/p%d'%(log_dir,publisher))
-    sub_iterations=sorted([int(i) for i in sub_dirs])
-    for sub in sub_iterations:
-      #extract avg and 90th percentile latency
-      with open('%s/p%d/%d/summary/overall_performance.csv'%(log_dir,publisher,sub),'r') as l:
-        #skip header
-        l.next()
-        contents=l.next().split(',')
-        latency_avg=float(contents[0])
-        latency_90th=float(contents[7])
-        f.write('%d,%d,%f,%f\n'%(publisher,sub,latency_90th,latency_avg))
+cpu=[]
+#gps_update=[]
+traffic_update=[]
+
+for sub_dir in sub_dirs:
+  with open('%s/%d/summary/summary_topic.csv'%(log_dir,sub_dir),'r') as f:
+    #skip header
+    next(f)
+    t=[] 
+    #b=[]
+    for line in f:
+      #if line.startswith('b'):
+      #  b.append(float(line.split(',')[9]))
+      if line.startswith('t'):
+        t.append(float(line.split(',')[9]))
+
+    #gps_update.append(np.mean(b)/1000)
+    traffic_update.append(np.mean(t))
+  with open('%s/%d/summary/summary_util.csv'%(log_dir,sub_dir),'r') as f:
+    #skip header
+    next(f)
+    cpu.append(float(f.next().split(',')[1]))
+    
+#print(gps_update)
+#print('Traffic update')
+print(traffic_update)
+print(cpu)

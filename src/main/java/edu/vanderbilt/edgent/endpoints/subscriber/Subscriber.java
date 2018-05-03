@@ -22,8 +22,8 @@ public class Subscriber extends Container{
 	private boolean logLatency;
 
 	public Subscriber(String topicName, int id, int sampleCount,
-			int runId, String logDir,boolean logLatency,String experimentType){
-		super( topicName,Container.ENDPOINT_TYPE_SUB,id,experimentType);
+			int runId, String logDir,boolean logLatency,String experimentType,int interval,String feAddress){
+		super( topicName,Container.ENDPOINT_TYPE_SUB,id,experimentType,interval,feAddress);
 		this.sampleCount=sampleCount;
 		this.runId=runId;
 		this.logDir=logDir;
@@ -67,8 +67,8 @@ public class Subscriber extends Container{
 	}
 
 	public static void main(String args[]){
-		if(args.length < 7){
-			System.out.println("Subscriber topicName id sampleCount runId logDir logLatency experimentType");
+		if(args.length < 9){
+			System.out.println("Subscriber topicName id sampleCount runId logDir logLatency experimentType interval feAddress");
 			return;
 		}
 		try{
@@ -80,9 +80,11 @@ public class Subscriber extends Container{
 			String logDir= args[4];
 			boolean logLatency= Integer.parseInt(args[5])>0?true:false;
 			String experimentType=args[6];
+			int interval= Integer.parseInt(args[7]);
+			String feAddress=args[8];
 			
 			//initialize subscriber
-			Subscriber sub=new Subscriber(topicName,id,sampleCount,runId,logDir,logLatency,experimentType);
+			Subscriber sub=new Subscriber(topicName,id,sampleCount,runId,logDir,logLatency,experimentType,interval,feAddress);
 			Thread subThread = new Thread(sub);
 
 			//install hook to handle SIGTERM and SIGINT

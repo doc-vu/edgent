@@ -78,19 +78,20 @@ public class EdgeBroker implements Runnable{
 	private String ipAddress;
 	private int regionId;
 	private String ebId;
-	
 	private Logger logger;
 
 	public EdgeBroker(String zkConnector,int ioThreads,int id){
+
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		ipAddress= UtilMethods.ipAddress();
 		regionId= UtilMethods.regionId(); 
 		ebId=String.format("EB-%d-%s-%d",regionId,ipAddress,id);
+
 		//topicControlConnector=String.format("inproc://%s", ebId);
 		topicControlConnector=String.format("tcp://localhost:%d",PortList.EB_TOPIC_CONTROL_PORT);
 
 		this.context = ZMQ.context(ioThreads);
-		this.context.setMaxSockets(50000);
+		//this.context.setMaxSockets(50000);
 		//initialize state information
 		hostedTopics= new HashMap<String,Topic>();
 		topicThreads= new HashMap<String,Thread>();
@@ -144,9 +145,12 @@ public class EdgeBroker implements Runnable{
 						//topic path: /eb/ebId/topicName
 						String path=event.getData().getPath();
 						String topicName=path.split("/")[3];
-						logger.info("EB:{} was assigned topic:{}",ebId,topicName);
+						String data= new String(client.getData().forPath(String.format("/topics/%s",topicName)));
+						String[] parts= data.split(",");
+						logger.info("EB:{} was assigned topic:{} with processing interval:{} and replication mode:{}",
+								ebId,topicName,parts[0],parts[1]);
 						//place EB_TOPIC_CREATE COMMAND in EB's queue
-						queue.add(String.format("%s,%s",Commands.EB_TOPIC_CREATE_COMMAND,topicName));
+						queue.add(String.format("%s,%s,%s",Commands.EB_TOPIC_CREATE_COMMAND,topicName,parts[0]));
 					}
 					if(event.getType()==Type.CHILD_REMOVED){
 						//topic path: /eb/ebId/topicName
@@ -194,9 +198,10 @@ public class EdgeBroker implements Runnable{
 				//topic creation
 				if(commandType.equals(Commands.EB_TOPIC_CREATE_COMMAND)){
 					String topicName=args[1];
-					logger.info("EdgeBroker:{} will process command:{} for topic:{}",
-							ebId,Commands.EB_TOPIC_CREATE_COMMAND,topicName);
-					createTopic(topicName);
+					String interval=args[2];
+					logger.info("EdgeBroker:{} will process command:{} for topic:{} and processing interval:{}",
+							ebId,Commands.EB_TOPIC_CREATE_COMMAND,topicName,interval);
+					createTopic(topicName,interval);
 				
 				}
 				//topic deletion
@@ -277,7 +282,7 @@ public class EdgeBroker implements Runnable{
 	 * is hosted on this EB.
 	 * @param topicName 
 	 */
-	private void createTopic(String topicName){
+	private void createTopic(String topicName,String interval){
 		logger.debug("EdgeBroker:{} will create topic:{}",ebId,topicName);
 
 		if(!hostedTopics.containsKey(topicName)){
@@ -291,7 +296,7 @@ public class EdgeBroker implements Runnable{
 			CountDownLatch topicInitialized=new CountDownLatch(1);
 			//Instantiate topic
 			Topic topic= new Topic(topicName,context,topicControlConnector,
-					receivePort,sendPort,lbPort,topicInitialized);
+					receivePort,sendPort,lbPort,topicInitialized,Integer.parseInt(interval));
 			//Start the topic thread
 			Thread topicThread=new Thread(topic);
 			topicThread.start();
@@ -331,6 +336,7 @@ public class EdgeBroker implements Runnable{
 				logger.debug("EdgeBroker:{} created its znode under /lb/topics/{}/{}", ebId, topicName,ebId);
 
 				// register listener for receiving topic level LB directives for this EB under: /lb/topics/topicName/ebId
+				@SuppressWarnings("resource")
 				PathChildrenCache cache = new PathChildrenCache(client, 
 						String.format("/lb/topics/%s/%s",topicName,ebId),true);
 				topicLbListeners.put(topicName, cache);
@@ -487,6 +493,7 @@ public class EdgeBroker implements Runnable{
 		topicControl.setLinger(0);
 		topicControl.close();
 		//close ZMQ Context
+		context.close();
 		context.term();
 		logger.debug("EdgeBroker:{} closed ZMQ sockets and context",ebId);
 		
@@ -547,7 +554,7 @@ public class EdgeBroker implements Runnable{
 	
 	public static void main(String args[]){
 		if(args.length<2){
-			System.out.println("Usage: EdgeBroker zkConnector ioThreads id");
+			System.out.println("Usage: EdgeBroker zkConnector ioThreads");
 			return;
 		}
 		try{

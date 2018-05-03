@@ -25,6 +25,7 @@ public final class FeRequest extends Table {
   public ByteBuffer ebIdAsByteBuffer() { return __vector_as_bytebuffer(12, 1); }
   public String experimentType() { int o = __offset(14); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer experimentTypeAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
+  public int interval() { int o = __offset(16); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
 
   public static int createFeRequest(FlatBufferBuilder builder,
       int type,
@@ -32,8 +33,10 @@ public final class FeRequest extends Table {
       int endpointTypeOffset,
       int containerIdOffset,
       int ebIdOffset,
-      int experimentTypeOffset) {
-    builder.startObject(6);
+      int experimentTypeOffset,
+      int interval) {
+    builder.startObject(7);
+    FeRequest.addInterval(builder, interval);
     FeRequest.addExperimentType(builder, experimentTypeOffset);
     FeRequest.addEbId(builder, ebIdOffset);
     FeRequest.addContainerId(builder, containerIdOffset);
@@ -43,13 +46,14 @@ public final class FeRequest extends Table {
     return FeRequest.endFeRequest(builder);
   }
 
-  public static void startFeRequest(FlatBufferBuilder builder) { builder.startObject(6); }
+  public static void startFeRequest(FlatBufferBuilder builder) { builder.startObject(7); }
   public static void addType(FlatBufferBuilder builder, int type) { builder.addInt(0, type, 0); }
   public static void addTopicName(FlatBufferBuilder builder, int topicNameOffset) { builder.addOffset(1, topicNameOffset, 0); }
   public static void addEndpointType(FlatBufferBuilder builder, int endpointTypeOffset) { builder.addOffset(2, endpointTypeOffset, 0); }
   public static void addContainerId(FlatBufferBuilder builder, int containerIdOffset) { builder.addOffset(3, containerIdOffset, 0); }
   public static void addEbId(FlatBufferBuilder builder, int ebIdOffset) { builder.addOffset(4, ebIdOffset, 0); }
   public static void addExperimentType(FlatBufferBuilder builder, int experimentTypeOffset) { builder.addOffset(5, experimentTypeOffset, 0); }
+  public static void addInterval(FlatBufferBuilder builder, int interval) { builder.addInt(6, interval, 0); }
   public static int endFeRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

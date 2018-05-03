@@ -7,6 +7,7 @@ table FeRequest {
   containerId:string;
   ebId:string;
   experimentType:string;
+  interval:int;
 }
 
 root_type FeRequest;

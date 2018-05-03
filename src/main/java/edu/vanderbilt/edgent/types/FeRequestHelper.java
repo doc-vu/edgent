@@ -10,7 +10,7 @@ public class FeRequestHelper {
 	}
 	
 	public byte[] serialize(int type,String topicName,String endpointType,
-			String containerId,String ebId,String experimentType){
+			String containerId,String ebId,String experimentType,int interval){
 		builder.clear();
 		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
@@ -20,13 +20,13 @@ public class FeRequestHelper {
 		int experimentTypeOffset=builder.createString(experimentType);
 		//get FeRequest offset
 		int feRequestOffset= FeRequest.createFeRequest(builder, type, topicNameOffset,
-				endpointTypeOffset, containerIdOffset, ebIdOffset,experimentTypeOffset);
+				endpointTypeOffset, containerIdOffset, ebIdOffset,experimentTypeOffset,interval);
 		builder.finish(feRequestOffset);
 		return builder.sizedByteArray();
 	}
 	
 	public byte[] serialize(int type, String topicName, String endpointType,
-			String containerId){
+			String containerId,int interval){
 		builder.clear();
 		//get builder string offsets
 		int topicNameOffset= builder.createString(topicName);
@@ -42,6 +42,8 @@ public class FeRequestHelper {
 		FeRequest.addEndpointType(builder, endpointTypeOffset);
 		//add containerId
 		FeRequest.addContainerId(builder, containerIdOffset);
+		//add interval
+		FeRequest.addInterval(builder, interval);
 		//close FeRequest builder and return byte array
 		int feRequestOffset= FeRequest.endFeRequest(builder);
 		builder.finish(feRequestOffset);

@@ -56,10 +56,13 @@ public class Topic implements Runnable {
 	private ContainerCommandHelper containerCommandHelper;
 	private int count;
 	private long startTs;
+	
+	private int per_sample_processing_interval;
+
 	private Logger logger;
 	
 	public Topic(String topicName,ZMQ.Context context, String ebControlConnector,
-			int receivePort,int sendPort,int lbPort,CountDownLatch initialized){
+			int receivePort,int sendPort,int lbPort,CountDownLatch initialized,int per_sample_processing_interval){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
 		this.topicName= topicName;
@@ -71,6 +74,8 @@ public class Topic implements Runnable {
 		this.initialized=initialized;
 		this.dataSampleHelper=new DataSampleHelper();
 		this.containerCommandHelper=new ContainerCommandHelper();
+		
+		this.per_sample_processing_interval=per_sample_processing_interval;
 		
 		topicConnector=String.format("%s,%d,%d,%d",UtilMethods.ipAddress(),
 				receivePort,sendPort,lbPort);
@@ -92,8 +97,10 @@ public class Topic implements Runnable {
 		controlSocket=context.socket(ZMQ.SUB);
 		receiveSocket= context.socket(ZMQ.SUB);
 		receiveSocket.setHWM(0);
+
 		sendSocket= context.socket(ZMQ.PUB);
 		sendSocket.setHWM(0);
+
 		lbSocket= context.socket(ZMQ.PUB);
 		poller=context.poller(2);
 
@@ -151,16 +158,30 @@ public class Topic implements Runnable {
 					
 					//Send new DataSample with ebReceiveTs set 
 					DataSample sample= DataSampleHelper.deserialize(msgContent);
+
+					//logger.debug("Topic:{} received message {}",topicName,sample.sampleId());
+
+					
+					//Either use spin or stress-ng to simulate per-sample processing 
+					if(per_sample_processing_interval>0){
+						//long spin_time_nanos= exponentialProcessingInterval(per_sample_processing_interval*1000000L);
+						bogus(per_sample_processing_interval);
+						//spin(spin_time_nanos);
+					}
+
 					sendSocket.sendMore(msgTopic);
 					sendSocket.send(dataSampleHelper.serialize(sample.sampleId(), 
 							sample.regionId(), sample.runId(), sample.priority(), sample.pubSendTs(),
 							ebReceiveTs, sample.containerId(), sample.payloadLength()));
+
+					//logger.debug("Topic:{} sent message {}",topicName,sample.sampleId());
+
 					
 					count++;
 					if(count==1){
 						startTs=System.currentTimeMillis();
 					}
-					if(count%1000==0){
+					if(count%20==0){
 						double throughput=(count*1.0)/(System.currentTimeMillis()-startTs);
 						logger.info("Topic:{} received {} messages.Throughput:{}",topicName,count,throughput);
 					}
@@ -191,9 +212,33 @@ public class Topic implements Runnable {
 				break;
 			}
 		}
+		
 		cleanup();
 		logger.info("Topic:{} deleted", topicName);
 	}
+	
+	public void bogus(int per_sample_processing_interval) throws Exception{
+		int cpu_ops=0;
+		if(per_sample_processing_interval==10){
+			cpu_ops = 1;
+		}else if(per_sample_processing_interval==20){
+			cpu_ops = 3;
+		}else if (per_sample_processing_interval==30){
+			cpu_ops=5;
+		}else if(per_sample_processing_interval==40){
+			cpu_ops = 6;
+		}else if (per_sample_processing_interval == 50) {
+			cpu_ops = 8;
+		}			
+		Process p = Runtime.getRuntime().exec(String.format("stress-ng --cpu 1 --cpu-method matrixprod --cpu-ops %d", cpu_ops));
+		p.waitFor();
+	}
+	
+	public void spin(long wait){
+		long startTime= System.nanoTime();
+		while ((System.nanoTime()-startTime)< wait){}
+	}
+
 	
 	private void cleanup(){
 		poller.close();
@@ -232,6 +277,10 @@ public class Topic implements Runnable {
 	
 	public String topicConnector(){
 		return topicConnector;
+	}
+	
+	private long exponentialProcessingInterval(long averageInterval){
+		return (long)(averageInterval*(-Math.log(Math.random())));
 	}
 	
 }

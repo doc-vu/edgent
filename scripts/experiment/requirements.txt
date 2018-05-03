@@ -1,0 +1,13 @@
+kazoo==2.4.0
+matplotlib==2.0.2
+netifaces==0.10.6
+numpy==1.13.1
+pandas==0.22.0
+pyparsing==2.2.0
+python-dateutil==2.6.1
+pytz==2017.2
+pyzmq==17.0.0
+scikit-learn==0.19.1
+scipy==0.19.1
+six==1.10.0
+subprocess32==3.2.7

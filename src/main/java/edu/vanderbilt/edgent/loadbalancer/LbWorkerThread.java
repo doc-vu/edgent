@@ -56,10 +56,11 @@ public class LbWorkerThread implements Runnable {
 
 			if (poller.pollin(0)) {
 				// process topic creation requests
-				String topic = listenerSocket.recvStr();
-				logger.info("WorkerThread:{} received topic creation request for topic:{}",
-						workerId, topic);
-				create(topic);
+				String msg = listenerSocket.recvStr();
+				String[] parts= msg.split(",");
+				logger.info("WorkerThread:{} received topic creation request for topic:{} and processing interval:{}",
+						workerId, parts[0],parts[1]);
+				create(parts[0],parts[1]);
 			}
 			if (poller.pollin(1)) {
 				// process control messages
@@ -81,7 +82,7 @@ public class LbWorkerThread implements Runnable {
 		logger.info("WorkerThread:{} exited",workerId);
 	}
 	
-	private void create(String topic){
+	private void create(String topic,String interval){
 		try{
 			/* Create topic znode under: /topics/topicName
 			 * Creation of topic znode acts like a locking mechanism, where 
@@ -90,7 +91,7 @@ public class LbWorkerThread implements Runnable {
 			 * received while the topic is being created by the system.
 			 */
 			client.create()
-				.forPath(String.format("/topics/%s",topic),LoadBalancer.REPLICATION_NONE.getBytes());
+				.forPath(String.format("/topics/%s",topic),String.format("%s,%s",interval,LoadBalancer.REPLICATION_NONE).getBytes());
 			logger.info("WorkerThread:{} created topic znode:/topics/{}",workerId,topic);
 			//create topic znode under: /lb/topics/topicName
 			client.create().forPath(String.format("/lb/topics/%s",topic));

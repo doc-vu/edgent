@@ -82,10 +82,11 @@ public class FeWorkerThread implements Runnable {
 					String topicName=request.topicName();
 					String endpointType=request.endpointType();
 					String containerId=request.containerId();
+					int interval=request.interval();
 					logger.info("WorkerThread:{} received FE_CONNECT_REQUEST "
-							+ "for topic:{}, endpointType:{} and containerId:{} ",
-							workerId,topicName,endpointType,containerId);
-					connect(topicName,endpointType,containerId);
+							+ "for topic:{}, endpointType:{} and containerId:{} interval:{}",
+							workerId,topicName,endpointType,containerId,interval);
+					connect(topicName,endpointType,containerId,interval);
 				}
 				//process Connect to EB request
 				else if(type==Commands.FE_CONNECT_TO_EB_REQUEST){
@@ -137,7 +138,7 @@ public class FeWorkerThread implements Runnable {
 	}
 
 	//process connection request
-	private void connect(String topic,String endpointType,String containerId)
+	private void connect(String topic,String endpointType,String containerId,int interval)
 	{
 		try{
 			//query ZK to get hosting EB locations
@@ -149,7 +150,7 @@ public class FeWorkerThread implements Runnable {
 			if(ebs==null || ebs.isEmpty()){
 				logger.info("WorkerThread:{} no ebs host topic:{}. Will request LB to create topic:{}",
 						workerId,topic,topic);
-				requestTopicCreation(topic);
+				requestTopicCreation(topic,interval);
 				ebs=hostingEbs(topic);
 			}
 
@@ -199,9 +200,9 @@ public class FeWorkerThread implements Runnable {
 	}
 
 
-	private void requestTopicCreation(String topicName) throws Exception{
+	private void requestTopicCreation(String topicName,int interval) throws Exception{
 		//send request to LB
-		lbSocket.send(topicName);
+		lbSocket.send(String.format("%s,%d", topicName,interval));
 		
 		//waitset to wait on until Topic creation completes
 		CountDownLatch latch= new CountDownLatch(1);
@@ -236,7 +237,9 @@ public class FeWorkerThread implements Runnable {
 		String replicationMode=null;
 		try{
 			//get the replication mode for topicName
-			replicationMode= new String(client.getData().forPath(String.format("/topics/%s", topicName)));
+			String result= new String(client.getData().forPath(String.format("/topics/%s", topicName)));
+			String[] parts= result.split(",");
+			replicationMode=parts[1];
 		}catch(Exception e){
 			logger.error("WorkerThread:{} caught exception:{}",workerId,e.getMessage());
 		}

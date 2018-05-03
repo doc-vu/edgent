@@ -9,4 +9,4 @@
   tasks: 
     - name: start subscriber process
       shell: cd "{{ src_home }}" && ./scripts/start_subscribers2.sh "{{ topic_descriptions }}"
-        "{{ run_id }}" "{{ log_dir }}" "{{ experiment_type }}"
+        "{{ run_id }}" "{{ log_dir }}" "{{ experiment_type }}" "{{ fe_address }}"

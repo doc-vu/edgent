@@ -14,10 +14,10 @@ class Experiment(object):
     self.zk=zk.Zk(self.experiment_type,self.conf.run_id,self.conf)
     
   def run(self):
-    #Re-start EdgeBroker on ebs
+    ##Re-start EdgeBroker on ebs
     print("\n\n\nRe-starting broker processes on edge-brokers")
     command_string='cd %s && ansible-playbook playbooks/experiment/eb.yml  --limit %s\
-      --extra-vars="zk_connector=%s io_threads=%d"'%\
+      --extra-vars="zk_connector=%s io_threads=%d id=0 per_sample_processing_interval=15"'%\
       (metadata.ansible,','.join(self.conf.ebs),metadata.public_zk,metadata.io_threads)
     subprocess.check_call(['bash','-c',command_string])
 
@@ -98,8 +98,8 @@ class Experiment(object):
     print("\n\n\nCleaning log directory on all host machines")
     self.clean_logs()
 
-    #free cached memory
-    print("\n\n\nCleaning cached memory on all host machines")
+    ##free cached memory
+    print("\n\n\nCleaning cached memory on all brokers")
     self.clean_memory()
     
     

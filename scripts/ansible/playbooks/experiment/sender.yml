@@ -1,0 +1,13 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+    - log_dir: /home/ubuntu/infrastructure_log/sender
+  tasks:
+    - name: ensure log dir exists
+      file: path={{ log_dir }} state=directory
+    - name: start sender script 
+      shell: cd "{{ src_home }}" && nohup python3 -u ./scripts/sender.py 1> "{{ log_dir }}/sender.log" 2>&1 &

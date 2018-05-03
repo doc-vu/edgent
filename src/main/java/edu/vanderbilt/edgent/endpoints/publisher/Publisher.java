@@ -25,8 +25,9 @@ public class Publisher extends Container{
 	private String zkConnector;
 
 	public Publisher(String topicName,int id,
-			int sampleCount,int sendInterval,int payloadSize,String zkConnector,String experimentType,int send) {
-		super(topicName, Container.ENDPOINT_TYPE_PUB, id,experimentType);
+			int sampleCount,int sendInterval,int payloadSize,
+			String zkConnector,String experimentType,int send,int interval,String feAddress) {
+		super(topicName, Container.ENDPOINT_TYPE_PUB, id,experimentType,interval,feAddress);
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
 		this.payloadSize=payloadSize;
@@ -73,8 +74,8 @@ public class Publisher extends Container{
 	}
 	
 	public static void main(String args[]){
-		if(args.length < 8){
-			System.out.println("Publisher topicName id sampleCount sendInterval payloadSize zkConnector experimentType send");
+		if(args.length < 10){
+			System.out.println("Publisher topicName id sampleCount sendInterval payloadSize zkConnector experimentType send interval feAddress");
 			return;
 		}
 		try{
@@ -87,10 +88,12 @@ public class Publisher extends Container{
 			String zkConnector=args[5];
 			String experimentType=args[6];
 			int send=Integer.parseInt(args[7]);
+			int interval=Integer.parseInt(args[8]);
+			String feAddress= args[9];
 			
 			//initialize publisher 
 			Publisher pub=new Publisher(topicName,id,sampleCount,
-					sendInterval,payloadSize,zkConnector,experimentType,send);
+					sendInterval,payloadSize,zkConnector,experimentType,send,interval,feAddress);
 			Thread pubThread = new Thread(pub);
 
 			//install hook to handle SIGTERM and SIGINT

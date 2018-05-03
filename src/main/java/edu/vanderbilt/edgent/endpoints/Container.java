@@ -62,15 +62,19 @@ public abstract class Container implements Runnable{
 	protected String topicName;
 	protected String containerId;
     protected String experimentType;	
+    protected int interval;
+    protected String feAddress;
 	
 	protected Logger logger;
 
-	public Container( String topicName,String endpointType,int id,String experimentType){
+	public Container( String topicName,String endpointType,int id,String experimentType,int interval,String feAddress){
 		logger= LogManager.getLogger(this.getClass().getSimpleName());
 		//stash constructor arguments
 		this.topicName=topicName;
 		this.endpointType=endpointType;
 		this.experimentType=experimentType;
+		this.interval=interval;
+		this.feAddress=feAddress;
 
 		containerId=String.format("%s-%s-%s-%d",endpointType,topicName,
 				UtilMethods.hostName(),id);
@@ -99,7 +103,7 @@ public abstract class Container implements Runnable{
 	public void run() {
 		logger.info("Container:{} started", containerId);
 		//acquire this region's known FE endpoint
-		String feAddress= Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
+		//String feAddress= Frontend.FE_LOCATIONS.get(UtilMethods.regionId());
 
 		if(feAddress==null){
 			logger.error("Container:{} could not locate it's region's FE(Region Id:{}). Exiting.",
@@ -108,20 +112,27 @@ public abstract class Container implements Runnable{
 			return;
 		}
 
-		//initialize ZMQ.REQ socket to query FE
-		feSocket=context.socket(ZMQ.REQ);
-		feSocket.connect(String.format("tcp://%s:%d",feAddress,PortList.FE_LISTENER_PORT));
+		try{
+			// initialize ZMQ.REQ socket to query FE
+			feSocket = context.socket(ZMQ.REQ);
+			feSocket.connect(String.format("tcp://%s:%d", feAddress, PortList.FE_LISTENER_PORT));
 
-		//create and bind container's queue socket 
-		queueSocket= context.socket(ZMQ.PULL);
-		queueSocket.bind(queueConnector);
+			// create and bind container's queue socket
+			queueSocket = context.socket(ZMQ.PULL);
+			queueSocket.bind(queueConnector);
 
-		//create and bind container's command socket
-		commandSocket= context.socket(ZMQ.PUB);
-		commandSocket.bind(commandConnector);
+			// create and bind container's command socket
+			commandSocket = context.socket(ZMQ.PUB);
+			commandSocket.bind(commandConnector);
 		
-		logger.debug("Container:{} queueConnector:{}",containerId,queueConnector);
-		logger.debug("Container:{} initialized ZMQ sockets",containerId);
+			logger.debug("Container:{} queueConnector:{}", containerId, queueConnector);
+			logger.debug("Container:{} initialized ZMQ sockets", containerId);
+		}catch(Exception e){
+			logger.error("Container:{} caught exception:{}",containerId,e.getMessage());
+			cleanup();
+			cleanupZMQ();
+			return;
+		}
 
 		//container implementation specific intialization
 		initialize();
@@ -208,7 +219,7 @@ public abstract class Container implements Runnable{
 							Commands.CONTAINER_WORKER_CONNECTED_COMMAND);
 
 					feSocket.send(feRequestHelper.serialize(Commands.FE_CONNECT_TO_EB_REQUEST, topicName, endpointType,
-							containerId, command.topicConnector().ebId(),experimentType));
+							containerId, command.topicConnector().ebId(),experimentType,interval));
 					FeResponse resp = FeResponseHelper.deserialize(feSocket.recv());
 					if (resp.code() == Frontend.FE_RESPONSE_CODE_OK) {
 						logger.info("Container:{} created its znode under ebId:{}",containerId,command.topicConnector().ebId());
@@ -277,7 +288,7 @@ public abstract class Container implements Runnable{
 		
 				//remove znode for this worker thread 
 				feSocket.send(feRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
-						topicName,endpointType,containerId,ebId,experimentType));
+						topicName,endpointType,containerId,ebId,experimentType,interval));
 				feResp=FeResponseHelper.deserialize(feSocket.recv());
 				if(feResp.code()==Frontend.FE_RESPONSE_CODE_ERROR){
 					logger.error("Container:{} got error:{} from Frontend",
@@ -295,7 +306,7 @@ public abstract class Container implements Runnable{
 	private FeResponse queryFe() {
 		// query FE for hosting EB's location
 		feSocket.send(feRequestHelper.serialize(Commands.FE_CONNECT_REQUEST, 
-				topicName, endpointType, containerId));
+				topicName, endpointType, containerId,interval));
 		return FeResponseHelper.deserialize(feSocket.recv());
 	}	
 	
@@ -376,7 +387,7 @@ public abstract class Container implements Runnable{
 
 		//request fe to remove znode for this worker
 		feSocket.send(feRequestHelper.serialize(Commands.FE_DISCONNECT_REQUEST, 
-				topicName,endpointType,containerId,ebId,experimentType));
+				topicName,endpointType,containerId,ebId,experimentType,interval));
 		FeResponse resp= FeResponseHelper.deserialize(feSocket.recv());
 		if(resp.code()==Frontend.FE_RESPONSE_CODE_OK){
 			logger.info("Container:{} removed znode for worker connected to eb:{}",containerId,ebId);
@@ -389,14 +400,20 @@ public abstract class Container implements Runnable{
 	
 	private void cleanupZMQ(){
 		//ZMQ set linger to 0
-		feSocket.setLinger(0);
-		commandSocket.setLinger(0);
-		queueSocket.setLinger(0);
-
-		//close ZMQ sockets
-		feSocket.close();
-		commandSocket.close();
-		queueSocket.close();
+		if (feSocket!=null){
+			feSocket.setLinger(0);
+			feSocket.close();
+		}
+		
+		if (commandSocket!=null){
+			commandSocket.setLinger(0);
+			commandSocket.close();
+		}
+		
+		if (queueSocket !=null){
+			queueSocket.setLinger(0);
+			queueSocket.close();
+		}
 
 		//terminate ZMQ context
 		context.term();

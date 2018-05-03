@@ -193,6 +193,7 @@ public abstract class Worker implements Runnable{
 		}
 		socket.setHWM(socketHWM);
 
+
 		//connect/bind socket endpoints
 		ctrlSocket.connect(controlConnector);
 		ctrlSocket.subscribe(topicName.getBytes());

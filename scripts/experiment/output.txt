@@ -1,0 +1,3373 @@
+Finding a feasible combination of length:15
+Checking feasibility
+
+Invoking model for k-colocation:15
+[[20, 33, 9.37, 392, 430]]
+[675.8796276]
+[[10, 74, 9.29, 351, 440]]
+[21256.47430619]
+Finding a feasible combination of length:14
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.729999999999999, 376, 390]]
+[1889.69920859]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.77, 372, 400]]
+[1547.60510341]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.69, 375, 390]]
+[1833.76095135]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.73, 376, 390]]
+[1889.69920859]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.65, 374, 390]]
+[1779.47856008]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.709999999999999, 370, 400]]
+[1485.38321243]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.77, 372, 400]]
+[1547.60510341]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.69, 375, 390]]
+[1833.76095135]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.77, 377, 390]]
+[1947.34384345]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.69, 358, 410]]
+[1225.52995485]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.589999999999998, 314, 420]]
+[704.84324252]
+[[10, 74, 8.51, 273, 430]]
+[150671.02808929]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.65, 368, 400]]
+[1425.66296978]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.74, 371, 400]]
+[1516.17500312]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[20, 33, 8.629999999999999, 318, 420]]
+[709.88929651]
+[[30, 21, 8.66, 330, 410]]
+[513.5823856]
+[[30, 24, 8.569999999999999, 327, 410]]
+[934.18615735]
+Checking feasibility
+
+Invoking model for k-colocation:14
+[[10, 74, 8.629999999999999, 318, 420]]
+[105612.21211066]
+Finding a feasible combination of length:13
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 356, 360]]
+[490.33287088]
+[[10, 74, 8.049999999999999, 315, 370]]
+[13880.92184426]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 359, 350]]
+[514.87457161]
+[[10, 74, 7.969999999999999, 318, 360]]
+[16286.61928595]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 355, 360]]
+[490.29493266]
+[[10, 74, 8.01, 314, 370]]
+[13689.41124319]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 360, 350]]
+[514.91441176]
+[[10, 74, 8.01, 319, 360]]
+[16693.02304801]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 356, 360]]
+[490.33287088]
+[[10, 74, 8.049999999999999, 315, 370]]
+[13880.92184426]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 359, 350]]
+[514.87457161]
+[[10, 74, 7.969999999999999, 318, 360]]
+[16286.61928595]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 358, 350]]
+[514.83473454]
+[[10, 74, 7.929999999999999, 317, 360]]
+[15890.10971844]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 354, 360]]
+[490.25699738]
+[[10, 74, 7.969999999999999, 313, 370]]
+[13500.54285211]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 357, 350]]
+[514.79490055]
+[[10, 74, 7.889999999999999, 316, 360]]
+[15503.25346414]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 358, 350]]
+[514.83473454]
+[[10, 74, 7.929999999999999, 317, 360]]
+[15890.10971844]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.069999999999999, 354, 360]]
+[490.46290185]
+[[10, 74, 7.989999999999998, 313, 370]]
+[13660.95329252]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.11, 350, 370]]
+[467.04865359]
+[[10, 74, 8.03, 309, 380]]
+[11761.41947932]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 353, 360]]
+[490.42495357]
+[[10, 74, 7.949999999999998, 312, 370]]
+[13472.4775266]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.069999999999999, 354, 360]]
+[490.46290185]
+[[10, 74, 7.989999999999998, 313, 370]]
+[13660.95329252]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 352, 360]]
+[490.38700823]
+[[10, 74, 7.909999999999998, 311, 370]]
+[13286.60210002]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 356, 360]]
+[490.33287088]
+[[10, 74, 8.049999999999999, 315, 370]]
+[13880.92184426]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.17, 352, 370]]
+[466.92483018]
+[[10, 74, 8.09, 311, 380]]
+[11950.80175403]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 355, 360]]
+[490.29493266]
+[[10, 74, 8.01, 314, 370]]
+[13689.41124319]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 356, 360]]
+[490.33287088]
+[[10, 74, 8.049999999999999, 315, 370]]
+[13880.92184426]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 354, 360]]
+[490.25699738]
+[[10, 74, 7.969999999999999, 313, 370]]
+[13500.54285211]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.11, 350, 370]]
+[467.04865359]
+[[10, 74, 8.03, 309, 380]]
+[11761.41947932]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 359, 350]]
+[514.87457161]
+[[10, 74, 7.969999999999999, 318, 360]]
+[16286.61928595]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 355, 360]]
+[490.29493266]
+[[10, 74, 8.01, 314, 370]]
+[13689.41124319]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 358, 350]]
+[514.83473454]
+[[10, 74, 7.929999999999999, 317, 360]]
+[15890.10971844]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 359, 350]]
+[514.87457161]
+[[10, 74, 7.969999999999999, 318, 360]]
+[16286.61928595]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 357, 350]]
+[514.79490055]
+[[10, 74, 7.889999999999999, 316, 360]]
+[15503.25346414]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 353, 360]]
+[490.42495357]
+[[10, 74, 7.949999999999998, 312, 370]]
+[13472.4775266]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 355, 360]]
+[490.29493266]
+[[10, 74, 8.01, 314, 370]]
+[13689.41124319]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 361, 350]]
+[514.954255]
+[[10, 74, 8.049999999999999, 320, 360]]
+[17109.56789676]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.17, 357, 360]]
+[490.37081204]
+[[10, 74, 8.09, 316, 370]]
+[14117.58630697]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 360, 350]]
+[514.91441176]
+[[10, 74, 8.01, 319, 360]]
+[16693.02304801]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.129999999999999, 361, 350]]
+[514.954255]
+[[10, 74, 8.049999999999999, 320, 360]]
+[17109.56789676]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 359, 350]]
+[514.87457161]
+[[10, 74, 7.969999999999999, 318, 360]]
+[16286.61928595]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.11, 355, 360]]
+[490.50085307]
+[[10, 74, 8.03, 314, 370]]
+[13852.06577572]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.17, 357, 360]]
+[490.37081204]
+[[10, 74, 8.09, 316, 370]]
+[14117.58630697]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 360, 350]]
+[514.91441176]
+[[10, 74, 8.01, 319, 360]]
+[16693.02304801]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 342, 370]]
+[469.31453524]
+[[10, 74, 7.969999999999999, 301, 380]]
+[12270.95893662]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 338, 380]]
+[446.90989057]
+[[10, 74, 8.01, 297, 390]]
+[10821.08866804]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 341, 370]]
+[469.27822326]
+[[10, 74, 7.929999999999999, 300, 380]]
+[12101.66047445]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 342, 370]]
+[469.31453524]
+[[10, 74, 7.969999999999999, 301, 380]]
+[12270.95893662]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 340, 370]]
+[469.24191409]
+[[10, 74, 7.889999999999999, 299, 380]]
+[11934.69776856]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 336, 380]]
+[447.02840623]
+[[10, 74, 7.949999999999998, 295, 390]]
+[11036.6365221]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 338, 380]]
+[446.90989057]
+[[10, 74, 8.01, 297, 390]]
+[10821.08866804]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 341, 370]]
+[469.27822326]
+[[10, 74, 7.929999999999999, 300, 380]]
+[12101.66047445]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.09, 343, 370]]
+[469.35085003]
+[[10, 74, 8.01, 302, 380]]
+[12442.62583156]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.949999999999998, 298, 380]]
+[461.58129897]
+[[10, 74, 7.869999999999999, 257, 390]]
+[14354.53901188]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 294, 390]]
+[447.65781435]
+[[10, 74, 7.909999999999999, 253, 400]]
+[13300.30601547]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.909999999999998, 297, 380]]
+[463.68631183]
+[[10, 74, 7.829999999999999, 256, 390]]
+[14156.49406752]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.949999999999998, 298, 380]]
+[461.58129897]
+[[10, 74, 7.869999999999999, 257, 390]]
+[14354.53901188]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.869999999999998, 296, 380]]
+[465.80092447]
+[[10, 74, 7.789999999999999, 255, 390]]
+[13983.4317766]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.929999999999998, 292, 390]]
+[451.11009335]
+[[10, 74, 7.849999999999999, 251, 400]]
+[13565.23799301]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 294, 390]]
+[447.65781435]
+[[10, 74, 7.909999999999998, 253, 400]]
+[13300.30601547]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.909999999999998, 297, 380]]
+[463.68631183]
+[[10, 74, 7.829999999999998, 256, 390]]
+[14156.49406752]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 299, 380]]
+[459.4858423]
+[[10, 74, 7.909999999999998, 258, 390]]
+[14555.35454335]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.909999999999998, 280, 400]]
+[471.17672014]
+[[10, 74, 7.829999999999998, 239, 410]]
+[13898.23963054]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 352, 360]]
+[490.59296731]
+[[10, 74, 7.929999999999999, 311, 370]]
+[13444.47054411]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 348, 370]]
+[467.17250984]
+[[10, 74, 7.969999999999999, 307, 380]]
+[11575.03831253]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 351, 360]]
+[490.55500896]
+[[10, 74, 7.889999999999999, 310, 370]]
+[13258.98152084]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.01, 352, 360]]
+[490.59296731]
+[[10, 74, 7.929999999999999, 311, 370]]
+[13444.47054411]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.929999999999999, 350, 360]]
+[490.51705355]
+[[10, 74, 7.849999999999999, 309, 370]]
+[13076.05162979]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 346, 370]]
+[467.29639893]
+[[10, 74, 7.909999999999998, 305, 380]]
+[11391.61069565]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 348, 370]]
+[467.17250984]
+[[10, 74, 7.969999999999999, 307, 380]]
+[11575.03831253]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 351, 360]]
+[490.55500896]
+[[10, 74, 7.889999999999999, 310, 370]]
+[13258.98152084]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.049999999999999, 353, 360]]
+[490.63092859]
+[[10, 74, 7.969999999999999, 312, 370]]
+[13632.55450107]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999999, 334, 380]]
+[447.14695333]
+[[10, 74, 7.889999999999999, 293, 390]]
+[11256.47792544]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.869999999999999, 290, 390]]
+[455.80197792]
+[[10, 74, 7.789999999999999, 249, 400]]
+[13835.44721399]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.1, 355, 360]]
+[490.39788206]
+[[10, 74, 8.02, 314, 370]]
+[13770.49835596]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.139999999999999, 351, 370]]
+[466.98673778]
+[[10, 74, 8.059999999999999, 310, 380]]
+[11855.73247604]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.059999999999999, 354, 360]]
+[490.35993881]
+[[10, 74, 7.979999999999999, 313, 370]]
+[13580.51123214]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.1, 355, 360]]
+[490.39788206]
+[[10, 74, 8.02, 314, 370]]
+[13770.49835596]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.02, 353, 360]]
+[490.32199849]
+[[10, 74, 7.939999999999999, 312, 370]]
+[13393.14529938]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.079999999999998, 349, 370]]
+[467.11057761]
+[[10, 74, 7.999999999999998, 308, 380]]
+[11667.85674761]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.139999999999999, 351, 370]]
+[466.98673778]
+[[10, 74, 8.059999999999999, 310, 380]]
+[11855.73247604]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.059999999999999, 354, 360]]
+[490.35993881]
+[[10, 74, 7.979999999999999, 313, 370]]
+[13580.51123214]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.139999999999999, 356, 360]]
+[490.43582824]
+[[10, 74, 8.059999999999999, 315, 370]]
+[13963.14334049]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.059999999999999, 337, 380]]
+[446.96914447]
+[[10, 74, 7.979999999999999, 296, 390]]
+[10928.33118105]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.959999999999999, 293, 390]]
+[449.38063868]
+[[10, 74, 7.879999999999999, 252, 400]]
+[13432.11883805]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.02, 347, 370]]
+[467.23445028]
+[[10, 74, 7.939999999999999, 306, 380]]
+[11482.95825315]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 302, 380]]
+[458.38300638]
+[[30, 21, 8.02, 314, 370]]
+[414.99571572]
+[[30, 24, 7.929999999999999, 311, 370]]
+[984.53734696]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 298, 390]]
+[443.33956268]
+[[30, 21, 8.059999999999999, 310, 380]]
+[385.15420015]
+[[30, 24, 7.969999999999999, 307, 380]]
+[913.7408931]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.949999999999998, 301, 380]]
+[459.2134441]
+[[30, 21, 7.979999999999999, 313, 370]]
+[415.30333108]
+[[30, 24, 7.889999999999999, 310, 370]]
+[985.26718276]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.989999999999998, 302, 380]]
+[458.38300638]
+[[30, 21, 8.02, 314, 370]]
+[414.99571572]
+[[30, 24, 7.929999999999999, 311, 370]]
+[984.53734696]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.909999999999998, 300, 380]]
+[461.30765851]
+[[30, 21, 7.939999999999999, 312, 370]]
+[415.61117445]
+[[30, 24, 7.849999999999999, 309, 370]]
+[985.9975596]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.969999999999998, 296, 390]]
+[446.75853987]
+[[30, 21, 7.999999999999998, 308, 380]]
+[384.60500838]
+[[30, 24, 7.909999999999998, 305, 380]]
+[912.4380292]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 298, 390]]
+[443.33956268]
+[[30, 21, 8.059999999999999, 310, 380]]
+[385.15420015]
+[[30, 24, 7.969999999999999, 307, 380]]
+[913.7408931]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.949999999999998, 301, 380]]
+[459.2134441]
+[[30, 21, 7.979999999999999, 313, 370]]
+[415.30333108]
+[[30, 24, 7.889999999999999, 310, 370]]
+[985.26718276]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 8.03, 303, 380]]
+[458.41847531]
+[[30, 21, 8.059999999999999, 315, 370]]
+[414.68832822]
+[[30, 24, 7.969999999999999, 312, 370]]
+[983.80805177]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.949999999999998, 284, 400]]
+[463.51389354]
+[[30, 21, 7.979999999999999, 296, 390]]
+[351.3840091]
+[[30, 24, 7.889999999999999, 293, 390]]
+[846.58358805]
+[[10, 78, 7.829999999999998, 239, 410]]
+[16531.83627519]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.849999999999999, 240, 410]]
+[470.98354847]
+[[30, 21, 7.879999999999999, 252, 400]]
+[301.93281122]
+[[30, 24, 7.789999999999999, 249, 400]]
+[703.44703875]
+[[20, 34, 7.829999999999998, 239, 410]]
+[584.56398494]
+[[40, 15, 7.909999999999998, 258, 390]]
+[401.37359439]
+[[40, 17, 7.829999999999998, 256, 390]]
+[714.00687656]
+[[30, 20, 7.909999999999998, 253, 400]]
+[276.29330181]
+[[30, 22, 7.849999999999999, 251, 400]]
+[391.4167301]
+[[40, 18, 7.789999999999999, 255, 390]]
+[948.24896457]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.909999999999999, 294, 390]]
+[450.20388378]
+[[30, 21, 7.939999999999999, 306, 380]]
+[384.0565828]
+[[10, 78, 7.789999999999999, 249, 400]]
+[16459.92260026]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[20, 33, 7.999999999999999, 297, 390]]
+[445.04576809]
+[[30, 24, 7.939999999999999, 306, 380]]
+[913.08921175]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.989999999999998, 302, 380]]
+[12296.52130673]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 8.03, 298, 390]]
+[10731.17035142]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.949999999999998, 301, 380]]
+[12126.87016879]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.989999999999998, 302, 380]]
+[12296.52130673]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.909999999999998, 300, 380]]
+[11959.55965287]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.969999999999998, 296, 390]]
+[10944.92710102]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 8.03, 298, 390]]
+[10731.17035142]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.949999999999998, 301, 380]]
+[12126.87016879]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 8.03, 303, 380]]
+[12468.54581127]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.949999999999998, 284, 400]]
+[11213.60492659]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.849999999999999, 240, 410]]
+[13782.7515914]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.909999999999999, 294, 390]]
+[11162.94172246]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[10, 74, 7.999999999999999, 297, 390]]
+[10837.521728]
+Checking feasibility
+
+Invoking model for k-colocation:13
+[[30, 21, 7.999999999999999, 297, 390]]
+[351.12473396]
+[[30, 24, 7.909999999999999, 294, 390]]
+[845.95892081]
+[[10, 78, 7.849999999999999, 240, 410]]
+[16400.59417703]
+Finding a feasible combination of length:12
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999999, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 343, 310]]
+[840.36868995]
+[[10, 74, 7.329999999999999, 302, 320]]
+[12972.93983187]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 341, 310]]
+[821.44010712]
+[[10, 74, 7.249999999999999, 300, 320]]
+[15076.74400934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 337, 320]]
+[754.44764839]
+[[10, 74, 7.289999999999999, 296, 330]]
+[16459.14514445]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 342, 310]]
+[830.85049599]
+[[10, 74, 7.289999999999999, 301, 320]]
+[13985.33849764]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 341, 310]]
+[821.44010712]
+[[10, 74, 7.249999999999999, 300, 320]]
+[15076.74400934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 334, 330]]
+[706.5107823]
+[[10, 74, 7.389999999999999, 293, 340]]
+[15305.26625716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 337, 320]]
+[760.53395554]
+[[10, 74, 7.309999999999999, 296, 330]]
+[16345.11333934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 333, 330]]
+[698.50869139]
+[[10, 74, 7.349999999999999, 292, 340]]
+[15483.86525741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 338, 320]]
+[769.24660569]
+[[10, 74, 7.349999999999999, 297, 330]]
+[16190.41473882]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 334, 330]]
+[706.5107823]
+[[10, 74, 7.389999999999999, 293, 340]]
+[15305.26625716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 337, 320]]
+[760.53395554]
+[[10, 74, 7.309999999999999, 296, 330]]
+[16345.11333934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 336, 320]]
+[751.91998671]
+[[10, 74, 7.269999999999999, 295, 330]]
+[16501.29007722]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 332, 330]]
+[690.59723385]
+[[10, 74, 7.309999999999999, 291, 340]]
+[15688.14447313]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 335, 320]]
+[743.40358152]
+[[10, 74, 7.229999999999999, 294, 330]]
+[16658.95907599]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 336, 320]]
+[751.91998671]
+[[10, 74, 7.269999999999999, 295, 330]]
+[16501.29007722]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 336, 330]]
+[717.00676661]
+[[10, 74, 7.449999999999999, 295, 340]]
+[15141.99545565]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 335, 330]]
+[708.88579595]
+[[10, 74, 7.409999999999999, 294, 340]]
+[15265.60792214]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999999, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 336, 330]]
+[717.00676661]
+[[10, 74, 7.449999999999999, 295, 340]]
+[15141.99545565]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 334, 330]]
+[700.85680513]
+[[10, 74, 7.369999999999999, 293, 340]]
+[15410.64130425]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 337, 320]]
+[754.44764839]
+[[10, 74, 7.289999999999999, 296, 330]]
+[16459.14514445]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 334, 330]]
+[706.5107823]
+[[10, 74, 7.389999999999999, 293, 340]]
+[15305.26625716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.509999999999999, 330, 340]]
+[648.89137218]
+[[10, 74, 7.429999999999999, 289, 350]]
+[14630.40990107]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 333, 330]]
+[698.50869139]
+[[10, 74, 7.349999999999999, 292, 340]]
+[15483.86525741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 334, 330]]
+[706.5107823]
+[[10, 74, 7.389999999999999, 293, 340]]
+[15305.26625716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 332, 330]]
+[690.59723385]
+[[10, 74, 7.309999999999999, 291, 340]]
+[15688.14447313]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 342, 310]]
+[830.85049599]
+[[10, 74, 7.289999999999999, 301, 320]]
+[13985.33849764]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 343, 310]]
+[840.36868995]
+[[10, 74, 7.329999999999999, 302, 320]]
+[12972.93983187]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 342, 310]]
+[830.85049599]
+[[10, 74, 7.289999999999999, 301, 320]]
+[13985.33849764]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 341, 310]]
+[821.44010712]
+[[10, 74, 7.249999999999999, 300, 320]]
+[15076.74400934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 337, 320]]
+[754.44764839]
+[[10, 74, 7.289999999999999, 296, 330]]
+[16459.14514445]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 340, 310]]
+[812.1363023]
+[[10, 74, 7.209999999999999, 299, 320]]
+[16253.322003]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 341, 310]]
+[821.44010712]
+[[10, 74, 7.249999999999999, 300, 320]]
+[15076.74400934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 337, 320]]
+[760.53395554]
+[[10, 74, 7.309999999999999, 296, 330]]
+[16345.11333934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 333, 330]]
+[698.50869139]
+[[10, 74, 7.349999999999999, 292, 340]]
+[15483.86525741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 336, 320]]
+[751.91998671]
+[[10, 74, 7.269999999999999, 295, 330]]
+[16501.29007722]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 337, 320]]
+[760.53395554]
+[[10, 74, 7.309999999999999, 296, 330]]
+[16345.11333934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 335, 320]]
+[743.40358152]
+[[10, 74, 7.229999999999999, 294, 330]]
+[16658.95907599]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 335, 330]]
+[708.88579595]
+[[10, 74, 7.409999999999999, 294, 340]]
+[15265.60792214]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 338, 320]]
+[763.09057402]
+[[10, 74, 7.329999999999999, 297, 330]]
+[16303.367288]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 337, 320]]
+[754.44764839]
+[[10, 74, 7.289999999999999, 296, 330]]
+[16459.14514445]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 333, 330]]
+[698.50869139]
+[[10, 74, 7.349999999999999, 292, 340]]
+[15483.86525741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 341, 320]]
+[789.61797937]
+[[10, 74, 7.449999999999999, 300, 330]]
+[13584.41061957]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 344, 310]]
+[849.995924]
+[[10, 74, 7.369999999999999, 303, 320]]
+[12033.82870637]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999999, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 345, 310]]
+[860.59862039]
+[[10, 74, 7.409999999999999, 304, 320]]
+[11165.73556611]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 341, 320]]
+[789.61797937]
+[[10, 74, 7.449999999999999, 300, 330]]
+[13584.41061957]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 344, 310]]
+[849.995924]
+[[10, 74, 7.369999999999999, 303, 320]]
+[12033.82870637]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 343, 310]]
+[840.36868995]
+[[10, 74, 7.329999999999999, 302, 320]]
+[12972.93983187]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 342, 310]]
+[830.85049599]
+[[10, 74, 7.289999999999999, 301, 320]]
+[13985.33849764]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 343, 310]]
+[840.36868995]
+[[10, 74, 7.329999999999999, 302, 320]]
+[12972.93983187]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 339, 320]]
+[778.05906765]
+[[10, 74, 7.389999999999999, 298, 330]]
+[15077.73269176]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.509999999999999, 335, 330]]
+[714.60454489]
+[[10, 74, 7.429999999999999, 294, 340]]
+[15181.33265936]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 338, 320]]
+[769.24660569]
+[[10, 74, 7.349999999999999, 297, 330]]
+[16190.41473882]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.469999999999999, 339, 320]]
+[778.05906765]
+[[10, 74, 7.389999999999999, 298, 330]]
+[15077.73269176]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 337, 320]]
+[760.53395554]
+[[10, 74, 7.309999999999999, 296, 330]]
+[16345.11333934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 341, 320]]
+[789.61797937]
+[[10, 74, 7.449999999999999, 300, 330]]
+[13584.41061957]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.569999999999999, 337, 330]]
+[725.22077082]
+[[10, 74, 7.489999999999999, 296, 340]]
+[15019.38393468]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999999, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.529999999999999, 341, 320]]
+[789.61797937]
+[[10, 74, 7.449999999999999, 300, 330]]
+[13584.41061957]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 339, 320]]
+[771.8325127]
+[[10, 74, 7.369999999999999, 298, 330]]
+[15787.376191]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.509999999999999, 335, 330]]
+[714.60454489]
+[[10, 74, 7.429999999999999, 294, 340]]
+[15181.33265936]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 344, 310]]
+[849.995924]
+[[10, 74, 7.369999999999999, 303, 320]]
+[12033.82870637]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999999, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 343, 310]]
+[840.36868995]
+[[10, 74, 7.329999999999999, 302, 320]]
+[12972.93983187]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 344, 310]]
+[849.995924]
+[[10, 74, 7.369999999999999, 303, 320]]
+[12033.82870637]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 342, 310]]
+[830.85049599]
+[[10, 74, 7.289999999999999, 301, 320]]
+[13985.33849764]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 338, 320]]
+[769.24660569]
+[[10, 74, 7.349999999999999, 297, 330]]
+[16190.41473882]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999998, 340, 320]]
+[780.67459873]
+[[10, 74, 7.409999999999998, 299, 330]]
+[14644.52801507]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 322, 340]]
+[657.59674589]
+[[10, 74, 7.369999999999999, 281, 350]]
+[14573.31117596]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 325, 330]]
+[707.87971936]
+[[10, 74, 7.289999999999999, 284, 340]]
+[15423.43571566]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 321, 340]]
+[650.14866572]
+[[10, 74, 7.329999999999999, 280, 350]]
+[14765.5774175]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 326, 330]]
+[715.98916444]
+[[10, 74, 7.329999999999999, 285, 340]]
+[15222.60333825]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 322, 340]]
+[657.59674589]
+[[10, 74, 7.369999999999999, 281, 350]]
+[14573.31117596]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 325, 330]]
+[707.87971936]
+[[10, 74, 7.289999999999999, 284, 340]]
+[15423.43571566]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 324, 330]]
+[699.86212357]
+[[10, 74, 7.249999999999999, 283, 340]]
+[15626.91768217]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 320, 340]]
+[642.78494409]
+[[10, 74, 7.289999999999999, 279, 350]]
+[14960.38023477]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 323, 330]]
+[691.93533678]
+[[10, 74, 7.209999999999999, 282, 340]]
+[15833.0841939]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 324, 330]]
+[699.86212357]
+[[10, 74, 7.249999999999999, 283, 340]]
+[15626.91768217]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 320, 340]]
+[647.97044186]
+[[10, 74, 7.309999999999999, 279, 350]]
+[14835.73633741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 316, 350]]
+[590.30069133]
+[[10, 74, 7.349999999999999, 275, 360]]
+[14219.28832934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 319, 340]]
+[640.63139125]
+[[10, 74, 7.269999999999999, 278, 350]]
+[15031.46476396]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 320, 340]]
+[647.97044186]
+[[10, 74, 7.309999999999999, 279, 350]]
+[14835.73633741]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 318, 340]]
+[633.37546429]
+[[10, 74, 7.229999999999999, 277, 350]]
+[15229.77544298]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 322, 340]]
+[657.59674589]
+[[10, 74, 7.369999999999999, 281, 350]]
+[14573.31117596]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 318, 350]]
+[598.817561]
+[[10, 74, 7.409999999999999, 277, 360]]
+[13951.71337729]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 321, 340]]
+[650.14866572]
+[[10, 74, 7.329999999999999, 280, 350]]
+[14765.5774175]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 322, 340]]
+[657.59674589]
+[[10, 74, 7.369999999999999, 281, 350]]
+[14573.31117596]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 320, 340]]
+[642.78494409]
+[[10, 74, 7.289999999999999, 279, 350]]
+[14960.38023477]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 316, 350]]
+[590.30069133]
+[[10, 74, 7.349999999999999, 275, 360]]
+[14219.28832934]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 325, 330]]
+[707.87971936]
+[[10, 74, 7.289999999999999, 284, 340]]
+[15423.43571566]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 321, 340]]
+[650.14866572]
+[[10, 74, 7.329999999999999, 280, 350]]
+[14765.5774175]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 324, 330]]
+[699.86212357]
+[[10, 74, 7.249999999999999, 283, 340]]
+[15626.91768217]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 325, 330]]
+[707.87971936]
+[[10, 74, 7.289999999999999, 284, 340]]
+[15423.43571566]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 323, 330]]
+[691.93533678]
+[[10, 74, 7.209999999999999, 282, 340]]
+[15833.0841939]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 319, 340]]
+[640.63139125]
+[[10, 74, 7.269999999999999, 278, 350]]
+[15031.46476396]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999998, 321, 340]]
+[650.14866572]
+[[10, 74, 7.329999999999998, 280, 350]]
+[14765.5774175]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 327, 330]]
+[724.19151103]
+[[10, 74, 7.369999999999999, 286, 340]]
+[15076.59066561]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999999, 323, 340]]
+[665.130151]
+[[10, 74, 7.409999999999999, 282, 350]]
+[14383.54848079]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 326, 330]]
+[715.98916444]
+[[10, 74, 7.329999999999999, 285, 340]]
+[15222.60333825]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 327, 330]]
+[724.19151103]
+[[10, 74, 7.369999999999999, 286, 340]]
+[15076.59066561]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 325, 330]]
+[707.87971936]
+[[10, 74, 7.289999999999999, 284, 340]]
+[15423.43571566]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 321, 340]]
+[655.39356837]
+[[10, 74, 7.349999999999999, 280, 350]]
+[14642.5565392]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.489999999999998, 323, 340]]
+[665.130151]
+[[10, 74, 7.409999999999998, 282, 350]]
+[14383.54848079]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999998, 326, 330]]
+[715.98916444]
+[[10, 74, 7.329999999999998, 285, 340]]
+[15222.60333825]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 278, 350]]
+[677.23271812]
+[[10, 74, 7.27, 237, 360]]
+[12698.1229054]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 281, 340]]
+[740.48723444]
+[[10, 74, 7.1899999999999995, 240, 350]]
+[13221.61925115]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 277, 350]]
+[669.80642955]
+[[10, 74, 7.2299999999999995, 236, 360]]
+[12883.40600107]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 282, 340]]
+[748.69717637]
+[[10, 74, 7.2299999999999995, 241, 350]]
+[13031.47213133]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 278, 350]]
+[677.23271812]
+[[10, 74, 7.27, 237, 360]]
+[12698.1229054]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 281, 340]]
+[740.48723444]
+[[10, 74, 7.1899999999999995, 240, 350]]
+[13221.61925115]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 280, 340]]
+[732.07158935]
+[[10, 74, 7.1499999999999995, 239, 350]]
+[13414.54087924]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 276, 350]]
+[662.46157496]
+[[10, 74, 7.1899999999999995, 235, 360]]
+[13071.3926322]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.189999999999999, 279, 340]]
+[720.6806451]
+[[10, 74, 7.109999999999999, 238, 350]]
+[13610.2774995]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 280, 340]]
+[732.07158935]
+[[10, 74, 7.1499999999999995, 239, 350]]
+[13414.54087924]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999998, 276, 350]]
+[667.6005644]
+[[10, 74, 7.209999999999999, 235, 360]]
+[12944.14004558]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999998, 272, 360]]
+[603.69913162]
+[[10, 74, 7.249999999999999, 231, 370]]
+[12510.0554719]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999998, 275, 350]]
+[660.27989853]
+[[10, 74, 7.169999999999999, 234, 360]]
+[13133.01287004]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999998, 276, 350]]
+[667.6005644]
+[[10, 74, 7.209999999999999, 235, 360]]
+[12944.14004558]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.209999999999998, 274, 350]]
+[653.03950843]
+[[10, 74, 7.129999999999999, 233, 360]]
+[13324.64160904]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 278, 350]]
+[677.23271812]
+[[10, 74, 7.269999999999999, 237, 360]]
+[12698.1229054]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 274, 360]]
+[612.47955024]
+[[10, 74, 7.309999999999999, 233, 370]]
+[12263.20274873]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 277, 350]]
+[669.80642955]
+[[10, 74, 7.229999999999999, 236, 360]]
+[12883.40600107]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 278, 350]]
+[677.23271812]
+[[10, 74, 7.269999999999999, 237, 360]]
+[12698.1229054]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 276, 350]]
+[662.46157496]
+[[10, 74, 7.189999999999999, 235, 360]]
+[13071.3926322]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999998, 272, 360]]
+[603.69913162]
+[[10, 74, 7.249999999999999, 231, 370]]
+[12510.0554719]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 281, 340]]
+[740.48723444]
+[[10, 74, 7.189999999999999, 240, 350]]
+[13221.61925115]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 277, 350]]
+[669.80642955]
+[[10, 74, 7.229999999999999, 236, 360]]
+[12883.40600107]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 280, 340]]
+[732.07158935]
+[[10, 74, 7.149999999999999, 239, 350]]
+[13414.54087924]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 281, 340]]
+[740.48723444]
+[[10, 74, 7.189999999999999, 240, 350]]
+[13221.61925115]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.189999999999999, 279, 340]]
+[720.6806451]
+[[10, 74, 7.1099999999999985, 238, 350]]
+[13610.2774995]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999999, 275, 350]]
+[660.27989853]
+[[10, 74, 7.169999999999999, 234, 360]]
+[13133.01287004]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 277, 350]]
+[669.80642955]
+[[10, 74, 7.229999999999999, 236, 360]]
+[12883.40600107]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 283, 340]]
+[756.9981437]
+[[10, 74, 7.269999999999999, 242, 350]]
+[12844.0596181]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 279, 350]]
+[684.74134356]
+[[10, 74, 7.309999999999999, 238, 360]]
+[12515.50446421]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 282, 340]]
+[748.69717637]
+[[10, 74, 7.229999999999999, 241, 350]]
+[13031.47213133]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 283, 340]]
+[756.9981437]
+[[10, 74, 7.269999999999999, 242, 350]]
+[12844.0596181]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 281, 340]]
+[740.48723444]
+[[10, 74, 7.189999999999999, 240, 350]]
+[13221.61925115]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999998, 277, 350]]
+[675.00239608]
+[[10, 74, 7.249999999999999, 236, 360]]
+[12757.9835014]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 279, 350]]
+[684.74134356]
+[[10, 74, 7.309999999999999, 238, 360]]
+[12515.50446421]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 282, 340]]
+[748.69717637]
+[[10, 74, 7.229999999999999, 241, 350]]
+[13031.47213133]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 264, 360]]
+[611.01184579]
+[[10, 74, 7.189999999999999, 223, 370]]
+[12456.45253844]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 260, 370]]
+[552.43667146]
+[[10, 74, 7.229999999999999, 219, 380]]
+[12065.1927978]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 263, 360]]
+[604.26861767]
+[[10, 74, 7.149999999999999, 222, 370]]
+[12640.05823295]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 264, 360]]
+[611.01184579]
+[[10, 74, 7.189999999999999, 223, 370]]
+[12456.45253844]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.189999999999999, 262, 360]]
+[597.59980893]
+[[10, 74, 7.1099999999999985, 221, 370]]
+[12826.3837645]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999999, 258, 370]]
+[544.5170189]
+[[10, 74, 7.169999999999999, 217, 380]]
+[12308.0793305]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 260, 370]]
+[552.43667146]
+[[10, 74, 7.229999999999999, 219, 380]]
+[12065.1927978]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 263, 360]]
+[604.26861767]
+[[10, 74, 7.149999999999999, 222, 370]]
+[12640.05823295]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 265, 360]]
+[617.83032377]
+[[10, 74, 7.229999999999999, 224, 370]]
+[12275.51453808]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 332, 330]]
+[696.16844464]
+[[10, 74, 7.329999999999999, 291, 340]]
+[15557.43713556]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 335, 320]]
+[749.40079357]
+[[10, 74, 7.249999999999999, 294, 330]]
+[16543.54292539]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 331, 330]]
+[688.28349324]
+[[10, 74, 7.289999999999999, 290, 340]]
+[15762.68698783]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 336, 320]]
+[757.98590261]
+[[10, 74, 7.289999999999999, 295, 330]]
+[16386.96628472]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 332, 330]]
+[696.16844464]
+[[10, 74, 7.329999999999999, 291, 340]]
+[15557.43713556]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 335, 320]]
+[749.40079357]
+[[10, 74, 7.249999999999999, 294, 330]]
+[16543.54292539]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 334, 320]]
+[740.91292129]
+[[10, 74, 7.209999999999999, 293, 330]]
+[16701.61564801]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 330, 330]]
+[680.48784846]
+[[10, 74, 7.249999999999999, 289, 340]]
+[15970.64470911]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999999, 333, 320]]
+[732.52118446]
+[[10, 74, 7.169999999999999, 292, 330]]
+[16902.28178308]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 334, 320]]
+[740.91292129]
+[[10, 74, 7.209999999999999, 293, 330]]
+[16701.61564801]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 330, 330]]
+[685.97750446]
+[[10, 74, 7.269999999999999, 289, 340]]
+[15837.5836927]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 326, 340]]
+[630.03268358]
+[[10, 74, 7.309999999999999, 285, 350]]
+[15162.06067389]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 329, 330]]
+[678.2079778]
+[[10, 74, 7.229999999999999, 288, 340]]
+[16046.52952902]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 330, 330]]
+[685.97750446]
+[[10, 74, 7.269999999999999, 289, 340]]
+[15837.5836927]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 328, 330]]
+[670.52645045]
+[[10, 74, 7.189999999999999, 287, 340]]
+[16258.2319956]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 332, 330]]
+[696.16844464]
+[[10, 74, 7.329999999999999, 291, 340]]
+[15557.43713556]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 328, 340]]
+[639.39250274]
+[[10, 74, 7.369999999999999, 287, 350]]
+[14893.86325316]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 331, 330]]
+[688.28349324]
+[[10, 74, 7.289999999999999, 290, 340]]
+[15762.68698783]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 332, 330]]
+[696.16844464]
+[[10, 74, 7.329999999999999, 291, 340]]
+[15557.43713556]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 330, 330]]
+[680.48784846]
+[[10, 74, 7.249999999999999, 289, 340]]
+[15970.64470911]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 326, 340]]
+[630.03268358]
+[[10, 74, 7.309999999999999, 285, 350]]
+[15162.06067389]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 335, 320]]
+[749.40079357]
+[[10, 74, 7.249999999999999, 294, 330]]
+[16543.54292539]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 331, 330]]
+[688.28349324]
+[[10, 74, 7.289999999999999, 290, 340]]
+[15762.68698783]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 334, 320]]
+[740.91292129]
+[[10, 74, 7.209999999999999, 293, 330]]
+[16701.61564801]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 335, 320]]
+[749.40079357]
+[[10, 74, 7.249999999999999, 294, 330]]
+[16543.54292539]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999999, 333, 320]]
+[732.52118446]
+[[10, 74, 7.169999999999999, 292, 330]]
+[16902.28178308]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 329, 330]]
+[678.2079778]
+[[10, 74, 7.2299999999999995, 288, 340]]
+[16046.52952902]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 331, 330]]
+[688.28349324]
+[[10, 74, 7.289999999999999, 290, 340]]
+[15762.68698783]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 337, 320]]
+[766.66936236]
+[[10, 74, 7.329999999999999, 296, 330]]
+[16231.8715663]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 333, 330]]
+[704.14372577]
+[[10, 74, 7.369999999999999, 292, 340]]
+[15354.85989246]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 336, 320]]
+[757.98590261]
+[[10, 74, 7.289999999999999, 295, 330]]
+[16386.96628472]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.409999999999999, 337, 320]]
+[766.66936236]
+[[10, 74, 7.329999999999999, 296, 330]]
+[16231.8715663]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 335, 320]]
+[749.40079357]
+[[10, 74, 7.249999999999999, 294, 330]]
+[16543.54292539]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 331, 330]]
+[693.83603853]
+[[10, 74, 7.309999999999999, 290, 340]]
+[15631.35859188]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.449999999999999, 333, 330]]
+[704.14372577]
+[[10, 74, 7.369999999999999, 292, 340]]
+[15354.85989246]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 336, 320]]
+[757.98590261]
+[[10, 74, 7.289999999999999, 295, 330]]
+[16386.96628472]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 318, 340]]
+[638.48505357]
+[[10, 74, 7.249999999999999, 277, 350]]
+[15102.88705262]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 314, 350]]
+[581.9049555]
+[[10, 74, 7.289999999999999, 273, 360]]
+[14505.51617027]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 317, 340]]
+[631.25343648]
+[[10, 74, 7.209999999999999, 276, 350]]
+[15302.14000858]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999999, 318, 340]]
+[638.48505357]
+[[10, 74, 7.249999999999999, 277, 350]]
+[15102.88705262]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999999, 316, 340]]
+[624.10372622]
+[[10, 74, 7.169999999999999, 275, 350]]
+[15504.02171627]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 312, 350]]
+[573.62863064]
+[[10, 74, 7.2299999999999995, 271, 360]]
+[14797.50564815]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 314, 350]]
+[581.9049555]
+[[10, 74, 7.289999999999999, 273, 360]]
+[14505.51617027]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999999, 317, 340]]
+[631.25343648]
+[[10, 74, 7.209999999999999, 276, 350]]
+[15302.14000858]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999999, 319, 340]]
+[645.7995158]
+[[10, 74, 7.289999999999999, 278, 350]]
+[14906.22861877]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.2299999999999995, 274, 350]]
+[658.105407]
+[[10, 74, 7.1499999999999995, 233, 360]]
+[13194.92359367]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.27, 270, 360]]
+[595.04458781]
+[[10, 74, 7.1899999999999995, 229, 370]]
+[12761.87722871]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.1899999999999995, 273, 350]]
+[650.87418903]
+[[10, 74, 7.109999999999999, 232, 360]]
+[13387.45569536]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.2299999999999995, 274, 350]]
+[658.105407]
+[[10, 74, 7.1499999999999995, 233, 360]]
+[13194.92359367]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.1499999999999995, 272, 350]]
+[643.69103347]
+[[10, 74, 7.069999999999999, 231, 360]]
+[13582.79710549]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.209999999999999, 268, 360]]
+[586.51411429]
+[[10, 74, 7.129999999999999, 227, 370]]
+[13018.78588938]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.27, 270, 360]]
+[595.04458781]
+[[10, 74, 7.1899999999999995, 229, 370]]
+[12761.87722871]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.1899999999999995, 273, 350]]
+[650.87418903]
+[[10, 74, 7.109999999999999, 232, 360]]
+[13387.45569536]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.27, 275, 350]]
+[665.40196381]
+[[10, 74, 7.1899999999999995, 234, 360]]
+[13005.16039825]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.1899999999999995, 256, 370]]
+[536.71090133]
+[[10, 74, 7.109999999999999, 215, 380]]
+[12555.85545501]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 335, 330]]
+[711.73942675]
+[[10, 74, 7.419999999999999, 294, 340]]
+[15223.41197345]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 338, 320]]
+[766.162407]
+[[10, 74, 7.339999999999999, 297, 330]]
+[16246.79285373]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 334, 330]]
+[703.6781151]
+[[10, 74, 7.379999999999999, 293, 340]]
+[15347.68908792]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 339, 320]]
+[774.93953649]
+[[10, 74, 7.379999999999999, 298, 330]]
+[15428.47491206]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 335, 330]]
+[711.73942675]
+[[10, 74, 7.419999999999999, 294, 340]]
+[15223.41197345]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 338, 320]]
+[766.162407]
+[[10, 74, 7.339999999999999, 297, 330]]
+[16246.79285373]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 337, 320]]
+[757.48468914]
+[[10, 74, 7.299999999999999, 296, 330]]
+[16402.0301443]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 333, 330]]
+[695.70810758]
+[[10, 74, 7.339999999999999, 292, 340]]
+[15548.77381675]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 336, 320]]
+[748.90525695]
+[[10, 74, 7.259999999999999, 295, 330]]
+[16558.7507194]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 337, 320]]
+[757.48468914]
+[[10, 74, 7.299999999999999, 296, 330]]
+[16402.0301443]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.439999999999999, 333, 330]]
+[701.32054899]
+[[10, 74, 7.3599999999999985, 292, 340]]
+[15419.22765969]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.479999999999999, 329, 340]]
+[644.12442778]
+[[10, 74, 7.399999999999999, 288, 350]]
+[14761.54884842]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.399999999999999, 332, 330]]
+[693.37724376]
+[[10, 74, 7.3199999999999985, 291, 340]]
+[15622.65410915]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.439999999999999, 333, 330]]
+[701.32054899]
+[[10, 74, 7.3599999999999985, 292, 340]]
+[15419.22765969]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.3599999999999985, 331, 330]]
+[685.52390609]
+[[10, 74, 7.2799999999999985, 290, 340]]
+[15828.76437141]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 335, 330]]
+[711.73942675]
+[[10, 74, 7.419999999999999, 294, 340]]
+[15223.41197345]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.539999999999999, 331, 340]]
+[653.6935951]
+[[10, 74, 7.459999999999999, 290, 350]]
+[14500.43596856]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 334, 330]]
+[703.6781151]
+[[10, 74, 7.379999999999999, 293, 340]]
+[15347.68908792]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 335, 330]]
+[711.73942675]
+[[10, 74, 7.419999999999999, 294, 340]]
+[15223.41197345]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 333, 330]]
+[695.70810758]
+[[10, 74, 7.339999999999999, 292, 340]]
+[15548.77381675]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.479999999999999, 329, 340]]
+[644.12442778]
+[[10, 74, 7.399999999999999, 288, 350]]
+[14761.54884842]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 338, 320]]
+[766.162407]
+[[10, 74, 7.339999999999999, 297, 330]]
+[16246.79285373]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 334, 330]]
+[703.6781151]
+[[10, 74, 7.379999999999999, 293, 340]]
+[15347.68908792]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 337, 320]]
+[757.48468914]
+[[10, 74, 7.299999999999999, 296, 330]]
+[16402.0301443]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 338, 320]]
+[766.162407]
+[[10, 74, 7.339999999999999, 297, 330]]
+[16246.79285373]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 336, 320]]
+[748.90525695]
+[[10, 74, 7.259999999999999, 295, 330]]
+[16558.7507194]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.399999999999999, 332, 330]]
+[693.37724376]
+[[10, 74, 7.3199999999999985, 291, 340]]
+[15622.65410915]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 334, 330]]
+[703.6781151]
+[[10, 74, 7.379999999999999, 293, 340]]
+[15347.68908792]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 340, 320]]
+[783.81721647]
+[[10, 74, 7.419999999999999, 299, 330]]
+[14311.60760002]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.539999999999999, 336, 330]]
+[719.8930885]
+[[10, 74, 7.459999999999999, 295, 340]]
+[15100.14118646]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 339, 320]]
+[774.93953649]
+[[10, 74, 7.379999999999999, 298, 330]]
+[15428.47491206]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.499999999999999, 340, 320]]
+[783.81721647]
+[[10, 74, 7.419999999999999, 299, 330]]
+[14311.60760002]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 338, 320]]
+[766.162407]
+[[10, 74, 7.339999999999999, 297, 330]]
+[16246.79285373]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.479999999999999, 334, 330]]
+[709.35485245]
+[[10, 74, 7.399999999999999, 293, 340]]
+[15262.96068814]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.539999999999999, 336, 330]]
+[719.8930885]
+[[10, 74, 7.459999999999999, 295, 340]]
+[15100.14118646]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 339, 320]]
+[774.93953649]
+[[10, 74, 7.379999999999999, 298, 330]]
+[15428.47491206]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 321, 340]]
+[652.76584929]
+[[10, 74, 7.339999999999999, 280, 350]]
+[14703.93832174]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 317, 350]]
+[594.54387579]
+[[10, 74, 7.379999999999999, 276, 360]]
+[14078.29940626]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 320, 340]]
+[645.37248488]
+[[10, 74, 7.299999999999999, 279, 350]]
+[14897.92793212]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 321, 340]]
+[652.76584929]
+[[10, 74, 7.339999999999999, 280, 350]]
+[14703.93832174]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 319, 340]]
+[638.06285929]
+[[10, 74, 7.259999999999999, 278, 350]]
+[15094.4768547]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.399999999999999, 315, 350]]
+[586.08778995]
+[[10, 74, 7.3199999999999985, 274, 360]]
+[14361.68920396]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 317, 350]]
+[594.54387579]
+[[10, 74, 7.379999999999999, 276, 360]]
+[14078.29940626]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 320, 340]]
+[645.37248488]
+[[10, 74, 7.299999999999999, 279, 350]]
+[14897.92793212]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.459999999999999, 322, 340]]
+[660.24391182]
+[[10, 74, 7.379999999999999, 281, 350]]
+[14512.47469815]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.319999999999999, 277, 350]]
+[672.39939385]
+[[10, 74, 7.239999999999999, 236, 360]]
+[12820.54137716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.359999999999999, 273, 360]]
+[608.07349277]
+[[10, 74, 7.279999999999999, 232, 370]]
+[12386.01415508]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.279999999999999, 276, 350]]
+[665.02610576]
+[[10, 74, 7.199999999999999, 235, 360]]
+[13007.61072688]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.319999999999999, 277, 350]]
+[672.39939385]
+[[10, 74, 7.239999999999999, 236, 360]]
+[12820.54137716]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.239999999999999, 275, 350]]
+[657.73367047]
+[[10, 74, 7.159999999999999, 234, 360]]
+[13197.40967596]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.299999999999999, 271, 360]]
+[599.35623875]
+[[10, 74, 7.219999999999999, 230, 370]]
+[12635.3390163]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.3599999999999985, 273, 360]]
+[608.07349277]
+[[10, 74, 7.2799999999999985, 232, 370]]
+[12386.01415508]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.2799999999999985, 276, 350]]
+[665.02610576]
+[[10, 74, 7.199999999999999, 235, 360]]
+[13007.61072688]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.3599999999999985, 278, 350]]
+[679.85443118]
+[[10, 74, 7.2799999999999985, 237, 360]]
+[12636.16237099]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.2799999999999985, 259, 370]]
+[548.46255066]
+[[10, 74, 7.199999999999999, 218, 380]]
+[12186.03094092]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 331, 330]]
+[691.05418915]
+[[10, 74, 7.299999999999999, 290, 340]]
+[15696.88544516]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 327, 340]]
+[634.6953398]
+[[10, 74, 7.339999999999999, 286, 350]]
+[15027.36365145]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 330, 330]]
+[683.22716288]
+[[10, 74, 7.259999999999999, 289, 340]]
+[15903.97504421]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.379999999999999, 331, 330]]
+[691.05418915]
+[[10, 74, 7.299999999999999, 290, 340]]
+[15696.88544516]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.299999999999999, 329, 330]]
+[675.48878718]
+[[10, 74, 7.219999999999999, 288, 340]]
+[16113.79678412]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.3599999999999985, 325, 340]]
+[625.40428058]
+[[10, 74, 7.2799999999999985, 284, 350]]
+[15297.96504635]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 327, 340]]
+[634.6953398]
+[[10, 74, 7.339999999999999, 286, 350]]
+[15027.36365145]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 330, 330]]
+[683.22716288]
+[[10, 74, 7.259999999999999, 289, 340]]
+[15903.97504421]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.419999999999999, 332, 330]]
+[698.97088154]
+[[10, 74, 7.339999999999999, 291, 340]]
+[15492.49241108]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.339999999999999, 313, 350]]
+[577.75197342]
+[[10, 74, 7.259999999999999, 272, 360]]
+[14650.78351007]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.239999999999999, 269, 360]]
+[590.76395403]
+[[10, 74, 7.159999999999999, 228, 370]]
+[12889.69004839]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 282, 350]]
+[675.70385109]
+[[30, 21, 7.419999999999999, 294, 340]]
+[451.27106816]
+[[30, 24, 7.329999999999999, 291, 340]]
+[824.6868924]
+[[10, 78, 7.27, 237, 360]]
+[17533.66423402]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 285, 340]]
+[738.81556902]
+[[30, 21, 7.339999999999999, 297, 330]]
+[485.41526439]
+[[30, 24, 7.249999999999999, 294, 330]]
+[887.0874652]
+[[10, 78, 7.1899999999999995, 240, 350]]
+[18369.17058885]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 281, 350]]
+[668.29432752]
+[[30, 21, 7.379999999999999, 293, 340]]
+[445.56377923]
+[[30, 24, 7.289999999999999, 290, 340]]
+[814.25696079]
+[[10, 78, 7.2299999999999995, 236, 360]]
+[17792.10603992]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 286, 340]]
+[747.00697684]
+[[30, 21, 7.379999999999999, 298, 330]]
+[491.63288643]
+[[30, 24, 7.289999999999999, 295, 330]]
+[898.45029295]
+[[10, 78, 7.2299999999999995, 241, 350]]
+[18102.34654851]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 282, 350]]
+[675.70385109]
+[[30, 21, 7.419999999999999, 294, 340]]
+[451.27106816]
+[[30, 24, 7.329999999999999, 291, 340]]
+[824.6868924]
+[[10, 78, 7.27, 237, 360]]
+[17533.66423402]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 285, 340]]
+[738.81556902]
+[[30, 21, 7.339999999999999, 297, 330]]
+[485.41526439]
+[[30, 24, 7.249999999999999, 294, 330]]
+[887.0874652]
+[[10, 78, 7.1899999999999995, 240, 350]]
+[18369.17058885]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 284, 340]]
+[730.71398522]
+[[30, 21, 7.299999999999999, 296, 330]]
+[479.27627587]
+[[30, 24, 7.209999999999999, 293, 330]]
+[875.86834474]
+[[10, 78, 7.1499999999999995, 239, 350]]
+[18639.92754852]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 280, 350]]
+[660.9660541]
+[[30, 21, 7.339999999999999, 292, 340]]
+[439.92867118]
+[[30, 24, 7.249999999999999, 289, 340]]
+[803.958938]
+[[10, 78, 7.1899999999999995, 235, 360]]
+[18054.35721311]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 283, 340]]
+[722.47681223]
+[[30, 21, 7.259999999999999, 295, 330]]
+[473.2149264]
+[[30, 24, 7.169999999999999, 292, 330]]
+[864.79111407]
+[[10, 78, 7.109999999999999, 238, 350]]
+[18914.67539775]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 284, 340]]
+[730.71398522]
+[[30, 21, 7.299999999999999, 296, 330]]
+[479.27627587]
+[[30, 24, 7.209999999999999, 293, 330]]
+[875.86834474]
+[[10, 78, 7.1499999999999995, 239, 350]]
+[18639.92754852]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999998, 280, 350]]
+[666.09344216]
+[[30, 21, 7.3599999999999985, 292, 340]]
+[443.4963891]
+[[30, 24, 7.269999999999999, 289, 340]]
+[810.47885566]
+[[10, 78, 7.209999999999999, 235, 360]]
+[17886.60896242]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999998, 276, 360]]
+[602.40709869]
+[[30, 21, 7.399999999999999, 288, 350]]
+[407.82097476]
+[[30, 24, 7.309999999999999, 285, 350]]
+[745.9292446]
+[[10, 78, 7.249999999999999, 231, 370]]
+[17324.78364636]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999998, 279, 350]]
+[658.78930285]
+[[30, 21, 7.3199999999999985, 291, 340]]
+[437.88742763]
+[[30, 24, 7.229999999999999, 288, 340]]
+[800.2286151]
+[[10, 78, 7.169999999999999, 234, 360]]
+[18150.25308494]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.329999999999998, 280, 350]]
+[666.09344216]
+[[30, 21, 7.3599999999999985, 292, 340]]
+[443.4963891]
+[[30, 24, 7.269999999999999, 289, 340]]
+[810.47885566]
+[[10, 78, 7.209999999999999, 235, 360]]
+[17886.60896242]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.249999999999998, 278, 350]]
+[651.56525808]
+[[30, 21, 7.2799999999999985, 290, 340]]
+[432.34940348]
+[[30, 24, 7.189999999999999, 287, 340]]
+[790.26866743]
+[[10, 78, 7.129999999999999, 233, 360]]
+[18417.80130738]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 282, 350]]
+[675.70385109]
+[[30, 21, 7.419999999999999, 294, 340]]
+[451.27106816]
+[[30, 24, 7.329999999999999, 291, 340]]
+[824.6868924]
+[[10, 78, 7.269999999999999, 237, 360]]
+[17533.66423402]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 278, 360]]
+[611.16872552]
+[[30, 21, 7.459999999999999, 290, 350]]
+[414.22139628]
+[[30, 24, 7.369999999999999, 287, 350]]
+[757.66093632]
+[[10, 78, 7.309999999999999, 233, 370]]
+[16982.897921]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 281, 350]]
+[668.29432752]
+[[30, 21, 7.379999999999999, 293, 340]]
+[445.56377923]
+[[30, 24, 7.289999999999999, 290, 340]]
+[814.25696079]
+[[10, 78, 7.229999999999999, 236, 360]]
+[17792.10603992]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 282, 350]]
+[675.70385109]
+[[30, 21, 7.419999999999999, 294, 340]]
+[451.27106816]
+[[30, 24, 7.329999999999999, 291, 340]]
+[824.6868924]
+[[10, 78, 7.269999999999999, 237, 360]]
+[17533.66423402]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 280, 350]]
+[660.9660541]
+[[30, 21, 7.339999999999999, 292, 340]]
+[439.92867118]
+[[30, 24, 7.249999999999999, 289, 340]]
+[803.958938]
+[[10, 78, 7.189999999999999, 235, 360]]
+[18054.35721311]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999998, 276, 360]]
+[602.40709869]
+[[30, 21, 7.399999999999999, 288, 350]]
+[407.82097476]
+[[30, 24, 7.309999999999999, 285, 350]]
+[745.9292446]
+[[10, 78, 7.249999999999999, 231, 370]]
+[17324.78364636]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 285, 340]]
+[738.81556902]
+[[30, 21, 7.339999999999999, 297, 330]]
+[485.41526439]
+[[30, 24, 7.249999999999999, 294, 330]]
+[887.0874652]
+[[10, 78, 7.189999999999999, 240, 350]]
+[18369.17058885]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 281, 350]]
+[668.29432752]
+[[30, 21, 7.379999999999999, 293, 340]]
+[445.56377923]
+[[30, 24, 7.289999999999999, 290, 340]]
+[814.25696079]
+[[10, 78, 7.229999999999999, 236, 360]]
+[17792.10603992]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 284, 340]]
+[730.71398522]
+[[30, 21, 7.299999999999999, 296, 330]]
+[479.27627587]
+[[30, 24, 7.209999999999999, 293, 330]]
+[875.86834474]
+[[10, 78, 7.149999999999999, 239, 350]]
+[18639.92754852]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 285, 340]]
+[738.81556902]
+[[30, 21, 7.339999999999999, 297, 330]]
+[485.41526439]
+[[30, 24, 7.249999999999999, 294, 330]]
+[887.0874652]
+[[10, 78, 7.189999999999999, 240, 350]]
+[18369.17058885]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 283, 340]]
+[722.47681223]
+[[30, 21, 7.259999999999999, 295, 330]]
+[473.2149264]
+[[30, 24, 7.169999999999999, 292, 330]]
+[864.79111407]
+[[10, 78, 7.1099999999999985, 238, 350]]
+[18914.67539775]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999998, 279, 350]]
+[658.78930285]
+[[30, 21, 7.3199999999999985, 291, 340]]
+[437.88742763]
+[[30, 24, 7.2299999999999995, 288, 340]]
+[800.2286151]
+[[10, 78, 7.169999999999999, 234, 360]]
+[18150.25308494]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 281, 350]]
+[668.29432752]
+[[30, 21, 7.379999999999999, 293, 340]]
+[445.56377923]
+[[30, 24, 7.289999999999999, 290, 340]]
+[814.25696079]
+[[10, 78, 7.229999999999999, 236, 360]]
+[17792.10603992]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 287, 340]]
+[755.28920456]
+[[30, 21, 7.419999999999999, 299, 330]]
+[497.93014919]
+[[30, 24, 7.329999999999999, 296, 330]]
+[909.95866876]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 283, 350]]
+[683.19552566]
+[[30, 21, 7.459999999999999, 295, 340]]
+[457.05146256]
+[[30, 24, 7.369999999999999, 292, 340]]
+[835.25042246]
+[[10, 78, 7.309999999999999, 238, 360]]
+[17278.9764619]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 286, 340]]
+[747.00697684]
+[[30, 21, 7.379999999999999, 298, 330]]
+[491.63288643]
+[[30, 24, 7.289999999999999, 295, 330]]
+[898.45029295]
+[[10, 78, 7.229999999999999, 241, 350]]
+[18102.34654851]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.389999999999999, 287, 340]]
+[755.28920456]
+[[30, 21, 7.419999999999999, 299, 330]]
+[497.93014919]
+[[30, 24, 7.329999999999999, 296, 330]]
+[909.95866876]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 285, 340]]
+[738.81556902]
+[[30, 21, 7.339999999999999, 297, 330]]
+[485.41526439]
+[[30, 24, 7.249999999999999, 294, 330]]
+[887.0874652]
+[[10, 78, 7.189999999999999, 240, 350]]
+[18369.17058885]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.369999999999998, 281, 350]]
+[673.47856405]
+[[30, 21, 7.399999999999999, 293, 340]]
+[449.17719655]
+[[30, 24, 7.309999999999999, 290, 340]]
+[820.86039299]
+[[10, 78, 7.249999999999999, 236, 360]]
+[17626.79444067]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.429999999999999, 283, 350]]
+[683.19552566]
+[[30, 21, 7.459999999999999, 295, 340]]
+[457.05146256]
+[[30, 24, 7.369999999999999, 292, 340]]
+[835.25042246]
+[[10, 78, 7.309999999999999, 238, 360]]
+[17278.9764619]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 286, 340]]
+[747.00697684]
+[[30, 21, 7.379999999999999, 298, 330]]
+[491.63288643]
+[[30, 24, 7.289999999999999, 295, 330]]
+[898.45029295]
+[[10, 78, 7.229999999999999, 241, 350]]
+[18102.34654851]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 268, 360]]
+[609.70416224]
+[[30, 21, 7.339999999999999, 280, 350]]
+[411.73397516]
+[[30, 24, 7.249999999999999, 277, 350]]
+[751.63286166]
+[[10, 78, 7.189999999999999, 223, 370]]
+[17250.56389804]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 264, 370]]
+[551.25435012]
+[[30, 21, 7.379999999999999, 276, 360]]
+[391.35610817]
+[[30, 24, 7.289999999999999, 273, 360]]
+[693.06135319]
+[[10, 78, 7.229999999999999, 219, 380]]
+[16708.73775031]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 267, 360]]
+[602.97536593]
+[[30, 21, 7.299999999999999, 279, 350]]
+[408.09526225]
+[[30, 24, 7.209999999999999, 276, 350]]
+[742.89474335]
+[[10, 78, 7.149999999999999, 222, 370]]
+[17504.85232208]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.309999999999999, 268, 360]]
+[609.70416224]
+[[30, 21, 7.339999999999999, 280, 350]]
+[411.73397516]
+[[30, 24, 7.249999999999999, 277, 350]]
+[751.63286166]
+[[10, 78, 7.189999999999999, 223, 370]]
+[17250.56389804]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.229999999999999, 266, 360]]
+[596.32082974]
+[[30, 21, 7.259999999999999, 278, 350]]
+[404.4887066]
+[[30, 24, 7.169999999999999, 275, 350]]
+[734.25821015]
+[[10, 78, 7.1099999999999985, 221, 370]]
+[17762.88918026]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.289999999999998, 262, 370]]
+[543.35164714]
+[[30, 21, 7.3199999999999985, 274, 360]]
+[386.86071442]
+[[30, 24, 7.2299999999999995, 271, 360]]
+[682.32992737]
+[[10, 78, 7.169999999999999, 217, 380]]
+[17045.10430872]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 264, 370]]
+[551.25435012]
+[[30, 21, 7.379999999999999, 276, 360]]
+[391.35610817]
+[[30, 24, 7.289999999999999, 273, 360]]
+[693.06135319]
+[[10, 78, 7.229999999999999, 219, 380]]
+[16708.73775031]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.269999999999999, 267, 360]]
+[602.97536593]
+[[30, 21, 7.299999999999999, 279, 350]]
+[408.09526225]
+[[30, 24, 7.209999999999999, 276, 350]]
+[742.89474335]
+[[10, 78, 7.149999999999999, 222, 370]]
+[17504.85232208]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.349999999999999, 269, 360]]
+[616.50804736]
+[[30, 21, 7.379999999999999, 281, 350]]
+[415.40513204]
+[[30, 24, 7.289999999999999, 278, 350]]
+[760.47375995]
+[[10, 78, 7.229999999999999, 224, 370]]
+[16999.96945561]
+Checking feasibility
+
+Invoking model for k-colocation:12
+[[20, 33, 7.209999999999999, 224, 370]]
+[546.06797783]
+[[30, 21, 7.239999999999999, 236, 360]]
+[431.4647102]
+[[30, 24, 7.1499999999999995, 233, 360]]
+[766.21349226]
+[[20, 34, 7.189999999999999, 223, 370]]
+[660.4006158]
+[[40, 15, 7.269999999999999, 242, 350]]
+[516.83447669]
+[[40, 17, 7.189999999999999, 240, 350]]
+[709.66961174]
+[[30, 20, 7.269999999999999, 237, 360]]
+[379.43721497]
+[[30, 22, 7.209999999999999, 235, 360]]
+[511.67558829]
+[[40, 18, 7.1499999999999995, 239, 350]]
+[883.98080648]
+[[40, 16, 7.2299999999999995, 241, 350]]
+[594.07621341]
+[[40, 17, 7.1899999999999995, 240, 350]]
+[709.66961174]
+[[30, 20, 7.27, 237, 360]]
+[379.43721497]
+Found a feasible combination of: ('t7:20:33', 't9:30:21', 't6:30:24', 't15:20:34', 't4:40:15', 't2:40:17', 't3:30:20', 't11:30:22', 't1:40:18', 't13:40:16', 't8:40:17', 't5:30:20')
+Finding a feasible combination of length:3
+Checking feasibility
+
+Invoking model for k-colocation:3
+[[10, 74, 1.42, 94, 50]]
+[93.77200558]
+[[10, 78, 1.38, 90, 50]]
+[134.3095766]
+[[40, 16, 1.52, 152, 20]]
+[411.98359288]
+Found a feasible combination of: ('t14:10:74', 't12:10:78', 't10:40:16')

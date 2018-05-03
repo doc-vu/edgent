@@ -32,7 +32,7 @@ def process_cpu(log_dir):
     cpu_user=0
     cpu_system=0
     cpu_iowait=0
-    for core in range(num_cores):
+    for core in range(int(num_cores)):
       cpu_user+= np.sum(data.iloc[:,7*core+1])
       cpu_system+= np.sum(data.iloc[:,7*core+3])
       cpu_iowait+= np.sum(data.iloc[:,7*core+4])

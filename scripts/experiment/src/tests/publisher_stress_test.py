@@ -6,18 +6,18 @@ def create_conf(experiment_type,num_pub,num_sub,sleep_interval_ms,payload,pub_sa
   num_clients=num_pub//metadata.max_publishers_per_host
   remainder=num_pub%metadata.max_publishers_per_host
   if num_clients==0:
-    clients=['node27']
-    pub_distribution=['node27:t1:%d'%(num_pub)]
+    clients=['node20']
+    pub_distribution=['node20:t1:%d'%(num_pub)]
   else:
-    clients=['node%d'%(27+i) for i in range(num_clients)]
+    clients=['node%d'%(20+i) for i in range(num_clients)]
     pub_distribution=['%s:t1:%d'%(cli,metadata.max_publishers_per_host) for cli in clients ]
   if(remainder > 0 and num_clients>0):
-    client='node%d'%(27+num_clients)
+    client='node%d'%(20+num_clients)
     clients.append(client)
     pub_distribution.append('%s:t1:%d'%(client,remainder))
    
   #add client machine for subscribers to clients
-  clients.append('node3')
+  clients.append('node26')
   sub_sample_count=pub_sample_count*num_pub
   conf="""run_id:%d
 rbs:
@@ -27,7 +27,7 @@ clients:%s
 topics:t1
 no_subs:%d
 no_pubs:%d
-sub_distribution:node3:t1:%d
+sub_distribution:node26:t1:%d
 pub_distribution:%s
 pub_sample_count:%d
 sub_sample_count:%d
@@ -44,12 +44,14 @@ def run(experiment_type,min_pub,step_size,max_pub,setup,num_sub,sleep_interval_m
   for num in range(min_pub, max_pub+step_size, step_size):
     create_conf(experiment_type,num,num_sub,sleep_interval_ms,payload,pub_sample_count)
     #check if infrastructure needs to be setup before every test
-    if setup:
-      print("Setting up Test Infrastructure")
-      infrastructure.Infrastructure('conf/%s_conf'%(experiment_type)).setup()
-      setup=False
+    #if setup:
+    #  print("Setting up Test Infrastructure")
+    #  infrastructure.Infrastructure('conf/%s_conf'%(experiment_type)).setup()
+    #  setup=False
     experiment.Experiment(experiment_type,'conf/%s_conf'%(experiment_type),log_dir,True).run()
     time.sleep(5)
+    #summarize.summarize(log_dir,[num])
+    
 
 if __name__=="__main__":
   parser=argparse.ArgumentParser(description='script for starting latency vs #pub stress test')
