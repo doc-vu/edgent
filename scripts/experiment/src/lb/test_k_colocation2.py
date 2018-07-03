@@ -4,7 +4,7 @@ from sklearn.externals import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import metadata,util
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/tests')
-import restart4,rate_processing_interval_combinations4
+import restart2,rate_processing_interval_combinations2
 
 intervals= [10,20,30,40]
 rates=10
@@ -18,36 +18,18 @@ max_supported_rate={
   40: 20,
 }
 
-#upto threshold
 #range_of_rates={ #msg/sec
-#  10: np.arange(1,max_supported_rate[10]+1),
-#  20: np.arange(1,max_supported_rate[20]+1),
-#  30: np.arange(1,max_supported_rate[30]+1),
-#  40: np.arange(1,max_supported_rate[40]+1),
+#  10:[int(v) for v in np.linspace(1,max_supported_rate[10],rates)],
+#  20:[int(v) for v in np.linspace(1,max_supported_rate[20],rates)],
+#  30:[int(v) for v in np.linspace(1,max_supported_rate[30],rates)],
+#  40:[int(v) for v in np.linspace(1,max_supported_rate[40],rates)],
 #}
 
-#5 below threshold
-#range_of_rates={ #msg/sec
-#  10: np.arange(1,max_supported_rate[10]-5),
-#  20: np.arange(1,max_supported_rate[20]-5),
-#  30: np.arange(1,max_supported_rate[30]-5),
-#  40: np.arange(1,max_supported_rate[40]-5),
-#}
-
-#from learning set
-#range_of_rates={
-#  10: [1, 5, 17, 34, 50, 51, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78], 
-#  20: [1, 5, 7, 10, 14, 20, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37],
-#  30: [1, 4, 7, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-#  40: [1, 3, 5, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-#}
-
-#5 below learning set
-range_of_rates={
-  10: [1, 5, 17, 34, 50, 51, 68, 69, 70, 71, 72, 73], 
-  20: [1, 5, 7, 10, 14, 20, 27, 28, 29, 30, 31, 32],
-  30: [1, 4, 7, 10, 14, 15, 16, 17, 18, 19],
-  40: [1, 3, 5, 7, 10, 11, 12, 13, 14, 15],
+range_of_rates={ #msg/sec
+  10: np.arange(1,max_supported_rate[10]+1),
+  20: np.arange(1,max_supported_rate[20]+1),
+  30: np.arange(1,max_supported_rate[30]+1),
+  40: np.arange(1,max_supported_rate[40]+1),
 }
 
 def create_request(topics):
@@ -102,15 +84,15 @@ def run(run_id,topics,models_dir,log_dir,req=None):
   predicted_latencies= predict_latency(req,models_dir)
   print(predicted_latencies)
 
-  ##restart brokers
-  #print('Restarting EdgeBroker') 
-  #util.start_eb(','.join(rate_processing_interval_combinations4.brokers),zk_connector)
+  #restart brokers
+  print('Restarting EdgeBroker') 
+  util.start_eb(','.join(rate_processing_interval_combinations2.brokers),zk_connector)
 
-  ##run test
-  #print('Starting test') 
-  #config=rate_processing_interval_combinations4.\
-  #      create_configuration(req)
-  #restart4.Hawk(config,log_dir,run_id,zk_connector,fe_address).run()
+  #run test
+  print('Starting test') 
+  config=rate_processing_interval_combinations2.\
+        create_configuration(req)
+  restart2.Hawk(config,log_dir,run_id,zk_connector,fe_address).run()
 
   #write prediction results
   with open('%s/%d/prediction'%(log_dir,run_id),'w') as f:
@@ -129,9 +111,9 @@ def create_request_file(topics,count,path):
   
 if __name__=="__main__":
   #constants
-  zk_connector=metadata.public_zk4
-  fe_address='10.20.30.29'
-  topics=2
+  zk_connector=metadata.public_zk2
+  fe_address='10.20.30.3'
+  topics=3
   experiment_runs=600
   test_iterations=50
   
@@ -141,8 +123,8 @@ if __name__=="__main__":
     os.makedirs(base_log_dir)
 
   #check if requests file exists
-  #if not os.path.exists('%s/5_below_learning_set_requests'%(base_log_dir)):
-  #  create_request_file(topics,test_iterations,'%s/5_below_learning_set_requests'%(base_log_dir))
+  #if not os.path.exists('%s/upto_threshold_requests'%(base_log_dir)):
+  #  create_request_file(topics,test_iterations,'%s/upto_threshold_requests'%(base_log_dir))
 
   log_dir='%s/%d_runs/5_below_threshold'%(base_log_dir,experiment_runs)
   if not os.path.exists(log_dir):

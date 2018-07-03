@@ -9,8 +9,8 @@ import metadata,util
 ##########################################################################
 #test machine configuration
 brokers=['node4']
-subscriber_test_machines=['node25']
-publisher_test_machines=['node%d'%(i) for i in range(6,10,1)]
+subscriber_test_machines=['node12']
+publisher_test_machines=['node13','node14','node15','node16']
 
 #for m in subscriber_test_machines:
 #  publisher_test_machines.remove(m)
@@ -251,7 +251,6 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
 
   #restart edge-broker
   print("\n\nRestarting EdgeBroker")
-  print(len(brokers))
   util.start_eb(','.join(brokers),zk_connector) 
 
   #start the experiment and wait for it to finish

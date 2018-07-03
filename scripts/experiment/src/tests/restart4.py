@@ -2,7 +2,7 @@ import threading,time,sys,os,signal,subprocess,json
 from kazoo.client import KazooClient
 from kazoo.retry import RetryFailedError
 from kazoo.exceptions import KazooException
-import rate_processing_interval_combinations
+import rate_processing_interval_combinations4
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import metadata,send_mail
 
@@ -72,7 +72,7 @@ class Hawk(object):
     self.start_periodic_check_timer()
     #start test
     print('Starting test for run_id:%d and config:%s\n'%(self.run_id,self.config))
-    args=['python','src/tests/rate_processing_interval_combinations.py',\
+    args=['python','src/tests/rate_processing_interval_combinations4.py',\
       '-config',json.dumps(self.config),\
       '-log_dir',self.log_dir,\
       '-run_id','%d'%(self.run_id),\
@@ -98,9 +98,9 @@ class Hawk(object):
 
       self.zk.stop()
       #kill existing endpoints 
-      sub_placement=rate_processing_interval_combinations.place('sub',\
+      sub_placement=rate_processing_interval_combinations4.place('sub',\
         ['%s'%(tdesc.split(',')[4]) for tdesc in self.config])
-      pub_placement=rate_processing_interval_combinations.place('pub',\
+      pub_placement=rate_processing_interval_combinations4.place('pub',\
         ['%s'%(tdesc.split(',')[3]) for tdesc in self.config])
       endpoint_machines= list(sub_placement.keys())+ list(pub_placement.keys())
       
@@ -119,49 +119,27 @@ class Hawk(object):
       self.zk.stop()
 
 if __name__=="__main__":
-  zk_connector=metadata.public_zk
-  fe_address='10.20.30.1'
-  runs=3
+  zk_connector=metadata.public_zk4
+  fe_address='10.20.30.29'
+  runs=1
 
   k_colocation=5
-  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning/training'
+  iterations=1120
+  root_log_dir='/home/kharesp/log'
 
-  for runid in range(3,runs+1,1):
-    start_iter=200
-    end_iter=960
-
-    config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
-    log_dir= '%s/data/%d_colocation/run%d'%\
+  for runid in range(1,runs+1,1):
+    start_iter=601
+    config_path='%s/configurations3/topics_%d'%(root_log_dir,k_colocation)
+    log_dir= '%s/colocated_with_proc_%d_final/run%d'%\
       (root_log_dir,k_colocation,runid)
 
     if not os.path.exists(log_dir):
       os.makedirs(log_dir)
-    
-    with open(config_file,'r') as f: 
-      for idx,line in enumerate(f):
-        if (idx>=start_iter) and (idx<end_iter):
-          config=rate_processing_interval_combinations.create_configuration(line.rstrip())
-            
-          print('Starting test runid:%d iteration:%d with config:%s\n\n\n'%(runid,idx+1,config))
-          h=Hawk(config,log_dir,idx+1,zk_connector,fe_address)
-          h.run()
 
-#if __name__=="__main__":
-#  zk_connector=metadata.public_zk
-#  fe_address='10.20.30.1'
-#
-#  k_colocation=2
-#  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning/validation'
-#
-#  config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
-#  log_dir= '%s/data/%d_colocation'%(root_log_dir,k_colocation)
-#
-#  if not os.path.exists(log_dir):
-#    os.makedirs(log_dir)
-#   
-#  with open(config_file,'r') as f: 
-#    for idx,line in enumerate(f):
-#      config=rate_processing_interval_combinations.create_configuration(line.rstrip())
-#      print('Starting test iteration:%d with config:%s\n\n\n'%(idx+1,config))
-#      h=Hawk(config,log_dir,idx+1,zk_connector,fe_address)
-#      h.run()
+    for iteration in range(start_iter,iterations+1,1):
+      config=rate_processing_interval_combinations4.load_configuration('%s/%d'%\
+        (config_path,iteration))
+
+      print('Starting test runid:%d iteration:%d with config:%s\n'%(runid,iteration,config))
+      h=Hawk(config,log_dir,iteration,zk_connector,fe_address)
+      h.run()

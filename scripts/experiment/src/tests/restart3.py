@@ -11,7 +11,7 @@ class Hawk(object):
     self.config=config
     self.log_dir=log_dir
     self.run_id=run_id
-    self.zk=KazooClient(hosts=metadata.public_zk3)
+    self.zk=KazooClient(hosts=zk_connector)
     self.event=threading.Event()
     self.execution_attempt=0
     self.zk_connector=zk_connector
@@ -120,26 +120,27 @@ class Hawk(object):
 
 if __name__=="__main__":
   zk_connector=metadata.public_zk3
-  fe_address='10.20.30.10' #node10
+  fe_address='10.20.30.5' 
   runs=1
 
-  k_colocation=4
-  iterations=600
-  root_log_dir='/home/kharesp/log'
+  k_colocation=2
+  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning/training'
 
   for runid in range(1,runs+1,1):
-    start_iter=1
-    config_path='%s/configurations3/topics_%d'%(root_log_dir,k_colocation)
-    log_dir= '%s/colocated_with_proc_%d_final/run%d'%\
+    start_iter=350
+    end_iter=480
+    config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
+    log_dir= '%s/data/%d_colocation/run%d'%\
       (root_log_dir,k_colocation,runid)
 
     if not os.path.exists(log_dir):
       os.makedirs(log_dir)
 
-    for iteration in range(start_iter,iterations+1,1):
-      config=rate_processing_interval_combinations3.load_configuration('%s/%d'%\
-        (config_path,iteration))
-
-      print('Starting test runid:%d iteration:%d with config:%s\n'%(runid,iteration,config))
-      h=Hawk(config,log_dir,iteration,zk_connector,fe_address)
-      h.run()
+    with open(config_file,'r') as f: 
+      for idx,line in enumerate(f):
+        if (idx>=start_iter) and (idx<end_iter):
+          config=rate_processing_interval_combinations3.create_configuration(line.rstrip())
+            
+          print('Starting test runid:%d iteration:%d with config:%s\n\n\n'%(runid,idx+1,config))
+          h=Hawk(config,log_dir,idx+1,zk_connector,fe_address)
+          h.run()

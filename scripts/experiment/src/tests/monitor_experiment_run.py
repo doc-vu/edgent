@@ -10,6 +10,16 @@ class Track(object):
     self.start_ts=-1
     self.runid=0
     self.execution_failed=False
+    if zk_connector==metadata.public_zk:
+      self.nw_partition=1
+    elif zk_connector==metadata.public_zk2:
+      self.nw_partition=2
+    elif zk_connector==metadata.public_zk3:
+      self.nw_partition=3
+    elif zk_connector==metadata.public_zk4:
+      self.nw_partition=4
+    else:
+      self.nw_partition=-1
     self.zk=KazooClient(hosts=zk_connector)
     self.zk.start()
 
@@ -33,7 +43,7 @@ class Track(object):
     self.status_update.start()
 
   def start_periodic_check_timer(self):
-    self.periodic_check=threading.Timer(1200,self.check)
+    self.periodic_check=threading.Timer(1800,self.check)
     self.periodic_check.start()
 
   def start(self):  
@@ -52,23 +62,22 @@ class Track(object):
       print('Test Execution has failed')
       self.execution_failed=True
       send_mail.Email().send(['kharesp28@gmail.com'],
-        'Execution Failure','Check execution')
+        'Execution Failure','Check execution for nw_partition:%d'%(self.nw_partition))
     else:
       self.runid=int(value)
       print('Updated run-id:%d'%(self.runid))
-      self.start_periodic_check_timer()
+    self.start_periodic_check_timer()
   
   def update(self):
     value,info=self.zk.get('/runid')
     print('Sending status update for runid:%s'%(value))
     send_mail.Email().send(['kharesp28@gmail.com'],\
-      'Update','run-id:%s'%(value))
-    if not self.execution_failed:
-      self.start_update_timer()
+      'Update','run-id:%s\nnw_partition:%d'%(value,self.nw_partition))
+    self.start_update_timer()
 
 
 if __name__=="__main__":
-  parser=argparse.ArgumentParser(description='script for monitoring test execution ')
+  parser=argparse.ArgumentParser(description='script for monitoring test execution')
   parser.add_argument('-zk_connector',required=True)
   args=parser.parse_args()
 

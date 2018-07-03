@@ -3,8 +3,8 @@ import os,argparse,sys
 def filter(log_dir,count):
   if not os.path.exists('%s/original'%(log_dir)):
     os.makedirs('%s/original'%(log_dir))
-  if not os.path.exists('%s/filtered'%(log_dir)):
-    os.makedirs('%s/filtered'%(log_dir))
+  if not os.path.exists('%s/purged'%(log_dir)):
+    os.makedirs('%s/purged'%(log_dir))
 
   files= os.listdir(log_dir)
   for f in files: 
@@ -14,7 +14,7 @@ def filter(log_dir,count):
   files= os.listdir('%s/original'%(log_dir))
   for filename in files:
     with open('%s/original/%s'%(log_dir,filename),'r') as inp,\
-      open('%s/filtered/%s'%(log_dir,filename),'w') as out: 
+      open('%s/purged/%s.csv'%(log_dir,filename.partition('_')[0]),'w') as out: 
       header= next(inp)
       out.write(header)
       for line in inp:

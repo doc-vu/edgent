@@ -8,9 +8,10 @@ import metadata,util
 ##########################################################################
 ##########################################################################
 #test machine configuration
-brokers=['node2']
-subscriber_test_machines=['node17']
-publisher_test_machines=['node%d'%(i) for i in range(18,21,1)]
+brokers= ['node2']
+subscriber_test_machines= ['node7']
+publisher_test_machines= ['node8','node9','node10','node11']
+  
 
 #for m in subscriber_test_machines:
 #  publisher_test_machines.remove(m)
@@ -22,6 +23,7 @@ maximum_publishers=reduce(lambda x,y:x+y,\
 #maximum number of subscribers
 maximum_subscribers=reduce(lambda x,y:x+y,\
   [metadata.sub_per_hw_type[metadata.get_hw_type(host)] for host in subscriber_test_machines])
+
 
 #maximum publication rate supported for a given per-topic processing interval
 max_supported_rates={
@@ -251,7 +253,7 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
 
   #restart edge-broker
   print("\n\nRestarting EdgeBroker")
-  print(len(brokers))
+  #print(len(brokers))
   util.start_eb(','.join(brokers),zk_connector) 
 
   #start the experiment and wait for it to finish
@@ -335,59 +337,3 @@ if __name__ == "__main__":
 
   #run experiment
   run(json.loads(args.config),args.log_dir,args.run_id,args.zk_connector,args.fe_address)
-  
- 
-#if __name__ == "__main__":
-#  parser= argparse.ArgumentParser(description='script for collecting performance data for a given number of colocated topics')
-#  parser.add_argument('-log_dir',required=True)
-#  parser.add_argument('-config_dir',required=True)
-#  parser.add_argument('-topics',type=int,required=True)
-#  #parser.add_argument('-combinations',type=int,required=True)
-#  parser.add_argument('-start_id',type=int,required=True)
-#  parser.add_argument('-end_id',type=int,required=True)
-#  args=parser.parse_args()
-#  
-#
-#  ##create test combinations for given number of colocated topics and number of test combinations
-#  #res=combinations_with_set_foreground(9,200,30,25)
-#  #for idx,test_iteration in enumerate(res):
-#  #  config=create_configuration(test_iteration)
-#  #  write_configuration(config,'/home/kharesp/log/background_load_test/%d'%(idx+1))
-#  
-#  #for idx,test_iteration in enumerate(res):
-#  #  #get test configuration
-#  #  config=create_configuration(test_iteration)
-#  #  #execute test
-#  #  #run(config,args.log_dir,idx+1)
-#  #  write_configuration(config,'%s/%d'%(dir_path,idx+1))
-#
-#  #for idx in range(args.start_id,args.end_id+1,1):
-#  #  #load test configuration
-#  #  config=load_configuration('%s/topics_%d/%d'%
-#  #    (args.config_dir,args.topics,idx))
-#  #  run(config,args.log_dir,idx)
-#  
-#  runs=1
-#  intervals=[10]
-#  rates={
-#    10: range(1,86),
-#    20: range(1,46),
-#    30: range(1,36),
-#    40: range(1,23),
-#  }
-#  for runid in range(1,runs+1,1):
-#    for interval in intervals: 
-#      for rate in rates[interval]:
-#        if ((runid==1) and (interval==10) and (rate<58)):
-#          print('skipping rate:%d'%(rate))
-#          continue
-#         
-#         
-#        res=combinations_with_set_foreground(1,1,interval,rate)
-#        for iteration in res:
-#          config=create_configuration(iteration)
-#          log_dir='%s/variance/interval_%d/run%d'%(args.log_dir,interval,runid)
-#          if not os.path.exists(log_dir):
-#            os.makedirs(log_dir)
-#          print('Starting test with config:%s. runid:%d\n'%(config,runid)) 
-#          run(config,log_dir,rate)

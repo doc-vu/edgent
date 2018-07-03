@@ -5,3 +5,6 @@ libs/
 .project
 .classpath
 .settings/
+model_learning/
+model_learning_urd/
+scripts/ansible/offsets.csv

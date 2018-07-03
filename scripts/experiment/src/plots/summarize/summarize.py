@@ -17,7 +17,7 @@ def summarize(log_dir,sub_dirs):
       metadata.initial_samples_per_pub)
     topic.process('%s/%s'%(log_dir,sub_dir))
     util.process('%s/%s'%(log_dir,sub_dir))
-    throughput.process('%s/%s'%(log_dir,sub_dir))
+    #throughput.process('%s/%s'%(log_dir,sub_dir))
     
 
 if __name__== "__main__":

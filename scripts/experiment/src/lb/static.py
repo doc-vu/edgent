@@ -3,21 +3,11 @@ from sklearn.externals import joblib
 from sklearn.neural_network import MLPRegressor
 import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import util
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/tests')
-import restart,rate_processing_interval_combinations
-from functools import reduce
-from kazoo.client import KazooClient
-from kazoo.retry import RetryFailedError
-from kazoo.exceptions import KazooException
 
-broker_id_host_map={
-  'b1': 'EB-30-10.20.30.2-0',
-}
-models_dir='/home/kharesp/log/models'
+models_dir='/home/kharesp/learned_models/600_runs'
+isolated_models_dir='/home/kharesp/learned_models'
 intervals= [10,20,30,40]
-rates=10
-max_topics=6
 deadline=1000
 threshold=100
 
@@ -28,13 +18,43 @@ max_supported_rate={
   40: 20,
 }
 
+#upto_threshold_requests
+#range_of_rates={
+#  10: np.arange(1,max_supported_rate[10]+1),
+#  20: np.arange(1,max_supported_rate[20]+1),
+#  30: np.arange(1,max_supported_rate[30]+1),
+#  40: np.arange(1,max_supported_rate[40]+1), 
+#}
 
-range_of_rates={ #msg/sec
-  10:[int(v) for v in np.linspace(max_supported_rate[10]-5,max_supported_rate[10],5)],
-  20:[int(v) for v in np.linspace(max_supported_rate[20]-5,max_supported_rate[20],5)],
-  30:[int(v) for v in np.linspace(max_supported_rate[30]-5,max_supported_rate[30],5)],
-  40:[int(v) for v in np.linspace(max_supported_rate[40]-5,max_supported_rate[40],5)],
+#5_below_threshold_requests
+range_of_rates={
+  10: np.arange(1,max_supported_rate[10]-5),
+  20: np.arange(1,max_supported_rate[20]-5),
+  30: np.arange(1,max_supported_rate[30]-5),
+  40: np.arange(1,max_supported_rate[40]-5), 
 }
+
+def create_skewed_request(topics):
+  req=''
+  for topic in range(1,topics+1,1):
+    higher_rate= random.choice([True,False])  
+    if higher_rate:
+      #pick processing interval at random
+      interval=intervals[random.randint(0,len(intervals)-1)]
+      #pick publication rate at random
+      rate=range_of_rates[interval][random.randint(len(range_of_rates[interval])-5,
+        len(range_of_rates[interval])-1)]
+      #add to req string
+      req+='t%d:%d:%d,'%(topic,interval,rate)
+    else:
+      #pick processing interval at random
+      interval=intervals[random.randint(0,len(intervals)-1)]
+      #pick publication rate at random
+      rate=range_of_rates[interval][random.randint(0,4)]
+      #add to req string
+      req+='t%d:%d:%d,'%(topic,interval,rate)
+  return req.rstrip(',')
+
 
 def create_request(topics):
   req=''
@@ -47,22 +67,31 @@ def create_request(topics):
     req+='t%d:%d:%d,'%(topic,interval,rate)
   return req.rstrip(',')
 
+def create_request_file(topics,number_of_requests,file_path):
+  with open(file_path,'w') as f:
+    for i in range(number_of_requests):
+      req=create_skewed_request(topics)
+      f.write(req+'\n')
 
 class StaticPlacement:
-  def __init__(self,zk_connector,fe_address,log_dir,run_id):
-    self.zk_connector=zk_connector
-    self.fe_address=fe_address
-    self.log_dir=log_dir
-    self.run_id=run_id
+  def __init__(self,max_topics,k_dash):
+    self.max_topics=max_topics
+    self.k_dash=k_dash
     #load models
     self.load_models()
 
   def load_models(self):
+    self.load_isolated_topic_model()
     self.scalers={} 
     self.models={}
-    for topic in range(2,max_topics+1,1):
+    for topic in range(2,self.max_topics+1,1):
       self.scalers[topic]=joblib.load('%s/%d_colocation_scaler.pkl'%(models_dir,topic))
       self.models[topic]=joblib.load('%s/%d_colocation.pkl'%(models_dir,topic))
+
+  def load_isolated_topic_model(self):
+    self.isolated_topic_scaler=joblib.load('%s/isolated_topic_scaler.pkl'%(isolated_models_dir))
+    self.isolated_topic_poly=joblib.load('%s/isolated_topic_poly.pkl'%(isolated_models_dir))
+    self.isolated_topic_model=joblib.load('%s/isolated_topic_model.pkl'%(isolated_models_dir))
 
   def create_partitions(self,req):
     topic_configurations=req.split(',')
@@ -84,7 +113,7 @@ class StaticPlacement:
   def check_feasibility(self,existing_topics):
     if (len(existing_topics)==1):
       return True
-    if (len(existing_topics)>max_topics):
+    if (len(existing_topics)>self.max_topics):
       return False
 
     scaler=self.scalers[len(existing_topics)]
@@ -106,28 +135,110 @@ class StaticPlacement:
         bkg_sum_rate+=int(bkg_rate)
         bkg_sum_processing+=int(bkg_interval)
 
-      X=[[f_p,f_r,bkg_load,bkg_sum_rate,bkg_sum_processing]]
+      X=[[f_p,f_r,bkg_load,bkg_sum_processing,bkg_sum_rate]]
       predicted_latency=np.exp(model.predict(scaler.transform(X)))
-      if (predicted_latency > (deadline - threshold)):
+      if (predicted_latency[0] > (deadline - threshold)):
         return False
     return True
- 
-  def feasibility_set(self,partitions):
-    placement={}
+
+
+  def hybrid2(self,partitions,k_prime):
     broker_count=1
-    topic_set=set(partitions)
-    
-    while (len(topic_set)>0): #continue until all topics are placed 
-      #print('\nWill attempt to place: %d topics'%(len(topic_set)))
+    sorted_topic_list=self.order_by_latency(partitions,descending=True)
+
+    placement={}   
+    while (len(sorted_topic_list) >= k_prime):
+      feasible_k_prime_set_found=False
+      #find a feasible set of size k_prime
+      for combination in itertools.combinations(sorted_topic_list,k_prime):
+        if self.check_feasibility(combination):
+          feasible_k_prime_set_found=True
+          placement['b%d'%(broker_count)]=list(combination)
+          for topic in combination:
+            sorted_topic_list.remove(topic)
+          break
+      if not feasible_k_prime_set_found:
+        break
+
+      #try to place remaining topics on this broker
+      additional_topics=[]
+      for topic in sorted_topic_list:
+        p=placement['b%d'%(broker_count)]
+        if (self.check_feasibility(p+[topic])):
+          placement['b%d'%(broker_count)].append(topic)
+          additional_topics.append(topic)
+
+      for topic in additional_topics:
+        sorted_topic_list.remove(topic)
+      #increment broker_count
+      broker_count+=1
+
+    #resort to feasibility set with k_prime - 1
+
+    while (len(sorted_topic_list)>0): #continue until all topics are placed 
       placed_on_current_broker=False
-      #try to find the maximal set of topics that can be placed on the current broker
-      for size in range(min(max_topics,len(topic_set)),0,-1):
-        #print('will try to find a feasible set of size:%d'%(size))
-        for combination in itertools.combinations(topic_set,size):
+      for size in range(min(len(sorted_topic_list),k_prime-1),0,-1):
+        for combination in itertools.combinations(sorted_topic_list,size):
           if self.check_feasibility(combination): 
             placement['b%d'%(broker_count)]=combination
             for topic in combination: 
-              topic_set.remove(topic)
+              sorted_topic_list.remove(topic)
+            broker_count+=1
+            placed_on_current_broker=True
+            break
+        if placed_on_current_broker:
+          break
+    return placement
+ 
+
+  def hybrid(self,partitions,K):
+    broker_count=1
+    placement={}
+    topic_list=list(partitions)
+
+    while (len(topic_list) > 0):
+      sorted_topic_list=self.order_by_latency(topic_list,descending=True)
+      placed=False
+      #try to place a set of K or less topics on current broker
+      for size in range(min(len(sorted_topic_list),K),0,-1):
+        for combination in itertools.combinations(sorted_topic_list,size):
+          if self.check_feasibility(combination):
+            placement['b%d'%(broker_count)]=list(combination)
+            for topic in combination:
+              topic_list.remove(topic)
+              sorted_topic_list.remove(topic)
+            placed=True
+            break
+        if placed:
+          break
+
+      additional_topics=[]
+      for topic in sorted_topic_list:
+        p=placement['b%d'%(broker_count)]
+        if (self.check_feasibility(p+[topic])):
+          placement['b%d'%(broker_count)].append(topic)
+          additional_topics.append(topic)
+
+      for topic in additional_topics:
+        topic_list.remove(topic)
+
+      broker_count+=1
+    return placement
+      
+  def feasibility_set(self,partitions):
+    placement={}
+    broker_count=1
+    sorted_topic_list=self.order_by_latency(partitions,descending=True)
+    
+    while (len(sorted_topic_list)>0): #continue until all topics are placed 
+      placed_on_current_broker=False
+      #try to find the maximal set of topics that can be placed on the current broker
+      for size in range(min(self.max_topics,len(sorted_topic_list)),0,-1):
+        for combination in itertools.combinations(sorted_topic_list,size):
+          if self.check_feasibility(combination): 
+            placement['b%d'%(broker_count)]=combination
+            for topic in combination: 
+              sorted_topic_list.remove(topic)
             broker_count+=1
             placed_on_current_broker=True
             break
@@ -151,92 +262,106 @@ class StaticPlacement:
         placement['b%d'%(len(placement)+1)]=[topic_partition]
     return placement
 
+  def first_fit_rate_ordering(self,partitions):
+    sorted_by_rate=[]
+    rate_description={} 
+    for p in partitions:
+      name,interval,rate= p.split(':')
+      if int(rate) in rate_description:
+        rate_description[int(rate)].append(p)
+      else:
+        rate_description[int(rate)]=[p]
+
+    for rate in sorted(rate_description):
+      sorted_by_rate= sorted_by_rate + rate_description[rate]
+
+    return self.first_fit(sorted_by_rate)
+
+  def order_by_latency(self,partitions,descending=False):
+    sorted_by_latency=[]
+    latency_description={}
+    for partition in partitions:
+      topic,interval,rate= partition.split(':')
+      X=[[int(interval),int(rate)]]
+      scaled_features= self.isolated_topic_scaler.transform(X)
+      polynomial_features= self.isolated_topic_poly.transform(scaled_features)
+      latency=np.exp(self.isolated_topic_model.predict(polynomial_features))[0][0]
+
+      if latency in latency_description:
+        latency_description[latency].append(partition)
+      else:
+        latency_description[latency]=[partition]
+
+    for latency in sorted(latency_description,reverse=descending):
+      sorted_by_latency= sorted_by_latency + latency_description[latency]
+
+    return sorted_by_latency
+  
+  def first_fit_latency_ordering(self,partitions,descending=False):
+    return self.first_fit(self.order_by_latency(partitions,descending))
+
   def place(self,req,algo):
     #partitions= self.create_partitions(req)
     partitions=req.split(',')
 
-    if algo=='first_fit':
+    if algo=='ffu':
       return self.first_fit(partitions)
-    elif algo=='feasibility_set':
+    if algo=='ffr':
+      return self.first_fit_rate_ordering(partitions)
+    if algo=='ffl':
+      return self.first_fit_latency_ordering(partitions)
+    if algo=='ffd':
+      return self.first_fit_latency_ordering(partitions,descending=True)
+    elif algo=='fs':
       return self.feasibility_set(partitions)
+    elif algo=='hyb':
+      return self.hybrid2(partitions,self.k_dash)
     else:
       print('placement algorithm:%s not recognized'%(algo))
       return None
 
   def check_correctness_of_placement(self,placement):
-    #if (len(placement) > 1): #currently only check for one broker placement
-    #  return False
     if (len(placement)==1):
       return True
     topic_placement=[set(v) for v in placement.values()]
     return not bool(set.intersection(*topic_placement))
-    
-  def place_topics_on_brokers(self,placement):
-    self.zk= KazooClient(hosts=self.zk_connector)
-    self.zk.start()
-    for broker_id,topics in placement.items():
-      eb_id=broker_id_host_map[broker_id]
-      try:
-        for t in topics:
-          name,interval,rate= t.split(':')
-          #create /topics/t
-          self.zk.retry(self.zk.create,'/topics/%s'%(name),\
-            bytes('%s,none'%(interval),'utf-8'))
-          #create /lb/topics/t
-          self.zk.retry(self.zk.ensure_path,'/lb/topics/%s'%(name))
-          #create /eb/eb_id/t
-          self.zk.retry(self.zk.ensure_path,'/eb/%s/%s'%(eb_id,name))
-      except (KazooException,RetryFailedError) as e:
-        print('Caught KazooException')
-    self.zk.stop()
-
-  def run(self,req,algo):
-    placement=self.place(req,algo)
-    print(placement)
-
-    if (self.check_correctness_of_placement(placement)):
-      #restart brokers
-      util.start_eb(','.join(rate_processing_interval_combinations.brokers),self.zk_connector)
-      #place topics on brokers as per placement 
-      self.place_topics_on_brokers(placement)
-      #start test
-      topic_descriptions_list=reduce(lambda x,y:x+y,placement.values()) 
-      config=rate_processing_interval_combinations.\
-        create_configuration(','.join(topic_descriptions_list))
-      restart.Hawk(config,self.log_dir,self.run_id,self.zk_connector,self.fe_address).run()
-    else:
-      print('Placement for request:%s is invalid'%(req)) 
 
 
 if __name__ == "__main__":
-  #parser= argparse.ArgumentParser(description='script for static topic placement')
-  #parser.add_argument('-topics',type=int,required=True)
-  #parser.add_argument('-zk_connector',required=True)
-  #parser.add_argument('-fe_address',required=True)
-  #parser.add_argument('-log_dir',required=True)
-  #parser.add_argument('-run_id',type=int,required=True)
-  #args= parser.parse_args()
+  algorithms=['hyb']
+  n=[10,20,30,40,50]
+  max_topics=6 
+  iterations=5
+  k_dash_values=[1,2,3,4,5,6]
 
-  #req=create_request(args.topics)
-  req=create_request(100)
-  #print('Packing topics for request:%s'%(req))
+  for algo in algorithms:
+    for topic in n:
+      for k_dash in k_dash_values: 
+        lb=StaticPlacement(max_topics,k_dash)
+        with open('/home/kharesp/static_placement/requests/skewed/n_%d'%(topic),'r') as fi,\
+          open('/home/kharesp/static_placement/placement/skewed/varying_k/k_%d/n_%d'%(k_dash,topic),'w') as fp,\
+          open('/home/kharesp/static_placement/results/skewed/varying_k/k_%d/n_%d'%(k_dash,topic),'w') as fr:
+          for idx,line in enumerate(fi):
+            if (idx+1)>iterations:
+              break
+            print('Creating placement for algo:%s, n:%d, k:%d, iter:%d'%(algo,topic,k_dash,idx+1))
 
-  #lb=StaticPlacement(args.zk_connector,args.fe_address,args.log_dir,args.run_id)
-  lb=StaticPlacement('zk','fe','log_dir',1)
-  #lb.run(req)
+            start_time_milli= int(round(time.time()*1000))
+            placement=lb.place(line.rstrip(),algo)
+            end_time_milli= int(round(time.time()*1000))
+ 
+            if (lb.check_correctness_of_placement(placement)):
+              print('Placement is correct')
 
-  start=time.time()
-  placement_1=lb.place(req,'first_fit')
-  end=time.time()
-  print(end-start)
-  if lb.check_correctness_of_placement(placement_1):
-    #print(placement_1) 
-    print(len(placement_1))
+            #write placement
+            placement_str=''
+            for b in range(len(placement)):
+              broker='b%d'%(b+1)
+              topic_description_list=sorted(placement[broker])
+              topics=[description.split(':')[0] for description in topic_description_list]
+              placement_str= placement_str + '%s:%s;'%(broker,','.join(topics))
+            fp.write(placement_str.rstrip(';')+'\n')
 
-  start=time.time()
-  placement_2=lb.place(req,'feasibility_set')
-  end=time.time()
-  print(end-start)
-  if lb.check_correctness_of_placement(placement_2):
-    #print(placement_2) 
-    print(len(placement_2))
+            #write results
+            print('brokers:%d,time:%d\n'%(len(placement),(end_time_milli-start_time_milli)))
+            fr.write('%d,%d\n'%(len(placement),(end_time_milli-start_time_milli)))

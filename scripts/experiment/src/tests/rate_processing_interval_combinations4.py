@@ -8,9 +8,9 @@ import metadata,util
 ##########################################################################
 ##########################################################################
 #test machine configuration
-brokers=['node6']
-subscriber_test_machines=['node17']
-publisher_test_machines=['node19','node20','node25','node27']
+brokers=['node16']
+subscriber_test_machines=['node32']
+publisher_test_machines=['node31','node5','node33','node9','node20']
 
 #for m in subscriber_test_machines:
 #  publisher_test_machines.remove(m)
@@ -249,10 +249,10 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
   util.clean_logs(','.join(list(subscriber_placement.keys())+\
     list(publisher_placement.keys())+brokers))
 
-  #restart edge-broker
-  print("\n\nRestarting EdgeBroker")
-  print(len(brokers))
-  util.start_eb(','.join(brokers),zk_connector) 
+  ##restart edge-broker
+  #print("\n\nRestarting EdgeBroker")
+  #print(len(brokers))
+  #util.start_eb(','.join(brokers),zk_connector) 
 
   #start the experiment and wait for it to finish
   print('\n\n\nStarting test endpoints')

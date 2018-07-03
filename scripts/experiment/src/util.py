@@ -41,9 +41,12 @@ class Coordinate(object):
     self._zk.start()
     try:
       #clean exp_path
+      print('Cleaning Experiment path')
       self._zk.retry(self.clean)
       #create necessary zk paths
       self._zk.retry(self.create_paths)
+      print('Created paths')
+      print(self.run_id)
       self._zk.retry(self.create_barriers)
       self._zk.retry(self.install_watches)
       self._zk.set('/runid',bytes('%d'%(self.run_id),'utf-8'))
@@ -94,7 +97,7 @@ class Coordinate(object):
       print('Waiting for all publishers to join')
       self._zk.retry(self.pub_barrier.wait)
     except (KazooException,RetryFailedError) as e:
-      print(str(e))
+      #print(str(e))
       self.stop()
 
   def wait(self):

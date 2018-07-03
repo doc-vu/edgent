@@ -7,16 +7,18 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.linear_model import LinearRegression 
 
 def process(log_dir):
   topic_files_map={}
-  for f in os.listdir(log_dir+'/filtered'):
-    if(os.path.isfile(os.path.join(log_dir+'/filtered',f)) and (f.startswith('t') )):
-      topic=f.partition('_')[0]
+  for f in os.listdir(log_dir+'/purged'):
+    if(os.path.isfile(os.path.join(log_dir+'/purged',f)) and (f.startswith('t') )):
+      topic=f.partition('.')[0]
       if topic in topic_files_map:
-        topic_files_map[topic].append(log_dir+'/filtered/'+f)
+        topic_files_map[topic].append(log_dir+'/purged/'+f)
       else:
-        topic_files_map[topic]=[log_dir+'/filtered/'+f]
+        topic_files_map[topic]=[log_dir+'/purged/'+f]
   
   with open('%s/summary/summary_topic.csv'%(log_dir),'w') as f:
     header="""topic,#subscribers,\
@@ -33,12 +35,14 @@ max_latency(ms),\
 99.9999th_percentile_latency(ms),\
 avg_latency_to_eb(ms),\
 avg_latency_from_eb(ms),\
-latency_std(ms)\n"""
+latency_std(ms),\
+trend,\
+level\n"""
     f.write(header)
 
     for topic,files in topic_files_map.items():
       stats= process_topic(log_dir,topic,files)
-      f.write('%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n'%(topic,
+      f.write('%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n'%(topic,
         len(files),
         stats['latency_avg'],
         stats['latency_min'],
@@ -53,8 +57,19 @@ latency_std(ms)\n"""
         stats['latency_99_9999th'],
         stats['avg_latency_to_eb'],
         stats['avg_latency_from_eb'],
-        stats['latency_std']))
+        stats['latency_std'],
+        stats['trend'],
+        stats['level']))
 
+def timeseries_trend(latencies): 
+  window_size=int(.1*len(latencies))
+  y=pd.DataFrame(latencies).rolling(window_size).mean().dropna()
+
+  X= [i for i in range(0,len(y))]
+  X= np.reshape(X,(len(X),1))
+  reg=LinearRegression()
+  reg.fit(X,y)
+  return (reg.coef_,reg.intercept_)
 
 def process_topic(log_dir,topic,topic_files):
   latency_avg=[]
@@ -71,13 +86,16 @@ def process_topic(log_dir,topic,topic_files):
   avg_latency_to_eb=[]
   avg_latency_from_eb=[]
   latency_std=[]
+  trend=[]
+  level=[]
   
   for f in topic_files:
     data=np.genfromtxt(f,dtype='int,int,int',delimiter=',',\
       usecols=[4,6,7],skip_header=1)[metadata.initial_samples:]
 
+    
     sorted_latency=np.sort(data['f0'])
-
+ 
     latency_avg.append(np.mean(data['f0']))
     latency_min.append(sorted_latency[0])
     latency_max.append(sorted_latency[-1])
@@ -92,6 +110,8 @@ def process_topic(log_dir,topic,topic_files):
     avg_latency_to_eb.append(np.mean(data['f1']))
     avg_latency_from_eb.append(np.mean(data['f2']))
     latency_std.append(np.std(data['f0']))
+    trend.append(timeseries_trend(data['f0'])[0])
+    level.append(timeseries_trend(data['f0'])[1])
 
 
   #mean,min,max,50th,60th,70th,80th,90th and 99th percentile latency values
@@ -110,6 +130,8 @@ def process_topic(log_dir,topic,topic_files):
   stats['avg_latency_to_eb']= np.mean(avg_latency_to_eb)
   stats['avg_latency_from_eb']= np.mean(avg_latency_from_eb)
   stats['latency_std']=np.mean(latency_std)
+  stats['trend']=np.mean(trend)
+  stats['level']=np.mean(level)
 
   return stats
     
@@ -184,10 +206,20 @@ if __name__== "__main__":
   #parse cmd line args
   parser=argparse.ArgumentParser(description='script for processing topic latency files')
   parser.add_argument('-log_dir',help='path to log directory',required=True)
-  parser.add_argument('-sub_dirs',nargs='*',required=True)
+
+  group= parser.add_mutually_exclusive_group()  
+  group.add_argument('-sub_dirs',nargs='*')
+  group.add_argument('-start_range',type=int)
+  
+  parser.add_argument('-end_range',type=int,required='-start_range')
   args=parser.parse_args()
 
-  for sub_dir in args.sub_dirs:
+  if args.sub_dirs:
+    dirs=args.sub_dirs
+  else: 
+    dirs=list(range(args.start_range,args.end_range+1))
+
+  for sub_dir in dirs:
     if not os.path.exists('%s/%s/summary'%(args.log_dir,sub_dir)):
       os.makedirs('%s/%s/summary'%(args.log_dir,sub_dir))
 
