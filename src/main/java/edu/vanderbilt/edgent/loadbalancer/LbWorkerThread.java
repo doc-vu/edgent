@@ -28,7 +28,7 @@ public class LbWorkerThread implements Runnable {
 	public LbWorkerThread(ZMQ.Context context,CuratorFramework client){
 		this.context=context;
 		this.client=client;
-		logger=LogManager.getLogger(this.getClass().getSimpleName());
+		logger=LogManager.getLogger(this.getClass().getName());
 	}
 
 	@Override

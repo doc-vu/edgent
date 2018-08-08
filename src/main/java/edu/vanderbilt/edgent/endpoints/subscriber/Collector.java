@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,8 @@ public class Collector implements Runnable{
 	private String topicName;
 	//Collector thread's socket connector at which it receives data 
 	private String collectorConnector;
+	//signal to indicate whether collector is initialized or not
+	private CountDownLatch collectorInitialized;
 	//Subscriber container's socket connector at which control commands are issued 
 	private String controlConnector;
 	//Subscriber container's socket connector at which it receives control commands
@@ -73,16 +76,16 @@ public class Collector implements Runnable{
 	private boolean logLatency;
 
 	public Collector(String containerId, ZMQ.Context context,String topicName,
-			String controlConnector,String subQueueConnector,String collectorConnector,
+			String controlConnector,String subQueueConnector,CountDownLatch collectorInitialized,
 			int sampleCount, int runId, String logDir,boolean logLatency){
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		//stash constructor arguments
 		this.containerId= containerId;
 		this.context=context;
 		this.topicName=topicName;
 		this.controlConnector=controlConnector;
 		this.subQueueConnector=subQueueConnector;
-		this.collectorConnector=collectorConnector;
+		this.collectorInitialized=collectorInitialized;
 		this.sampleCount=sampleCount;
 		this.logLatency=logLatency;
 		this.containerCommandHelper=new ContainerCommandHelper();
@@ -102,12 +105,6 @@ public class Collector implements Runnable{
 
 	@Override
 	public void run() {
-		//create and bind socket endpoint at which Collector thread will receive data
-		collectorSocket= context.socket(ZMQ.SUB);
-		collectorSocket.setHWM(0);
-		collectorSocket.bind(collectorConnector);
-		collectorSocket.subscribe("".getBytes());
-		
 		//connect to Subscriber container's command socket to receive control messages 
 		controlSocket= context.socket(ZMQ.SUB);
 		controlSocket.connect(controlConnector);
@@ -117,6 +114,17 @@ public class Collector implements Runnable{
 		commandSocket= context.socket(ZMQ.PUSH);
 		commandSocket.connect(subQueueConnector);
 	
+		//create and bind socket endpoint at which Collector thread will receive data
+		collectorSocket= context.socket(ZMQ.SUB);
+		collectorSocket.setHWM(0);
+		int port= collectorSocket.bindToRandomPort("tcp://localhost");
+		collectorConnector= String.format("tcp://localhost:%d", port);
+		collectorSocket.subscribe("".getBytes());
+	    
+		//collector initialized
+		collectorInitialized.countDown();
+
+
 		//schedule periodic cleaning of Publisher state information
 		scheduler.scheduleWithFixedDelay(new Cleanup(),STATE_CLEANUP_INTERVAL_SEC,
 				STATE_CLEANUP_INTERVAL_SEC, TimeUnit.SECONDS);
@@ -328,5 +336,9 @@ public class Collector implements Runnable{
 				}
 			}
 		}
+	}
+	
+	public String collectorConnector(){
+		return collectorConnector;
 	}
 }

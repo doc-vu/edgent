@@ -59,7 +59,7 @@ public class LoadBalancer implements Runnable{
 	
 	public LoadBalancer(String zkConnector) 
 	{
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		ipAddress=UtilMethods.ipAddress();
 		regionId= UtilMethods.regionId();
 		lbId=String.format("LB-%d-%s",regionId,ipAddress);

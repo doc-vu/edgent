@@ -2,15 +2,17 @@ from kazoo.client import KazooClient
 import multiprocessing,metadata,subprocess,os
 from kazoo.recipe.barrier import Barrier
 from kazoo.recipe.watchers import ChildrenWatch
+from kazoo.recipe.watchers import DataWatch
 from kazoo.protocol.states import EventType
 from kazoo.retry import RetryFailedError
 from kazoo.exceptions import KazooException
 from functools import reduce
-import zmq,json,time,metadata
+import zmq,json,time,metadata,threading
 
 class Coordinate(object):
   def __init__(self,exp_type,run_id,
-    subscribers,publishers,brokers,log_dir,wait_flag,zk_connector,fe_address):
+    subscribers,publishers,brokers,log_dir,wait_flag,zk_connector,fe_address,mq_connector):
+    print(zk_connector)
     self.exp_type=exp_type
     self.run_id=run_id
     self.exp_path='/experiment/%s'%(exp_type)
@@ -28,8 +30,12 @@ class Coordinate(object):
       [ int(t.split(':')[1]) for t in reduce(lambda x,y:x+y,publishers.values())])
 
     self.context=zmq.Context(1)    
-    self.socket=self.context.socket(zmq.PUSH)
-    self.socket.connect('tcp://129.59.104.151:1025')
+    self.sockets=[]
+    for connector in mq_connector.split(','):
+      print(connector)
+      socket=self.context.socket(zmq.PUSH)
+      socket.connect(connector)
+      self.sockets.append(socket)
     #allow connection to finish
     time.sleep(2)
 
@@ -65,7 +71,9 @@ class Coordinate(object):
 
       #kill endpoints
       print('Killing publisher processes')
-      kill('edgent.endpoints',','.join(self.publishers.keys()))
+      #kill('edgent.endpoints',','.join(self.publishers.keys()))
+      kill2(self.sockets,','.join(self.subscribers.keys()))
+      kill2(self.sockets,','.join(self.publishers.keys()))
 
       #collect logs
       print('Collecting logs')
@@ -87,34 +95,52 @@ class Coordinate(object):
   def start(self): 
     try:
       print('Starting subscribers')
-      start_subscribers(self.subscribers,self.run_id,self.exp_type,self.fe_address)
-      #start_subscribers2(self.socket,self.subscribers,self.run_id,self.exp_type)
+      #start_subscribers(self.subscribers,self.run_id,self.exp_type,self.fe_address)
+      start_subscribers2(self.sockets,self.subscribers,self.run_id,self.exp_type,self.fe_address)
       print('Waiting for all subscribers to join')
       self._zk.retry(self.sub_barrier.wait)
       print('Starting publishers')
-      start_publishers(self.publishers,self.exp_type,self.zk_connector,self.fe_address)
-      #start_publishers2(self.socket,self.publishers,self.exp_type)
+      #start_publishers(self.publishers,self.exp_type,self.zk_connector,self.fe_address)
+      start_publishers2(self.sockets,self.publishers,self.exp_type,self.zk_connector,self.fe_address)
       print('Waiting for all publishers to join')
       self._zk.retry(self.pub_barrier.wait)
     except (KazooException,RetryFailedError) as e:
       #print(str(e))
       self.stop()
 
+  def wait_for_node_deletion(self,zk_path,event):
+    def _node_exists(data,stat,zk_event):
+      if zk_event and zk_event.type==EventType.DELETED and stat==None and data==None:
+        print('%s path was deleted'%(zk_path))
+        event.set()
+        return False
+    #start watch
+    DataWatch(client=self._zk,\
+      path=zk_path,\
+      func=_node_exists,send_event=True)
+
+    print('Will wait for %s node to be deleted'%(zk_path))
+    event.wait()
+
   def wait(self):
     try:
       print('Waiting for test to finish execution')
-      self._zk.retry(self.finished_barrier.wait)
-      self._zk.retry(self.logs_barrier.wait)
+      self.wait_for_node_deletion('%s/barriers/finished'%(self.exp_path),threading.Event())
+      self.wait_for_node_deletion('%s/barriers/logs'%(self.exp_path),threading.Event())
+      #self._zk.retry(self.finished_barrier.wait)
+      #self._zk.retry(self.logs_barrier.wait)
     except (KazooException, RetryFailedError) as e:
       print(str(e))
       self.stop()
 
   def kill(self):
     msg={'command':'kill'}
-    self.socket.send(json.dumps(msg)) 
+    self.socket.send_string(json.dumps(msg)) 
 
   def stop(self):
-    self.socket.close()
+    for socket in self.sockets:
+      socket.setsockopt(zmq.LINGER,0)
+      socket.close()
     self.context.destroy()
     self._zk.stop()
 
@@ -190,6 +216,18 @@ def kill(pattern,hosts=None):
       --extra-vars="pattern=%s"'%(metadata.ansible,pattern)
     subprocess.check_call(['bash','-c', command_string])
 
+def kill2(sockets,hosts=None):
+  if(hosts):
+    msg={'command':'kill',\
+      'global': False,\
+      'target': hosts}
+  else:
+    msg={'command':'kill',\
+      'global': True}
+
+  for socket in sockets:
+    socket.send_string(json.dumps(msg)) 
+
 def clean_logs(hosts=None):   
   if hosts:
     command_string='cd %s && ansible-playbook playbooks/util/clean.yml -f 16\
@@ -217,15 +255,17 @@ def start_monitors(run_id,experiment_type,pub_node,hosts,zk_connector):
    metadata.restricted_core_count,hosts)
   subprocess.check_call(['bash','-c',command_string])
 
-def start_subscribers2(socket,subscribers,run_id,experiment_type):
+def start_subscribers2(sockets,subscribers,run_id,experiment_type,fe_address):
   msg={'command':'start',
     'endpoint': 'sub',
     'experiment_type': experiment_type,
-    'run_id': run_id,
+    'fe_address': fe_address,
     'topic_descriptions': subscribers,
-    'out_dir': metadata.remote_log_dir,
+    'log_dir': metadata.remote_log_dir,
+    'run_id': run_id,
   }
-  socket.send(json.dumps(msg))
+  for socket in sockets:
+    socket.send_string(json.dumps(msg))
 
 def start_subscribers(subscribers,run_id,experiment_type,fe_address):
   parallelism=16
@@ -254,14 +294,16 @@ def start_subscribers(subscribers,run_id,experiment_type,fe_address):
   for p in processes:
     p.join()
 
-def start_publishers2(socket,publishers,experiment_type):
+def start_publishers2(sockets,publishers,experiment_type,zk_connector,fe_address):
   msg={'command':'start',
     'endpoint': 'pub',
-    'zk_connector': metadata.public_zk,
     'experiment_type': experiment_type,
+    'fe_address': fe_address,
     'topic_descriptions': publishers,
+    'zk_connector': zk_connector,
   }
-  socket.send(json.dumps(msg))
+  for socket in sockets:
+    socket.send_string(json.dumps(msg))
   
 def start_publishers(publishers,experiment_type,zk_connector,fe_address):
   parallelism=16
@@ -307,4 +349,5 @@ def start_eb(brokers,zk_connector):
   command_string='cd %s && ansible-playbook playbooks/experiment/eb.yml  --limit %s\
     --extra-vars="zk_connector=%s io_threads=%d"'%\
     (metadata.ansible,brokers,zk_connector,metadata.io_threads)
+  print(command_string)
   subprocess.check_call(['bash','-c',command_string])

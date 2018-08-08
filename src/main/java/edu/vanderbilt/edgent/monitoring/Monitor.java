@@ -35,7 +35,7 @@ public class Monitor {
 	private Logger logger;
 
 	public Monitor(String zkConnector, String runId, String outDir,boolean pub_node,String experimentType,int coreCount){
-		logger=  LogManager.getLogger(this.getClass().getSimpleName());
+		logger=  LogManager.getLogger(this.getClass().getName());
 		
 		String pid= UtilMethods.pid();
 		hostName=UtilMethods.hostName();

@@ -23,7 +23,7 @@ public class Prune implements Runnable {
 		this.ebId=ebId;
 		this.client=client;
 		this.queue=queue;
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 	}
 
 	@Override

@@ -10,7 +10,9 @@ import metadata,util
 #test machine configuration
 brokers=['node6']
 subscriber_test_machines=['node17']
-publisher_test_machines=['node19','node20','node25','node27']
+#publisher_test_machines=['node19','node20','node25','node27']
+publisher_test_machines=['node19','node20','node25']
+
 
 #for m in subscriber_test_machines:
 #  publisher_test_machines.remove(m)
@@ -106,7 +108,7 @@ def load_configuration(config_path):
       config.append(line.rstrip())
   return config 
 
-def create_configuration(iteration):
+def create_configuration(iteration,liveliness=120,per_publisher_publication_rate=1):
   config=[]
   for t in iteration.split(','):
     topic,processing_interval,rate=t.split(':')  
@@ -121,7 +123,7 @@ def create_configuration(iteration):
     #sub_distribution=topic:#sub:sample_count:interval
     sub_distribution='%s:%d:%d:%s'%(topic,
       subscribers_per_topic,
-      liveliness*num_publishers,
+      liveliness*num_publishers*per_publisher_publication_rate,
       processing_interval)
     #topic_configuration= name,processing_interval,rate,pub_distribution,sub_distribution,#pub,#sub,#endpoints,payload,interval*rate
     topic_config='%s,%s,%s,%s,%s,%d,%d,%d,%d,%f'%(topic,
@@ -243,7 +245,7 @@ def model_output(log_dir,run_id):
       res['avg'][parts[0]]=float(parts[2])
   return res
 
-def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address):
+def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address,mq_connector):
   #clean-up before running any test
   print("\n\nCleaning logs directory")
   util.clean_logs(','.join(list(subscriber_placement.keys())+\
@@ -251,7 +253,6 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
 
   #restart edge-broker
   print("\n\nRestarting EdgeBroker")
-  print(len(brokers))
   util.start_eb(','.join(brokers),zk_connector) 
 
   #start the experiment and wait for it to finish
@@ -259,7 +260,7 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
   print("Subscribers:{}".format(subscriber_placement))
   print("Publishers:{}".format(publisher_placement))
   load=util.Coordinate("test",run_id,subscriber_placement,\
-    publisher_placement,brokers,log_dir,True,zk_connector,fe_address)
+    publisher_placement,brokers,log_dir,True,zk_connector,fe_address,mq_connector)
 
   #start monitoring processes
   util.start_monitors(run_id,"test",0,','.join(brokers),zk_connector)
@@ -274,43 +275,8 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
   subprocess.check_call(['python','src/plots/summarize/summarize.py',\
     '-log_dir',log_dir,'-sub_dirs',str(run_id)])
 
-
-  ##copy model features 
-  #print("\n\nCopying model features")
-  #y=model_output(log_dir,run_id)
-  #features=model_features(config)
-  #with open('%s/%s/features'%(log_dir,run_id),'w') as f:
-  #  f.write('#topics,foreground_processing_interval,foreground_rate,background_rate_x_processing_interval,\
-  #foreground_avg_latency,foreground_90th_percentile_latency,broker_cpu,broker_mem,broker_nw\n')
-  #  for i in range(len(config)):
-  #    topic='t%d'%(i+1)
-  #    x=features[topic]
-  #    f.write('%d,%s,%f,%f,%f,%f,%f\n'%(len(config),x,
-  #      y['avg'][topic],y['90th'][topic],y['cpu'],y['mem'],y['nw']))
-
-  ##copy feature vectors
-  #with open('%s/%s/vectors'%(log_dir,run_id),'w') as f:
-  #  f.write('processing_intervals,publication_rates,latency_avg,latency_90th,cpu,mem,nw\n')
-  #  processing_intervals=[]
-  #  publication_rates=[]
-  #  latency_avg=[]
-  #  latency_90th=[]
-  #  for i in range(len(config)):
-  #    topic='t%d'%(i+1)
-  #    processing_interval,publication_rate,background_rate_x_processing_interval= features[topic].split(',')
-  #    processing_intervals.append(int(processing_interval))
-  #    publication_rates.append(int(publication_rate))
-  #    latency_avg.append(y['avg'][topic])
-  #    latency_90th.append(y['90th'][topic])
-
-  #  f.write('%s;%s;%s;%s;%f;%f;%f\n'%(','.join([str(v) for v in processing_intervals]),
-  #    ','.join([str(v) for v in publication_rates]),
-  #    ','.join([str(v) for v in latency_avg]),
-  #    ','.join([str(v) for v in latency_90th]),
-  #    y['cpu'],y['mem'],y['nw']))
-
-
-def run(config,log_dir,run_id,zk_connector,fe_address):
+def run(config,log_dir,run_id,\
+  zk_connector,fe_address,mq_connector):
   #get subscriber configurations for all topics in this test config
   subscribers=['%s'%(tdesc.split(',')[4]) for tdesc in config]
   #get publisher configurations for all topics in this test config
@@ -320,9 +286,8 @@ def run(config,log_dir,run_id,zk_connector,fe_address):
   subscriber_placement=place('sub',subscribers)
   #get placement for all publishers in this test
   publisher_placement=place('pub',publishers)
-  
   #run experiment
-  experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address)
+  experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address,mq_connector)
 
 if __name__ == "__main__":
   parser= argparse.ArgumentParser(description='script for running test')
@@ -331,63 +296,10 @@ if __name__ == "__main__":
   parser.add_argument('-run_id',type=int,required=True)
   parser.add_argument('-zk_connector',required=True)
   parser.add_argument('-fe_address',required=True)
+  parser.add_argument('-mq_connector',required=True)
   args=parser.parse_args()
 
   #run experiment
-  run(json.loads(args.config),args.log_dir,args.run_id,args.zk_connector,args.fe_address)
-  
- 
-#if __name__ == "__main__":
-#  parser= argparse.ArgumentParser(description='script for collecting performance data for a given number of colocated topics')
-#  parser.add_argument('-log_dir',required=True)
-#  parser.add_argument('-config_dir',required=True)
-#  parser.add_argument('-topics',type=int,required=True)
-#  #parser.add_argument('-combinations',type=int,required=True)
-#  parser.add_argument('-start_id',type=int,required=True)
-#  parser.add_argument('-end_id',type=int,required=True)
-#  args=parser.parse_args()
-#  
-#
-#  ##create test combinations for given number of colocated topics and number of test combinations
-#  #res=combinations_with_set_foreground(9,200,30,25)
-#  #for idx,test_iteration in enumerate(res):
-#  #  config=create_configuration(test_iteration)
-#  #  write_configuration(config,'/home/kharesp/log/background_load_test/%d'%(idx+1))
-#  
-#  #for idx,test_iteration in enumerate(res):
-#  #  #get test configuration
-#  #  config=create_configuration(test_iteration)
-#  #  #execute test
-#  #  #run(config,args.log_dir,idx+1)
-#  #  write_configuration(config,'%s/%d'%(dir_path,idx+1))
-#
-#  #for idx in range(args.start_id,args.end_id+1,1):
-#  #  #load test configuration
-#  #  config=load_configuration('%s/topics_%d/%d'%
-#  #    (args.config_dir,args.topics,idx))
-#  #  run(config,args.log_dir,idx)
-#  
-#  runs=1
-#  intervals=[10]
-#  rates={
-#    10: range(1,86),
-#    20: range(1,46),
-#    30: range(1,36),
-#    40: range(1,23),
-#  }
-#  for runid in range(1,runs+1,1):
-#    for interval in intervals: 
-#      for rate in rates[interval]:
-#        if ((runid==1) and (interval==10) and (rate<58)):
-#          print('skipping rate:%d'%(rate))
-#          continue
-#         
-#         
-#        res=combinations_with_set_foreground(1,1,interval,rate)
-#        for iteration in res:
-#          config=create_configuration(iteration)
-#          log_dir='%s/variance/interval_%d/run%d'%(args.log_dir,interval,runid)
-#          if not os.path.exists(log_dir):
-#            os.makedirs(log_dir)
-#          print('Starting test with config:%s. runid:%d\n'%(config,runid)) 
-#          run(config,log_dir,rate)
+  run(json.loads(args.config),args.log_dir,\
+    args.run_id,args.zk_connector,\
+    args.fe_address,args.mq_connector)

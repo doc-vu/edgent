@@ -10,3 +10,4 @@ pyvenv.cfg
 pip-selfcheck.json
 *.pyc
 conf/conf
+src/send_mail.py

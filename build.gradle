@@ -19,6 +19,7 @@ dependencies {
     	compile 'org.apache.zookeeper:zookeeper:3.5.0-alpha'
         compile 'org.apache.logging.log4j:log4j-api:2.8.2'
         compile 'org.apache.logging.log4j:log4j-core:2.8.2'
+        compile 'org.json:json:20180130'
         compile fileTree(dir: './jars/', include: ['jeromq-0.4.4-SNAPSHOT.jar','jeromq-0.4.4-SNAPSHOT-sources.jar'])
 }
 

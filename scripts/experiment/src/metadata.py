@@ -1,8 +1,9 @@
 #zk='10.20.30.1:2181,10.20.30.15:2181,10.20.30.16:2181'
 public_zk='129.59.107.80:2181,129.59.107.97:2181,129.59.107.148:2181'
-public_zk2='129.59.107.134:2181'
-public_zk3='129.59.107.57:2181'
-public_zk4='129.59.107.201:2181'
+public_zk2='129.59.107.134:2181,129.59.107.57:2181,129.59.107.201:2181'
+public_zk3='129.59.107.36:2181,129.59.107.35:2181,129.59.107.37:2181'
+public_zk4='129.59.234.238:2181,129.59.234.233:2181,129.59.234.234:2181'
+#public_zk4='129.59.107.201:2181'
 ansible='/home/kharesp/workspace/java/edgent/scripts/ansible'
 remote_log_dir='/home/ubuntu/log'
 local_log_dir='/home/kharesp/log'
@@ -49,7 +50,8 @@ def get_hw_type(node):
   else:
     return 'invalid'
 
-pub_per_hw_type={'hw1':109,'hw2':180,'hw3':220,'hw4':220,'hw5':190}
+#pub_per_hw_type={'hw1':109,'hw2':180,'hw3':220,'hw4':220,'hw5':190}
+pub_per_hw_type={'hw1':100,'hw2':100,'hw3':100,'hw4':100,'hw5':100}
 sub_per_hw_type={'hw1':10,'hw2':20,'hw3':35,'hw4':45,'hw5':45}
 
 def get_host_subscriber_capacity(host):

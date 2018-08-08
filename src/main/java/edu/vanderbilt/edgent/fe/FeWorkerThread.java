@@ -51,7 +51,7 @@ public class FeWorkerThread implements Runnable {
 
 	public FeWorkerThread(ZContext context,
 			CuratorFramework client,String lbAddress){
-		logger=LogManager.getLogger(this.getClass().getSimpleName());
+		logger=LogManager.getLogger(this.getClass().getName());
 		this.context=context;
 		this.client=client;
 		this.lbAddress=lbAddress;

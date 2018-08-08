@@ -1,0 +1,13 @@
+---
+- include: ../util/set_ansible_ssh_host.yml
+
+- hosts: all
+  gather_facts: False
+  vars:
+    - src_home: /home/ubuntu/workspace/edgent
+    - log_dir: /home/ubuntu/endpoint_logs
+  tasks:
+    - name: ensure log directory exists
+      file: path={{ log_dir }} state=directory
+    - name: start endpoint managers
+      shell: cd "{{ src_home }}" && nohup python -u scripts/start_endpoint_manager.py "{{ type }}" "{{ mq }}" > output.csv

@@ -37,7 +37,7 @@ public abstract class Worker implements Runnable{
 	//ZMQ PUB/SUB socket to send/receive data from EB
 	protected ZMQ.Socket socket;
 
-	//Subscriber's socket connector at which it issues control messages
+	//Worker's ctrlSocket connector at which it receives control messages
 	private String controlConnector;
 	/*Container's socket connector at which it receives 
 	commands to enqueue in its queue */
@@ -49,7 +49,7 @@ public abstract class Worker implements Runnable{
 	//Monitor thread to monitor Worker's connection status to EB
 	private Thread monitoringThread;
 
-	//Latch to signal connection/dischponnection with EB
+	//Latch to signal connection/disconnection with EB
 	private CountDownLatch connected;
 	//Current state of connection with the EB
 	protected AtomicInteger connectionState;
@@ -90,7 +90,7 @@ public abstract class Worker implements Runnable{
 			String topicName,String endpointType,
 			String ebId,String topicConnector,
 			String controlConnector, String queueConnector,int socketHWM){
-        logger= LogManager.getLogger(this.getClass().getSimpleName());
+        logger= LogManager.getLogger(this.getClass().getName());
         //stash constructor params
         this.context=context;
         this.containerId=containerId;
@@ -311,7 +311,7 @@ public abstract class Worker implements Runnable{
 		private Logger logger;
 
 		public Monitor(ZMQ.Context context,CountDownLatch latch){
-			logger= LogManager.getLogger(this.getClass().getSimpleName());
+			logger= LogManager.getLogger(this.getClass().getName());
 			this.context=context;
 			connected=latch;
 			logger.debug("Monitor initialized");

@@ -63,7 +63,7 @@ public class Topic implements Runnable {
 	
 	public Topic(String topicName,ZMQ.Context context, String ebControlConnector,
 			int receivePort,int sendPort,int lbPort,CountDownLatch initialized,int per_sample_processing_interval){
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		//stash constructor arguments
 		this.topicName= topicName;
 		this.context=context;

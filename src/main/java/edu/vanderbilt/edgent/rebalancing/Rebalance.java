@@ -65,7 +65,7 @@ public abstract class Rebalance {
 	public Rebalance(String lbPolicy,String topicName,
 			String currEbId,String currTopicConnector,boolean waitForDisconnection,
 			CuratorFramework client, ZMQ.Socket topicControl,TopicCommandHelper topicCommandHelper){
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		this.lbPolicy=lbPolicy;
 		this.topicName=topicName;
 		this.currEbId=currEbId;

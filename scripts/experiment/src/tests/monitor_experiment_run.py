@@ -26,24 +26,22 @@ class Track(object):
   def install_listener(self):
     def listener(data,stat,event):
       try:
-        print(data)
         if (event and event.type==EventType.CHANGED):
           curr_ts=int(time.time())
           if (self.start_ts > 0):
             elapsed_time= (curr_ts-self.start_ts)/(60.0)
-            #print('Previous experiment run took:%f minutes\n'%(elapsed_time/(1000*60.0)))
-            print(str(elapsed_time))
+            print('Current runid:%s. Previous experiment run took:%f mins'%(data,elapsed_time))
           self.start_ts=curr_ts
       except Exception as e:
         print(e)
     DataWatch(client=self.zk,path='/runid',func=listener,send_event=True)
 
-  def start_update_timer(self):
-    self.status_update=threading.Timer(600,self.update)
+  def start_update_timer(self): #sends an update email every 60mins
+    self.status_update=threading.Timer(3600,self.update)
     self.status_update.start()
 
-  def start_periodic_check_timer(self):
-    self.periodic_check=threading.Timer(1800,self.check)
+  def start_periodic_check_timer(self): #checks wheter the test has failed after 60mins
+    self.periodic_check=threading.Timer(3600,self.check)
     self.periodic_check.start()
 
   def start(self):  
@@ -59,18 +57,17 @@ class Track(object):
   def check(self):
     value,info=self.zk.get('/runid')
     if(int(value)==self.runid):
-      print('Test Execution has failed')
+      print('\nTest Execution for run-id:%d has failed\n'%(self.runid))
       self.execution_failed=True
       send_mail.Email().send(['kharesp28@gmail.com'],
         'Execution Failure','Check execution for nw_partition:%d'%(self.nw_partition))
     else:
       self.runid=int(value)
-      print('Updated run-id:%d'%(self.runid))
     self.start_periodic_check_timer()
   
   def update(self):
     value,info=self.zk.get('/runid')
-    print('Sending status update for runid:%s'%(value))
+    print('\nSending status update for runid:%s\n'%(value))
     send_mail.Email().send(['kharesp28@gmail.com'],\
       'Update','run-id:%s\nnw_partition:%d'%(value,self.nw_partition))
     self.start_update_timer()

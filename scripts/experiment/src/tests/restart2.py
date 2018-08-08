@@ -4,10 +4,12 @@ from kazoo.retry import RetryFailedError
 from kazoo.exceptions import KazooException
 import rate_processing_interval_combinations2
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import metadata,send_mail
+import metadata,send_mail,util
+import zmq,json
 
 class Hawk(object):
-  def __init__(self,config,log_dir,run_id,zk_connector,fe_address):
+  def __init__(self,config,log_dir,run_id,\
+    zk_connector,fe_address,mq_connector):
     self.config=config
     self.log_dir=log_dir
     self.run_id=run_id
@@ -16,7 +18,12 @@ class Hawk(object):
     self.execution_attempt=0
     self.zk_connector=zk_connector
     self.fe_address=fe_address
- 
+
+    self.mq_connector=mq_connector
+    self.context=zmq.Context(1)
+    self.socket=self.context.socket(zmq.PUSH)
+    self.socket.connect(self.mq_connector)
+
   def reset_variables(self):
     self.attempt=0
     self.execution_failed=False
@@ -77,7 +84,8 @@ class Hawk(object):
       '-log_dir',self.log_dir,\
       '-run_id','%d'%(self.run_id),\
       '-zk_connector',self.zk_connector,\
-      '-fe_address',self.fe_address]
+      '-fe_address',self.fe_address,\
+      '-mq_connector',self.mq_connector]
     p= subprocess.Popen(args)
 
     #wait for test to finish
@@ -85,7 +93,7 @@ class Hawk(object):
 
     #check execution status
     if self.execution_failed:
-      print('Execution had failed.Exiting')
+      print('Execution Attempt:%d has failed.'%(self.execution_attempt))
       #kill the experiment run
       p.kill()    
       #cancel periodic check timer
@@ -104,44 +112,65 @@ class Hawk(object):
         ['%s'%(tdesc.split(',')[3]) for tdesc in self.config])
       endpoint_machines=list(sub_placement.keys())+ list(pub_placement.keys())
       
-      command_string='cd %s && ansible-playbook playbooks/util/kill.yml \
-        --extra-vars="pattern=edgent.endpoints" --limit %s'%\
-        (metadata.ansible,','.join(endpoint_machines))
-      subprocess.check_call(['bash','-c', command_string])
+      #command_string='cd %s && ansible-playbook playbooks/util/kill.yml \
+      #  --extra-vars="pattern=edgent.endpoints" --limit %s'%\
+      #  (metadata.ansible,','.join(endpoint_machines))
+      #subprocess.check_call(['bash','-c', command_string])
+      
+      util.kill2(self.socket,','.join(endpoint_machines))
       #check if endpoints are still running. If so, restart those nodes
       #wait for sometime 
       #restart test
       if (self.execution_attempt< 3):
+        time.sleep(5)
         self.run()
+      else:
+        print('All execution attempts for test:%d failed.'%(self.run_id))
+        self.cleanup()
     else:
-      print('Execution was successful.Exiting')
+      print('Execution attempt:%d was successful.Exiting'%(self.execution_attempt))
       self.periodic_check.cancel()
-      self.zk.stop()
+      self.cleanup()
+
+  def cleanup(self):
+    self.zk.stop()
+    self.socket.close()
+    self.context.destroy()
 
 if __name__=="__main__":
   zk_connector=metadata.public_zk2
   fe_address='10.20.30.3' #node3
-  runs=2
+  mq_connector='tcp://129.59.104.151:2025'
+  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning_urd/training'
+  runs=1
 
-  k_colocation=5
-  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning/training'
+  k=[6,7,8,9,10,11,12]
+  for k_colocation in k:
+    for runid in range(1,runs+1,1):
+      if k_colocation==6:
+        start_iter=811
+        end_iter=1000
+      else:
+        start_iter=0
+        end_iter=1000
 
-  for runid in range(2,runs+1,1):
-    start_iter=271
-    end_iter=640
-    config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
-    log_dir= '%s/data/%d_colocation/run%d'%\
-      (root_log_dir,k_colocation,runid)
-    print(log_dir)
+      config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
+      log_dir= '%s/data/%d_colocation/run%d'%\
+        (root_log_dir,k_colocation,runid)
 
-    if not os.path.exists(log_dir):
-      os.makedirs(log_dir)
-
-    with open(config_file,'r') as f: 
-      for idx,line in enumerate(f):
-        if (idx>=start_iter) and (idx<end_iter):
-          config=rate_processing_interval_combinations2.create_configuration(line.rstrip())
+      if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+      with open(config_file,'r') as f: 
+        for idx,line in enumerate(f):
+          if (idx>=start_iter) and (idx<end_iter):
+            config=rate_processing_interval_combinations2.create_configuration(line.rstrip())
+              
+            print('Starting test runid:%d iteration:%d with config:%s\n\n\n'%(runid,idx+1,config))
+            start_time=time.time()
+            h=Hawk(config,log_dir,idx+1,\
+              zk_connector,fe_address,mq_connector)
+            h.run()
+            end_time=time.time()
             
-          print('Starting test runid:%d iteration:%d with config:%s\n\n\n'%(runid,idx+1,config))
-          h=Hawk(config,log_dir,idx+1,zk_connector,fe_address)
-          h.run()
+            elapsed_time_min=(end_time-start_time)/60.0
+            print('\n\nRunid:%d iteration:%d took %f mins to finish\n\n'%(runid,idx+1,elapsed_time_min))

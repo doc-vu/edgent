@@ -9,10 +9,24 @@ import metadata,util
 ##########################################################################
 #test machine configuration
 brokers= ['node2']
-subscriber_test_machines= ['node7']
-publisher_test_machines= ['node8','node9','node10','node11']
-  
+subscriber_test_machines= ['node3','node4']
+publisher_test_machines= ['node7','node8','node9','node10','node11',\
+  'node12','node13','node14','node15','node16']
 
+node_mq_map={
+  'node3': 'tcp://10.20.30.1:1026',
+  'node4': 'tcp://10.20.30.1:2026',
+  'node7': 'tcp://10.20.30.1:1026',
+  'node8': 'tcp://10.20.30.1:1026',
+  'node9': 'tcp://10.20.30.1:1026',
+  'node10': 'tcp://10.20.30.1:1026',
+  'node11': 'tcp://10.20.30.1:1026',
+  'node12': 'tcp://10.20.30.1:2026',
+  'node13': 'tcp://10.20.30.1:2026',
+  'node14': 'tcp://10.20.30.1:2026',
+  'node15': 'tcp://10.20.30.1:2026',
+  'node16': 'tcp://10.20.30.1:2026',
+}
 #for m in subscriber_test_machines:
 #  publisher_test_machines.remove(m)
 
@@ -245,7 +259,7 @@ def model_output(log_dir,run_id):
       res['avg'][parts[0]]=float(parts[2])
   return res
 
-def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address):
+def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address,mq_connector):
   #clean-up before running any test
   print("\n\nCleaning logs directory")
   util.clean_logs(','.join(list(subscriber_placement.keys())+\
@@ -253,15 +267,18 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
 
   #restart edge-broker
   print("\n\nRestarting EdgeBroker")
-  #print(len(brokers))
+  print(zk_connector)
   util.start_eb(','.join(brokers),zk_connector) 
+
+  #wait for EB to initialize
+  time.sleep(10)
 
   #start the experiment and wait for it to finish
   print('\n\n\nStarting test endpoints')
   print("Subscribers:{}".format(subscriber_placement))
   print("Publishers:{}".format(publisher_placement))
   load=util.Coordinate("test",run_id,subscriber_placement,\
-    publisher_placement,brokers,log_dir,True,zk_connector,fe_address)
+    publisher_placement,brokers,log_dir,True,zk_connector,fe_address,mq_connector)
 
   #start monitoring processes
   util.start_monitors(run_id,"test",0,','.join(brokers),zk_connector)
@@ -276,43 +293,8 @@ def experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk
   subprocess.check_call(['python','src/plots/summarize/summarize.py',\
     '-log_dir',log_dir,'-sub_dirs',str(run_id)])
 
-
-  ##copy model features 
-  #print("\n\nCopying model features")
-  #y=model_output(log_dir,run_id)
-  #features=model_features(config)
-  #with open('%s/%s/features'%(log_dir,run_id),'w') as f:
-  #  f.write('#topics,foreground_processing_interval,foreground_rate,background_rate_x_processing_interval,\
-  #foreground_avg_latency,foreground_90th_percentile_latency,broker_cpu,broker_mem,broker_nw\n')
-  #  for i in range(len(config)):
-  #    topic='t%d'%(i+1)
-  #    x=features[topic]
-  #    f.write('%d,%s,%f,%f,%f,%f,%f\n'%(len(config),x,
-  #      y['avg'][topic],y['90th'][topic],y['cpu'],y['mem'],y['nw']))
-
-  ##copy feature vectors
-  #with open('%s/%s/vectors'%(log_dir,run_id),'w') as f:
-  #  f.write('processing_intervals,publication_rates,latency_avg,latency_90th,cpu,mem,nw\n')
-  #  processing_intervals=[]
-  #  publication_rates=[]
-  #  latency_avg=[]
-  #  latency_90th=[]
-  #  for i in range(len(config)):
-  #    topic='t%d'%(i+1)
-  #    processing_interval,publication_rate,background_rate_x_processing_interval= features[topic].split(',')
-  #    processing_intervals.append(int(processing_interval))
-  #    publication_rates.append(int(publication_rate))
-  #    latency_avg.append(y['avg'][topic])
-  #    latency_90th.append(y['90th'][topic])
-
-  #  f.write('%s;%s;%s;%s;%f;%f;%f\n'%(','.join([str(v) for v in processing_intervals]),
-  #    ','.join([str(v) for v in publication_rates]),
-  #    ','.join([str(v) for v in latency_avg]),
-  #    ','.join([str(v) for v in latency_90th]),
-  #    y['cpu'],y['mem'],y['nw']))
-
-
-def run(config,log_dir,run_id,zk_connector,fe_address):
+def run(config,log_dir,run_id,\
+  zk_connector,fe_address,mq_connector):
   #get subscriber configurations for all topics in this test config
   subscribers=['%s'%(tdesc.split(',')[4]) for tdesc in config]
   #get publisher configurations for all topics in this test config
@@ -322,9 +304,8 @@ def run(config,log_dir,run_id,zk_connector,fe_address):
   subscriber_placement=place('sub',subscribers)
   #get placement for all publishers in this test
   publisher_placement=place('pub',publishers)
-  
   #run experiment
-  experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address)
+  experiment(log_dir,run_id,config,subscriber_placement,publisher_placement,zk_connector,fe_address,mq_connector)
 
 if __name__ == "__main__":
   parser= argparse.ArgumentParser(description='script for running test')
@@ -333,7 +314,10 @@ if __name__ == "__main__":
   parser.add_argument('-run_id',type=int,required=True)
   parser.add_argument('-zk_connector',required=True)
   parser.add_argument('-fe_address',required=True)
+  parser.add_argument('-mq_connector',required=True)
   args=parser.parse_args()
 
   #run experiment
-  run(json.loads(args.config),args.log_dir,args.run_id,args.zk_connector,args.fe_address)
+  run(json.loads(args.config),args.log_dir,\
+    args.run_id,args.zk_connector,\
+    args.fe_address,args.mq_connector)

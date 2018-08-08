@@ -38,7 +38,7 @@ public class LbListener implements Runnable{
 	public LbListener(String containerId,String topicName,ZMQ.Context context,String ebConnector,
 			String controlConnector,String queueConnector,
 			CountDownLatch connected){
-        logger= LogManager.getLogger(this.getClass().getSimpleName());
+        logger= LogManager.getLogger(this.getClass().getName());
         //stash constructor arguments
         this.containerId=containerId;
 		this.topicName=topicName;

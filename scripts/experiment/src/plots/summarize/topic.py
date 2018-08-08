@@ -40,7 +40,9 @@ trend,\
 level\n"""
     f.write(header)
 
-    for topic,files in topic_files_map.items():
+    for idx in range(len(topic_files_map)):
+      topic='t%d'%(idx+1)
+      files=topic_files_map[topic]
       stats= process_topic(log_dir,topic,files)
       f.write('%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n'%(topic,
         len(files),

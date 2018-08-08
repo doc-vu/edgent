@@ -1,5 +1,7 @@
 package edu.vanderbilt.edgent.endpoints.publisher;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -25,6 +27,8 @@ public class Producer implements Runnable {
 	private String queueConnector;
 	//connector at which produced data is published
 	private String producerConnector;
+	//signal to track if producer is initialized or not
+	private CountDownLatch producerInitialized;
 
 	//Parent container's id
 	private String containerId;
@@ -52,16 +56,16 @@ public class Producer implements Runnable {
 	private boolean send;
 	private Logger logger;
 
-	public Producer(String containerId,Context context, String topicName, String queueConnector,
-			String producerConnector, int sampleCount, int sendInterval,int payloadSize,
+	public Producer(String containerId,Context context, String topicName, String queueConnector,CountDownLatch producerInitialized,
+			 int sampleCount, int sendInterval,int payloadSize,
 			String zkConnector,String experimentType,boolean send) {
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		//stash constructor arguments
 		this.containerId=containerId;
 		this.context=context;
 		this.topicName=topicName;
 		this.queueConnector=queueConnector;
-		this.producerConnector=producerConnector;
+		this.producerInitialized=producerInitialized;
 		this.sampleCount=sampleCount;
 		this.sendInterval=sendInterval;
 		this.payloadSize=payloadSize;
@@ -84,17 +88,23 @@ public class Producer implements Runnable {
 	@Override
 	public void run() {
 		try{
-			pubSocket = context.socket(ZMQ.PUB);
-			pubSocket.setHWM(0);
-			pubSocket.bind(producerConnector);
-
 			commandSocket = context.socket(ZMQ.PUSH);
 			commandSocket.connect(queueConnector);
 
-			logger.info("Producer:{} for topic:{} sent:{} samples", containerId, topicName, currCount);
+			pubSocket = context.socket(ZMQ.PUB);
+			pubSocket.setHWM(0);
+			int port=pubSocket.bindToRandomPort("tcp://*");
+			producerConnector=String.format("tcp://*:%d",port);
+			producerInitialized.countDown();
+
+			boolean barrier_opened=false;
 			DistributedBarrier barrier = new DistributedBarrier(client,
 					String.format("/experiment/%s/barriers/pub",experimentType));
-			barrier.waitOnBarrier();
+			while(!stopped.get() && !barrier_opened){
+				logger.info("Producer:{} will wait until all publishers have joined",containerId);
+				barrier_opened=barrier.waitOnBarrier(5, TimeUnit.SECONDS);
+			}
+			logger.info("Producer:{} wait on barrier was successful.Will start sending data",containerId);
 
 			// TODO: Adhoc sleep to prevent loss of initially sent data samples
 			Thread.sleep(1000);
@@ -103,7 +113,7 @@ public class Producer implements Runnable {
 					&& (currCount < sampleCount || sampleCount == -1)) {
 				try {
 					// send data
-					if(this.send){
+					if(this.send && barrier_opened){
 						pubSocket.sendMore(topicName.getBytes());
 						pubSocket.send(fb.serialize(currCount, // sample
 																			// id
@@ -158,6 +168,10 @@ public class Producer implements Runnable {
 	
 	public void stop(){
 		stopped.set(true);
+	}
+	
+	public String producerConnector(){
+		return producerConnector;
 	}
 	
 	private long exponentialInterarrival(double averageInterval){

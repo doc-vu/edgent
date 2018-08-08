@@ -1,17 +1,19 @@
 package edu.vanderbilt.edgent.endpoints.subscriber;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.zeromq.ZMQ;
 import edu.vanderbilt.edgent.endpoints.Container;
 import edu.vanderbilt.edgent.endpoints.Worker;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
-import edu.vanderbilt.edgent.util.PortList;
 
 public class Subscriber extends Container{
 	//Collector Thread
 	private Thread collectorThread=null;
 	//Connector for the collector thread
 	private String collectorConnector;
+	private CountDownLatch collectorInitialized;
 	//expected number of samples
 	private int sampleCount;
 	//experiment runId
@@ -28,17 +30,24 @@ public class Subscriber extends Container{
 		this.runId=runId;
 		this.logDir=logDir;
 		this.logLatency=logLatency;
-		collectorConnector=String.format("tcp://localhost:%d",
-				(PortList.SUBSCRIBER_COLLECTOR_BASE_PORT_NUM+id));
+		this.collectorInitialized=new CountDownLatch(1);
 	}
 
 	@Override
 	public void initialize() {
 		//start the collector thread
-		collectorThread = new Thread(new Collector(containerId,context, topicName, commandConnector, queueConnector,
-				collectorConnector, sampleCount,runId, logDir,logLatency));
+		Collector collector=new Collector(containerId,context, topicName, commandConnector, queueConnector,
+				collectorInitialized, sampleCount,runId, logDir,logLatency);
+		collectorThread = new Thread(collector);
 		collectorThread.start();
-		logger.info("Container:{} started its data collector thread", containerId);
+		try{
+			collectorInitialized.await();
+			collectorConnector= collector.collectorConnector();
+			logger.info("Container:{} started its data collector thread", containerId);
+		}catch(InterruptedException e){
+			logger.error("Container:{} caught exception:{}",
+					containerId,e.getMessage());
+		}
 	}
 
 	@Override

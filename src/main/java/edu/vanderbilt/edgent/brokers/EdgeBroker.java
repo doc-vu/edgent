@@ -82,7 +82,7 @@ public class EdgeBroker implements Runnable{
 
 	public EdgeBroker(String zkConnector,int ioThreads,int id){
 
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		ipAddress= UtilMethods.ipAddress();
 		regionId= UtilMethods.regionId(); 
 		ebId=String.format("EB-%d-%s-%d",regionId,ipAddress,id);

@@ -1,11 +1,11 @@
 package edu.vanderbilt.edgent.endpoints.publisher;
 
+import java.util.concurrent.CountDownLatch;
 import org.zeromq.ZMQ;
 import edu.vanderbilt.edgent.endpoints.Container;
 import edu.vanderbilt.edgent.endpoints.Worker;
 import edu.vanderbilt.edgent.types.ContainerCommandHelper;
 import edu.vanderbilt.edgent.util.Commands;
-import edu.vanderbilt.edgent.util.PortList;
 
 public class Publisher extends Container{
 	//Producer instance
@@ -14,6 +14,7 @@ public class Publisher extends Container{
 	private Thread producerThread;
 	//Connector at which producer thread publishes data
 	private String producerConnector;
+	private CountDownLatch producerInitialized;
 
 	//number of samples to send
 	private int sampleCount;
@@ -33,23 +34,28 @@ public class Publisher extends Container{
 		this.payloadSize=payloadSize;
 		this.zkConnector=zkConnector;
 		this.send=send>0?true:false;
-		producerConnector=String.format("tcp://*:%d",
-				(PortList.PUBLISHER_PRODUCER_BASE_PORT_NUM+id));
+		this.producerInitialized= new CountDownLatch(1);
 	}
 
 	@Override
 	public void initialize() {
-		//no-op
+		producer = new Producer(containerId,context,topicName,
+				queueConnector,producerInitialized, sampleCount, sendInterval,payloadSize,zkConnector,experimentType,this.send);
+		producerThread = new Thread(producer);
+		producerThread.start();
+		try{
+			producerInitialized.await();
+			producerConnector=producer.producerConnector();
+			logger.info("Container:{} started its data producer thread", containerId);
+		}catch(InterruptedException e){
+				logger.error("Container:{} caught exception:{}",
+						containerId, e.getMessage());
+		}
 	}
 
 	@Override
 	public void onConnected(){
-		// start the producer thread
-		producer = new Producer(containerId,context, topicName,
-				queueConnector, producerConnector, sampleCount, sendInterval,payloadSize,zkConnector,experimentType,this.send);
-		producerThread = new Thread(producer);
-		producerThread.start();
-		logger.info("Container:{} started its data producer thread", containerId);
+		// no op
 	}
 
 	@Override
@@ -67,10 +73,11 @@ public class Publisher extends Container{
 
 	@Override
 	public Worker instantiateWorker(ZMQ.Context context,int uuid,String ebId, String topicConnector) {
-		return new Sender(context,containerId, uuid, 
-				topicName, Worker.ENDPOINT_TYPE_PUB,ebId, 
-				topicConnector,
-				commandConnector, queueConnector,producerConnector);
+		if (producerConnector != null) {
+			return new Sender(context, containerId, uuid, topicName, Worker.ENDPOINT_TYPE_PUB, ebId, topicConnector,
+					commandConnector, queueConnector, producerConnector);
+		}
+		return null;
 	}
 	
 	public static void main(String args[]){

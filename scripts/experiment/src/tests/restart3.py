@@ -4,10 +4,12 @@ from kazoo.retry import RetryFailedError
 from kazoo.exceptions import KazooException
 import rate_processing_interval_combinations3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import metadata,send_mail
+import metadata,send_mail,util
+import zmq,json
 
 class Hawk(object):
-  def __init__(self,config,log_dir,run_id,zk_connector,fe_address):
+  def __init__(self,config,log_dir,run_id,\
+    zk_connector,fe_address,mq_connector,liveliness_mins):
     self.config=config
     self.log_dir=log_dir
     self.run_id=run_id
@@ -16,14 +18,28 @@ class Hawk(object):
     self.execution_attempt=0
     self.zk_connector=zk_connector
     self.fe_address=fe_address
- 
+
+    self.mq_connector=mq_connector
+    self.context=zmq.Context(1)
+    self.sockets=[]
+    for connector in mq_connector.split(','):
+      socket=self.context.socket(zmq.PUSH)
+      socket.connect(connector)
+      self.sockets.append(socket)
+
+    self.periodic_check_timer_interval_sec=10
+    self.grace_period_mins=3
+    self.execution_failure_attempts=((liveliness_mins+\
+      self.grace_period_mins)*60)/self.periodic_check_timer_interval_sec
+
   def reset_variables(self):
     self.attempt=0
     self.execution_failed=False
     self.event.clear()
 
   def start_periodic_check_timer(self):
-    self.periodic_check=threading.Timer(10,self.check)
+    self.periodic_check=threading.Timer(self.periodic_check_timer_interval_sec,
+      self.check)
     self.periodic_check.start()
 
   def zk_query(self):
@@ -37,7 +53,7 @@ class Hawk(object):
       self.event.set()
       return
 
-    if ((children is not None) and (len(children)>0) and (self.attempt>120)):
+    if ((children is not None) and (len(children)>0) and (self.attempt>self.execution_failure_attempts)):
       print('Test Execution for run_id:%d has failed'%(self.run_id))
       self.execution_failed=True
       self.event.set()
@@ -46,7 +62,7 @@ class Hawk(object):
   def check(self):
     self.attempt+=1
     print('Attempt number:%d'%(self.attempt))
-    if (self.attempt>120):
+    if (self.attempt>self.execution_failure_attempts):
       self.execution_failed=True
       self.event.set()
       return
@@ -77,7 +93,8 @@ class Hawk(object):
       '-log_dir',self.log_dir,\
       '-run_id','%d'%(self.run_id),\
       '-zk_connector',self.zk_connector,\
-      '-fe_address',self.fe_address]
+      '-fe_address',self.fe_address,\
+      '-mq_connector',self.mq_connector]
     p= subprocess.Popen(args)
 
     #wait for test to finish
@@ -85,7 +102,7 @@ class Hawk(object):
 
     #check execution status
     if self.execution_failed:
-      print('Execution had failed.Exiting')
+      print('Execution Attempt:%d has failed.'%(self.execution_attempt))
       #kill the experiment run
       p.kill()    
       #cancel periodic check timer
@@ -104,43 +121,63 @@ class Hawk(object):
         ['%s'%(tdesc.split(',')[3]) for tdesc in self.config])
       endpoint_machines=list(sub_placement.keys())+ list(pub_placement.keys())
       
-      command_string='cd %s && ansible-playbook playbooks/util/kill.yml \
-        --extra-vars="pattern=edgent.endpoints" --limit %s'%\
-        (metadata.ansible,','.join(endpoint_machines))
-      subprocess.check_call(['bash','-c', command_string])
+      #command_string='cd %s && ansible-playbook playbooks/util/kill.yml \
+      #  --extra-vars="pattern=edgent.endpoints" --limit %s'%\
+      #  (metadata.ansible,','.join(endpoint_machines))
+      #subprocess.check_call(['bash','-c', command_string])
+      
+      util.kill2(self.sockets,','.join(endpoint_machines))
       #check if endpoints are still running. If so, restart those nodes
       #wait for sometime 
       #restart test
       if (self.execution_attempt< 3):
+        time.sleep(5)
         self.run()
+      else:
+        print('All execution attempts for test:%d failed.'%(self.run_id))
+        self.cleanup()
     else:
-      print('Execution was successful.Exiting')
+      print('Execution attempt:%d was successful.Exiting'%(self.execution_attempt))
       self.periodic_check.cancel()
-      self.zk.stop()
+      self.cleanup()
+
+  def cleanup(self):
+    self.zk.stop()
+    for socket in self.sockets:
+      socket.setsockopt(zmq.LINGER,0)
+      socket.close()
+    self.context.destroy()
+
 
 if __name__=="__main__":
   zk_connector=metadata.public_zk3
   fe_address='10.20.30.5' 
   runs=1
 
-  k_colocation=2
-  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning/training'
+  k_colocation=3
+  mq_connector='tcp://129.59.104.151:3025'
+  root_log_dir='/home/kharesp/workspace/java/edgent/model_learning_urd/training'
 
   for runid in range(1,runs+1,1):
-    start_iter=350
-    end_iter=480
     config_file='%s/configurations/%d_colocation'%(root_log_dir,k_colocation)
-    log_dir= '%s/data/%d_colocation/run%d'%\
-      (root_log_dir,k_colocation,runid)
-
-    if not os.path.exists(log_dir):
-      os.makedirs(log_dir)
-
     with open(config_file,'r') as f: 
       for idx,line in enumerate(f):
-        if (idx>=start_iter) and (idx<end_iter):
-          config=rate_processing_interval_combinations3.create_configuration(line.rstrip())
+        #if (idx+1) in [186,747,827,297,481,525]:
+        if (idx+1) in [687, 747, 748, 761, 810, 909, 924, 945, 965]:
+          log_dir= '%s/test_interval_impact/%d_colocation/between_.04_and_.09/run%d/%d'%(root_log_dir,k_colocation,runid,idx+1)
+          if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+          for l in [2,5,10,20,40]:
+            if (idx+1==687) and (l<=20):
+              continue
+            config=rate_processing_interval_combinations3.create_configuration(line.rstrip(),liveliness=l*60)
             
-          print('Starting test runid:%d iteration:%d with config:%s\n\n\n'%(runid,idx+1,config))
-          h=Hawk(config,log_dir,idx+1,zk_connector,fe_address)
-          h.run()
+            print('Starting test runid:%d iteration:%d liveliness:%d mins with config:%s\n\n\n'%(runid,idx+1,l,config))
+            start_time=time.time()
+            h=Hawk(config,log_dir,l,\
+              zk_connector,fe_address,mq_connector,l)
+            h.run()
+            end_time=time.time()
+          
+            elapsed_time_min=(end_time-start_time)/60.0
+            print('\n\nRunid:%d iteration:%d liveliness:%d mins took %f mins to finish\n\n'%(runid,idx+1,l,elapsed_time_min))

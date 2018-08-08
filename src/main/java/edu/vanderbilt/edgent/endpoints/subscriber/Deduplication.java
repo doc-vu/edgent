@@ -27,7 +27,7 @@ public class Deduplication {
 	private Logger logger;
 
 	public Deduplication(String pubId, int uuid){
-		logger= LogManager.getLogger(this.getClass().getSimpleName());
+		logger= LogManager.getLogger(this.getClass().getName());
 		this.pubId=pubId;
 		this.uuid=uuid;
 		mostRecentMsgTs=-1;

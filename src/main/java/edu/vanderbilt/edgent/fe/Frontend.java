@@ -54,7 +54,7 @@ public class Frontend {
 	public Frontend(ZContext context,
 			String zkConnector,String lbAddress){
 
-		logger=LogManager.getLogger(this.getClass().getSimpleName());
+		logger=LogManager.getLogger(this.getClass().getName());
 		ipAddress=UtilMethods.ipAddress();
 		regionId= UtilMethods.regionId();
 		feId=String.format("FE-%d-%s",regionId,ipAddress);
